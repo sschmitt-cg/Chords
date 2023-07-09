@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Music Theory Helper</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        #inputArea {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        #outputArea {
+            text-align: center;
+            width: 100%;
+        }
+        #scaleOutput {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+        }
+        #chordGrid1 {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-around;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        #chordGrid2 {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: space-around;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .chordColumn {
+            margin-bottom: 20px;
+            text-align: left;
+        }             
+    </style>
+</head>
+<body>
+    <h2>Music Theory Helper</h2>
+    <div id="inputArea">
+        <div class="selector">
+            <label for="key">Key:</label>
+            <select id="key"></select>
+        </div>
+        <div class="selector">
+            <label for="mode">Mode:</label>
+            <select id="mode"></select>
+        </div>
+        <button id="submit">Submit</button>
+        <button id="random">Random</button>
+    </div>
+    <div id="outputArea">
+        <div id="scaleOutput"></div>
+        <div id="chordGrid1">
+            <div id="triadsOutput" class="chordColumn"></div>
+            <div id="seventhsOutput" class="chordColumn"></div>
+        </div>
+        <div id="chordGrid2">
+            <div id="ninthsOutput" class="chordColumn"></div>
+            <div id="suspendedOutput" class="chordColumn"></div>
+        </div>
+    </div>    
+    <script src="script.js"></script>
+</body>
+</html>
