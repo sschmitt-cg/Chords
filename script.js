@@ -1,3 +1,8 @@
+// ideas:
+// click on a chord and hear the chord
+// diagrams showing voicings for guitar and piano
+// 
+
 // Mapping notes to indices and indices to notes
 const noteToIndex = {"C": 0, "C#": 1, "Db": 1, "D": 2, "D#": 3, "Eb": 3, "E": 4, "F": 5, "F#": 6, "Gb": 6, "G": 7, "G#": 8, "Ab": 8, "A": 9, "A#": 10, "Bb": 10, "B": 11};
 
@@ -15,7 +20,6 @@ const scalePatterns = {
     "Aeolian (Minor)": [0, 2, 3, 5, 7, 8, 10],
     "Locrian": [0, 1, 3, 5, 6, 8, 10]
 };
-
 
 // Populating key dropdown
 const keys = Object.keys(noteToIndex);
@@ -108,8 +112,7 @@ function buildChords(scaleNotes) {
     return {triads: triads, sevenths: sevenths, ninths: ninths, suspended: suspended};
 }
 
-// Handle submit button click
-document.getElementById('submit').addEventListener('click', function() {
+function drawChords() {
     let key = document.getElementById('key').value;
     let scale = document.getElementById('mode').value;
     let scaleNotes = buildScale(key, scale);
@@ -129,6 +132,13 @@ document.getElementById('submit').addEventListener('click', function() {
 
     let suspendedOutput = document.getElementById('suspendedOutput');
     suspendedOutput.innerHTML = "<h2>Suspended:</h2> " + chords.suspended.join("<br/>") + "<br/>";
+}
+
+drawChords();
+
+// Handle submit button click
+document.getElementById('submit').addEventListener('click', function() {
+    drawChords();
 });
 
 function setRandomKeyAndMode() {
@@ -145,4 +155,98 @@ function setRandomKeyAndMode() {
 document.getElementById('random').addEventListener('click', function() {
     setRandomKeyAndMode();
     document.getElementById('submit').click();
+});
+
+// Function to generate chord data for all keys and modes
+function generateChordData() {
+    let data = {};
+    for (let key of keys) {
+        data[key] = {};
+        for (let mode of modes) {
+            let scaleNotes = buildScale(key, mode);
+            let chords = buildChords(scaleNotes);
+            data[key][mode] = [].concat(chords.triads, chords.sevenths).map(chord => chord.split("&nbsp;&nbsp;&nbsp;")[0].replace("<b>", "").replace("</b>", ""));
+        }
+    }
+    return data;
+}
+
+let chordData = generateChordData();
+
+// Function to get available chords
+function getAvailableChords(data) {
+    let chords = new Set();
+    for (let key in data) {
+        for (let mode in data[key]) {
+            for (let chord of data[key][mode]) {
+                chords.add(chord);  // Now we have clean chord names
+            }
+        }
+    }
+    return Array.from(chords);
+}
+
+let availableChords = getAvailableChords(chordData).sort();
+
+// Get the select elements
+let selectChord1 = document.getElementById('chord1');
+let selectChord2 = document.getElementById('chord2');
+let selectChord3 = document.getElementById('chord3');
+
+// Add options to the select elements
+// Add options to the select elements
+function populateChordSelect(selectElement, chords) {
+    // Add default (null) option
+    let defaultOption = document.createElement('option');
+    defaultOption.text = 'Select a chord';
+    defaultOption.value = '';
+    selectElement.add(defaultOption);
+
+    // Add other options
+    for (let chord of chords) {
+        let option = document.createElement('option');
+        option.text = chord;
+        option.value = chord;
+        selectElement.add(option);
+    }
+}
+
+// Populate the select elements with the available chords
+populateChordSelect(selectChord1, availableChords);
+populateChordSelect(selectChord2, availableChords);
+populateChordSelect(selectChord3, availableChords);
+
+// Function to find matching keys/modes for a chord
+function matchChord(chord) {
+    let matches = [];
+    if (chord !== '') {  // Only proceed if a chord has been selected
+        for (let key in chordData) {
+            for (let mode in chordData[key]) {
+                if (chordData[key][mode].includes(chord)) {
+                    matches.push({key: key, mode: mode});
+                }
+            }
+        }
+    }
+    return matches;
+}
+
+// Click event for the Match button
+document.getElementById('match').addEventListener('click', function() {
+    // Clear previous results
+    document.getElementById('results1').innerText = '';
+    document.getElementById('results2').innerText = '';
+    document.getElementById('results3').innerText = '';
+
+    let selectedChords = [selectChord1.value, selectChord2.value, selectChord3.value];
+    let resultsElements = [document.getElementById('results1'), document.getElementById('results2'), document.getElementById('results3')];
+    
+    selectedChords.forEach(function(chord, i) {
+        let matches = matchChord(chord);
+        for (let match of matches) {
+            let matchText = document.createElement('p');
+            matchText.innerText = `${match.key} ${match.mode}`;
+            resultsElements[i].appendChild(matchText);
+        }
+    });
 });
