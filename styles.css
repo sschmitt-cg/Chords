@@ -137,7 +137,7 @@ button:active {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100vh - 170px);
+  max-height: calc(100dvh - 150px);
   overflow: hidden;
 }
 
@@ -161,7 +161,7 @@ button:active {
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   align-items: start;
-  max-height: calc(100vh - 230px);
+  max-height: calc(100dvh - 210px);
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -317,12 +317,22 @@ button:active {
   border-radius: 14px;
   padding: 10px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  touch-action: none;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .scale-tiles {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
   gap: 8px;
+  touch-action: none;
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .scale-tile {
@@ -446,5 +456,36 @@ button:active {
   }
   .scale-tiles {
     grid-template-columns: repeat(auto-fit, minmax(52px, 1fr));
+  }
+}
+
+@media (max-width: 480px) {
+  .controls-panel {
+    gap: 8px;
+  }
+
+  .wheel-strip {
+    gap: 8px;
+  }
+
+  .wheel {
+    padding: 6px 8px;
+    min-height: 160px;
+  }
+
+  .wheel-window {
+    height: 180px;
+  }
+
+  .scale-strip {
+    padding: 8px;
+  }
+
+  .scale-banner {
+    padding: 10px 12px;
+  }
+
+  .main-grid {
+    gap: 8px;
   }
 }
