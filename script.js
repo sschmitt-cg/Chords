@@ -263,11 +263,10 @@ function renderScaleStrip(scale) {
   track.style.transition = "none";
   track.style.transform = "translate3d(0,0,0)";
   const romans = computeRomans(currentScale.pitchClasses);
-  const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const notes = scale.map((note, idx) =>
-    `<div class="note-label${idx === 0 ? " tonic" : ""}"><div>${note}</div></div>`
+    `<div class="note-label${idx === 0 ? " tonic" : ""}"><div>${note}</div><small>${romans[idx] || ""}</small></div>`
   ).join("");
-  track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
+  track.innerHTML = `<div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
 
 function rotateArray(arr, dir) {
@@ -286,37 +285,38 @@ function renderHorizontalWithWrap(scale) {
   track.classList.remove("vertical-track");
   track.style.transition = "none";
   const romans = computeRomans(currentScale.pitchClasses);
-  const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const prevSet = rotateArray(scale, -1);
   const nextSet = rotateArray(scale, 1);
+  const prevRomans = rotateArray(romans, -1);
+  const nextRomans = rotateArray(romans, 1);
   const extended = [...prevSet, ...scale, ...nextSet];
+  const extendedRomans = [...prevRomans, ...romans, ...nextRomans];
   const notes = extended.map((note, idx) => {
     const inCenter = idx >= scale.length && idx < scale.length * 2;
     const isTonic = inCenter && idx === scale.length;
-    return `<div class="note-label${isTonic ? " tonic" : ""}"><div>${note}</div></div>`;
+    return `<div class="note-label${isTonic ? " tonic" : ""}"><div>${note}</div><small>${extendedRomans[idx] || ""}</small></div>`;
   }).join("");
-  track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
+  track.innerHTML = `<div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
 
 function renderVerticalRows() {
   const track = document.getElementById("scaleTiles");
   track.classList.add("vertical-track");
   track.style.transition = "none";
-  const down = buildScaleFromPc(wrap(currentScale.pitchClasses[0] - 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
-  const up = buildScaleFromPc(wrap(currentScale.pitchClasses[0] + 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
+  const plusOne = buildScaleFromPc(wrap(currentScale.pitchClasses[0] + 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
+  const minusOne = buildScaleFromPc(wrap(currentScale.pitchClasses[0] - 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
   const rows = [
-    { notes: up, tag: "up" },
+    { notes: plusOne, tag: "plus" },
     { notes: currentScale.spelled, tag: "current" },
-    { notes: down, tag: "down" }
+    { notes: minusOne, tag: "minus" }
   ];
   const romans = computeRomans(currentScale.pitchClasses);
-  const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${tileMetrics.rowHeight}px">${row.notes.map((note, idx) =>
-      `<div class="note-label${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div></div>`
+      `<div class="note-label${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div><small>${romans[idx] || ""}</small></div>`
     ).join("")}</div>`
   ).join("");
-  track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer">${rowsHtml}</div>`;
+  track.innerHTML = `<div class="notes-layer vertical" id="notesLayer">${rowsHtml}</div>`;
 }
 
 function renderChordLists() {

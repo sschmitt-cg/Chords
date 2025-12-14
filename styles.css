@@ -378,14 +378,7 @@ button:active {
 }
 
 .slots-row {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--tile-gap);
-  pointer-events: none;
-  z-index: 3;
-  padding-top: 4px;
+  display: none;
 }
 
 .slot {
@@ -420,12 +413,14 @@ button:active {
   min-width: 40px;
   display: grid;
   place-items: center;
+  padding-top: 6px;
   background: linear-gradient(140deg, #f7f8ff, #eef1ff);
   border: 1px solid #d8ddf6;
   border-radius: 10px;
   box-shadow: 0 6px 12px rgba(16, 20, 52, 0.08);
   color: #111731;
   font-weight: 800;
+  height: 100%;
 }
 
 .note-label.tonic {
@@ -438,6 +433,7 @@ button:active {
   color: #5c6385;
   font-size: 11px;
   font-weight: 600;
+  margin-top: 2px;
 }
 
 .strip-hint {
