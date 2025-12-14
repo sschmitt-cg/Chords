@@ -682,7 +682,7 @@ function setupScaleStripDrag() {
       track.classList.add("vertical-track");
       const maxDy = stepY * MAX_DRAG_STEPS;
       const clampedDy = Math.max(-maxDy, Math.min(maxDy, dy));
-      notesLayer.style.transform = `translate3d(0,${baseY + clampedDy}px,0)`;
+      notesLayer.style.transform = `translate3d(0,${baseY - clampedDy}px,0)`;
       const rawSteps = clampedDy / stepY;
       const previewSteps = Math.max(-MAX_DRAG_STEPS, Math.min(MAX_DRAG_STEPS, Math.round(rawSteps)));
       applyPreview("y", previewSteps);
@@ -724,7 +724,7 @@ function setupScaleStripDrag() {
     } else if (lockedDir === "y") {
       const finalStepsRaw = lastDy / stepY;
       const finalSteps = Math.max(-MAX_DRAG_STEPS, Math.min(MAX_DRAG_STEPS, Math.round(finalStepsRaw)));
-      const targetY = baseY + finalSteps * stepY;
+      const targetY = baseY - finalSteps * stepY;
       notesLayer.style.transition = "transform 0.2s ease";
       notesLayer.style.transform = `translate3d(0,${targetY}px,0)`;
       if (finalSteps !== 0) {
