@@ -10,9 +10,6 @@ const NOTE_TO_INDEX = {
   "B": 11
 };
 
-const SHARP_NOTES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
-const FLAT_NOTES  = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
-
 const SCALE_PATTERNS = {
   "Ionian (Major)": [0,2,4,5,7,9,11],
   "Dorian":         [0,2,3,5,7,9,10],
@@ -50,6 +47,8 @@ const KEY_OPTIONS = [
 const ITEM_STRIDE = 42; // item height + gap in wheel
 const WHEEL_VIEW = 5;
 const DRAG_THRESHOLD = 36;
+const LETTER_TO_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+const LETTERS = ["C","D","E","F","G","A","B"];
 
 // -------------------- HELPERS ------------------------
 
@@ -57,26 +56,70 @@ function wrap(value, size) {
   return (value % size + size) % size;
 }
 
-function chooseNoteNamesForKey(keyName) {
-  const flatKeys  = ["F","Bb","Eb","Ab","Db","Gb","Cb"];
-  const sharpKeys = ["G","D","A","E","B","F#","C#"];
-
-  if (flatKeys.includes(keyName)) return FLAT_NOTES;
-  if (sharpKeys.includes(keyName)) return SHARP_NOTES;
-  return keyName.includes("b") ? FLAT_NOTES : SHARP_NOTES;
+function accidentalSymbol(offset) {
+  if (offset === 0) return "";
+  const char = offset > 0 ? "#" : "b";
+  return char.repeat(Math.abs(offset));
 }
 
-function buildScale(keyName, modeName) {
+function biasFromName(name) {
+  if (name.includes("#")) return "sharp";
+  if (name.includes("b")) return "flat";
+  return "neutral";
+}
+
+function spellScale(tonicPc, tonicName, pitchClasses) {
+  const bias = biasFromName(tonicName);
+  const tonicLetter = tonicName[0].toUpperCase();
+  const startIdx = LETTERS.indexOf(tonicLetter);
+  const spelled = pitchClasses.map((pc, i) => {
+    const letter = LETTERS[(startIdx + i) % LETTERS.length];
+    const basePc = LETTER_TO_PC[letter];
+    const candidates = [];
+    for (let offset = -2; offset <= 2; offset++) {
+      if (wrap(basePc + offset, 12) === pc) candidates.push(offset);
+    }
+
+    let chosen = candidates[0];
+    if (candidates.length > 1) {
+      candidates.sort((a, b) => {
+        const score = (o) => {
+          let s = Math.abs(o);
+          if (bias === "flat" && o > 0) s += 0.3;
+          if (bias === "sharp" && o < 0) s += 0.3;
+          return s;
+        };
+        return score(a) - score(b);
+      });
+      chosen = candidates[0];
+    }
+
+    if (chosen === undefined) {
+      const rawDiff = wrap(pc - basePc, 12);
+      const alt = rawDiff > 6 ? rawDiff - 12 : rawDiff;
+      chosen = alt;
+    }
+
+    return `${letter}${accidentalSymbol(chosen)}`;
+  });
+  verifyDiatonic(spelled);
+  return spelled;
+}
+
+function verifyDiatonic(spelled) {
+  const letters = spelled.map(n => n[0].toUpperCase());
+  const unique = new Set(letters);
+  if (spelled.length !== 7 || unique.size !== 7) {
+    console.warn("Diatonic spelling failed", spelled);
+  }
+}
+
+function buildScaleData(keyName, modeName) {
   const tonicIndex = NOTE_TO_INDEX[keyName];
   const pattern    = SCALE_PATTERNS[modeName];
-  const noteNames  = chooseNoteNamesForKey(keyName);
-  return pattern.map(step => noteNames[(tonicIndex + step) % 12]);
-}
-
-function intervalFrom(root, note) {
-  const a = NOTE_TO_INDEX[root];
-  const b = NOTE_TO_INDEX[note];
-  return (b - a + 12) % 12;
+  const pitchClasses = pattern.map(step => wrap(tonicIndex + step, 12));
+  const spelled = spellScale(tonicIndex, keyName, pitchClasses);
+  return { pitchClasses, spelled };
 }
 
 // -------------------- CHORD ANALYSIS ------------------------
@@ -126,8 +169,8 @@ function ninthQuality(seventhQual, int9) {
   }
 }
 
-function analyzeChords(scale) {
-  const len = scale.length;
+function analyzeChords(scaleNames, pitchClasses) {
+  const len = scaleNames.length;
   const categories = {
     triads: [],
     sevenths: [],
@@ -137,18 +180,19 @@ function analyzeChords(scale) {
   const degrees = [];
 
   for (let i = 0; i < len; i++) {
-    const root  = scale[i];
-    const third = scale[(i + 2) % len];
-    const fifth = scale[(i + 4) % len];
-    const seventhNote = scale[(i + 6) % len];
-    const second  = scale[(i + 1) % len];
-    const fourth  = scale[(i + 3) % len];
+    const root  = scaleNames[i];
+    const third = scaleNames[(i + 2) % len];
+    const fifth = scaleNames[(i + 4) % len];
+    const seventhNote = scaleNames[(i + 6) % len];
+    const second  = scaleNames[(i + 1) % len];
+    const fourth  = scaleNames[(i + 3) % len];
 
-    const int3 = intervalFrom(root, third);
-    const int5 = intervalFrom(root, fifth);
-    const int7 = intervalFrom(root, seventhNote);
-    const int2 = intervalFrom(root, second);
-    const int4 = intervalFrom(root, fourth);
+    const rootPc = pitchClasses[i];
+    const int3 = wrap(pitchClasses[(i + 2) % len] - rootPc, 12);
+    const int5 = wrap(pitchClasses[(i + 4) % len] - rootPc, 12);
+    const int7 = wrap(pitchClasses[(i + 6) % len] - rootPc, 12);
+    const int2 = wrap(pitchClasses[(i + 1) % len] - rootPc, 12);
+    const int4 = wrap(pitchClasses[(i + 3) % len] - rootPc, 12);
 
     const triad = triadQuality(int3, int5);
     const seventh = seventhQuality(triad, int7);
@@ -372,13 +416,13 @@ function drawFromState() {
   const keyName = keyValue(currentKeyIndex);
   const keyDisplay = keyLabel(currentKeyIndex);
   const modeName = MODE_NAMES[currentModeIndex];
-  const scale = buildScale(keyName, modeName);
+  const { pitchClasses, spelled } = buildScaleData(keyName, modeName);
 
   document.getElementById("scaleOutput").innerHTML =
-    `<h2>Scale:</h2> ${keyDisplay} ${modeName} - ${scale.join(" - ")}`;
+    `<h2>Scale:</h2> ${keyDisplay} ${modeName} - ${spelled.join(" - ")}`;
 
-  currentChords = analyzeChords(scale);
-  renderScaleStrip(scale);
+  currentChords = analyzeChords(spelled, pitchClasses);
+  renderScaleStrip(spelled);
   renderChordLists();
   populateChordSelectors();
 
