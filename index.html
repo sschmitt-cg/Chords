@@ -25,6 +25,28 @@
                     <select id="mode"></select>
                 </div>
             </div>
+            <div class="scale-strip-shell">
+                <div class="strip-header">
+                    <div>
+                        <p class="eyebrow subtle">Scale strip</p>
+                        <p class="strip-meta"><span id="stripKeyLabel"></span> - <span id="stripModeLabel"></span></p>
+                    </div>
+                    <div class="strip-controls" aria-label="Scale controls">
+                        <div class="control-group">
+                            <button type="button" id="keyUp" class="ghost" aria-label="Transpose up a semitone">↑</button>
+                            <button type="button" id="keyDown" class="ghost" aria-label="Transpose down a semitone">↓</button>
+                        </div>
+                        <div class="control-group">
+                            <button type="button" id="modeLeft" class="ghost" aria-label="Previous mode">←</button>
+                            <button type="button" id="modeRight" class="ghost" aria-label="Next mode">→</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="scaleStrip" class="scale-strip" aria-label="Scale strip">
+                    <div id="scaleTiles" class="scale-tiles" aria-live="polite"></div>
+                    <div class="strip-hint">Drag horizontally for modes - drag vertically to transpose</div>
+                </div>
+            </div>
             <div class="action-buttons">
                 <button id="submit">Update</button>
                 <button id="random">Randomize</button>

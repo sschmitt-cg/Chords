@@ -24,6 +24,19 @@ const SCALE_PATTERNS = {
   "Locrian":        [0,1,3,5,6,8,10]
 };
 
+const MODE_NAMES = [
+  "Ionian (Major)",
+  "Dorian",
+  "Phrygian",
+  "Lydian",
+  "Mixolydian",
+  "Aeolian (Minor)",
+  "Locrian"
+];
+
+const IONIAN_INTERVALS = SCALE_PATTERNS["Ionian (Major)"];
+const KEY_ORDER = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"];
+
 // use sharps for keys with sharps, flats for flat keys
 function chooseNoteNamesForKey(keyName) {
   const flatKeys  = ["F","Bb","Eb","Ab","Db","Gb","Cb"];
@@ -41,6 +54,41 @@ function buildScale(key, modeName) {
   const noteNames  = chooseNoteNamesForKey(key);
 
   return pattern.map(step => noteNames[(tonicIndex + step) % 12]);
+}
+
+// -------------------- GLOBAL STATE ----------------------------
+
+let currentChords = [];
+let currentBaseRoot = 0;   // Ionian root for the pitch set
+let currentModeIndex = 0;  // 0 = Ionian, 1 = Dorian, etc.
+let preferSharps = true;
+
+function wrap(value, size) {
+  return (value % size + size) % size;
+}
+
+function noteSetForPreference() {
+  return preferSharps ? SHARP_NOTES : FLAT_NOTES;
+}
+
+function noteNameFromIndex(idx) {
+  return noteSetForPreference()[wrap(idx, 12)];
+}
+
+function getModeName() {
+  return MODE_NAMES[currentModeIndex];
+}
+
+function getTonicIndex() {
+  return wrap(currentBaseRoot + IONIAN_INTERVALS[currentModeIndex], 12);
+}
+
+function setStateFromSelection(keyName, modeName) {
+  const modeIdx = MODE_NAMES.indexOf(modeName);
+  currentModeIndex = modeIdx >= 0 ? modeIdx : 0;
+  preferSharps = chooseNoteNamesForKey(keyName) !== FLAT_NOTES;
+  const tonicIdx = NOTE_TO_INDEX[keyName];
+  currentBaseRoot = wrap(tonicIdx - IONIAN_INTERVALS[currentModeIndex], 12);
 }
 
 // -------------------- CHORD ANALYSIS ----------------------------
@@ -126,16 +174,14 @@ function populateKeyAndModeDropdowns() {
   keySelect.innerHTML = "";
   modeSelect.innerHTML = "";
 
-  const keyOrder = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"];
-
-  keyOrder.forEach(k => {
+  KEY_ORDER.forEach(k => {
     const opt = document.createElement("option");
     opt.value = k;
     opt.textContent = k;
     keySelect.appendChild(opt);
   });
 
-  Object.keys(SCALE_PATTERNS).forEach(m => {
+  MODE_NAMES.forEach(m => {
     const opt = document.createElement("option");
     opt.value = m;
     opt.textContent = m;
@@ -205,18 +251,41 @@ function updateChordResult(selectEl, resultEl, chords) {
 
 // -------------------- MAIN DRAW FUNCTION ----------------------------
 
-let currentChords = [];
+function syncSelectorsFromState() {
+  const keySelect  = document.getElementById("key");
+  const modeSelect = document.getElementById("mode");
+  keySelect.value  = noteNameFromIndex(getTonicIndex());
+  modeSelect.value = getModeName();
+}
 
-function drawForCurrentSelection() {
-  const key  = document.getElementById("key").value;
-  const mode = document.getElementById("mode").value;
+function renderScaleStrip(scale) {
+  const tiles = document.getElementById("scaleTiles");
+  tiles.innerHTML = "";
 
-  const scale = buildScale(key, mode);
+  scale.forEach((note, idx) => {
+    const tile = document.createElement("div");
+    tile.className = "scale-tile" + (idx === 0 ? " tonic" : "");
+    tile.innerHTML = `<div>${note}</div><small>${idx + 1}</small>`;
+    tiles.appendChild(tile);
+  });
+
+  document.getElementById("stripKeyLabel").textContent = noteNameFromIndex(getTonicIndex());
+  document.getElementById("stripModeLabel").textContent = getModeName();
+}
+
+function drawForCurrentState() {
+  const tonicName = noteNameFromIndex(getTonicIndex());
+  const modeName  = getModeName();
+
+  syncSelectorsFromState();
+
+  const scale = buildScale(tonicName, modeName);
   currentChords = analyzeChords(scale);
 
   document.getElementById("scaleOutput").innerHTML =
-    `<h2>Scale:</h2> ${scale.join(" - ")}`;
+    `<h2>Scale:</h2> ${tonicName} ${modeName} - ${scale.join(" - ")}`;
 
+  renderScaleStrip(scale);
   renderChordColumns(currentChords);
   populateChordSelectors(currentChords);
 
@@ -226,23 +295,110 @@ function drawForCurrentSelection() {
   document.getElementById("results3").textContent = "";
 }
 
+function shiftMode(delta) {
+  currentModeIndex = wrap(currentModeIndex + delta, MODE_NAMES.length);
+  drawForCurrentState();
+}
+
+function shiftKeySemitone(delta) {
+  currentBaseRoot = wrap(currentBaseRoot + delta, 12);
+  drawForCurrentState();
+}
+
+function setupScaleStripDrag() {
+  const strip = document.getElementById("scaleStrip");
+  if (!strip) return;
+
+  let startX = 0;
+  let startY = 0;
+  let dragging = false;
+  const threshold = 36;
+
+  const pointFromEvent = (e) => {
+    const touch = e.touches ? e.touches[0] : e;
+    return { x: touch.clientX, y: touch.clientY };
+  };
+
+  const onStart = (e) => {
+    const { x, y } = pointFromEvent(e);
+    startX = x;
+    startY = y;
+    dragging = true;
+  };
+
+  const onMove = (e) => {
+    if (!dragging) return;
+    const { x, y } = pointFromEvent(e);
+    const dx = x - startX;
+    const dy = y - startY;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+
+    if (absX < threshold && absY < threshold) return;
+
+    if (absX > absY) {
+      shiftMode(dx > 0 ? 1 : -1);
+    } else {
+      shiftKeySemitone(dy < 0 ? 1 : -1);
+    }
+
+    startX = x;
+    startY = y;
+    if (e.cancelable) e.preventDefault();
+  };
+
+  const onEnd = () => {
+    dragging = false;
+  };
+
+  strip.addEventListener("mousedown", onStart);
+  strip.addEventListener("touchstart", onStart, { passive: true });
+  window.addEventListener("mousemove", onMove);
+  window.addEventListener("touchmove", onMove, { passive: false });
+  window.addEventListener("mouseup", onEnd);
+  window.addEventListener("touchend", onEnd);
+  window.addEventListener("touchcancel", onEnd);
+}
+
 // -------------------- INIT & EVENT WIRING ----------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
   populateKeyAndModeDropdowns();
-  drawForCurrentSelection(); // initial C Ionian display
-
   const keySelect  = document.getElementById("key");
   const modeSelect = document.getElementById("mode");
 
-  document.getElementById("submit").addEventListener("click", drawForCurrentSelection);
+  setStateFromSelection(keySelect.value, modeSelect.value);
+  drawForCurrentState(); // initial C Ionian display
+  setupScaleStripDrag();
+
+  document.getElementById("submit").addEventListener("click", () => {
+    setStateFromSelection(keySelect.value, modeSelect.value);
+    drawForCurrentState();
+  });
+
+  keySelect.addEventListener("change", () => {
+    setStateFromSelection(keySelect.value, modeSelect.value);
+    drawForCurrentState();
+  });
+
+  modeSelect.addEventListener("change", () => {
+    setStateFromSelection(keySelect.value, modeSelect.value);
+    drawForCurrentState();
+  });
+
   document.getElementById("random").addEventListener("click", () => {
     const keyOpts  = Array.from(keySelect.options);
     const modeOpts = Array.from(modeSelect.options);
-    keySelect.value  = keyOpts[Math.floor(Math.random() * keyOpts.length)].value;
-    modeSelect.value = modeOpts[Math.floor(Math.random() * modeOpts.length)].value;
-    drawForCurrentSelection();
+    const nextKey  = keyOpts[Math.floor(Math.random() * keyOpts.length)].value;
+    const nextMode = modeOpts[Math.floor(Math.random() * modeOpts.length)].value;
+    setStateFromSelection(nextKey, nextMode);
+    drawForCurrentState();
   });
+
+  document.getElementById("modeLeft").addEventListener("click", () => shiftMode(-1));
+  document.getElementById("modeRight").addEventListener("click", () => shiftMode(1));
+  document.getElementById("keyUp").addEventListener("click", () => shiftKeySemitone(1));
+  document.getElementById("keyDown").addEventListener("click", () => shiftKeySemitone(-1));
 
   // chord selector behaviour
   const chord1 = document.getElementById("chord1");
@@ -275,5 +431,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // For now, Match just re-draws based on current key/mode;
   // you can later extend it to do whatever matching logic you had in mind.
-  document.getElementById("match").addEventListener("click", drawForCurrentSelection);
+  document.getElementById("match").addEventListener("click", () => {
+    setStateFromSelection(keySelect.value, modeSelect.value);
+    drawForCurrentState();
+  });
 });
