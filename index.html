@@ -1,150 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Music Theory Helper</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            font-family: Arial, sans-serif;
-            height: 100vh;
-            justify-content: flex-start;
-        }
-
-        #inputArea {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            max-width: 600px;
-            margin-bottom: 20px;
-        }
-        
-        #outputArea {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            text-align: center;
-            max-width: 90vw; /* maximum width of the output area is set to 90% of the viewport width */
-        }
-        
-        #scaleOutput {
-            font-size: 1.5em;
-            margin-bottom: 20px;
-            order: 1; /* makes sure this is always the first item in the flexbox */
-        }
-
-        .chordColumn {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        #mainContainer {
-            display: flex;
-            border: 1px solid black;
-            padding: 10px;
-            order: 2; /* makes sure this comes after #scaleOutput */
-            width: auto; /* this will size the width to the content with a little bit of extra space */
-            justify-content: center;
-            height: auto; /* this will size the height to the content */
-            overflow: hidden; /* this will prevent scroll bars from appearing */
-        }
-        
-        #chordContainer {
-            width: auto; /* this will size the width to the content with a little bit of extra space */
-            height: auto; /* this will size the height to the content */
-            padding: 40px; /* this will add a bit of space around the edges of the content */
-            overflow: hidden; /* this will prevent scroll bars from appearing */
-            border: 1px solid black; /* this adds a border for visual reference */
-        }
-        
-        #buttonContainer {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-            border: 2px solid black;
-            padding: 10px;
-        }
-        
-        #chordSelections {
-            display: flex;
-            justify-content: space-around;
-            width: 100%;
-            border: 2px solid black;
-            padding: 10px;
-        }
-        
-        .chordSelection {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            border: 2px solid black;
-            padding: 10px;
-        }
-        
-        #availableChordsContainer {
-            width: auto; /* this will size the width to the content with a little bit of extra space */
-            height: auto; /* this will size the height to the content */
-            padding: 10px; /* this will add a bit of space around the edges of the content */
-            overflow: hidden; /* this will prevent scroll bars from appearing */
-            border: 1px solid black; /* this adds a border for visual reference */
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h2>Music Theory Helper</h2>
-    <div id="inputArea">
-        <!-- Your existing input area here -->
-        <div class="selector">
-            <label for="key">Key:</label>
-            <select id="key"></select>
-        </div>
-        <div class="selector">
-            <label for="mode">Mode:</label>
-            <select id="mode"></select>
-        </div>
-        <button id="submit">Submit</button>
-        <button id="random">Random</button>
+    <div class="page-shell">
+        <header class="page-header">
+            <p class="eyebrow">Chord companion</p>
+            <h1>Music Theory Helper</h1>
+            <p class="subhead">Explore keys, modes, and harmonies without leaving the browser.</p>
+        </header>
+
+        <section id="inputArea" class="panel controls-panel">
+            <div class="selectors">
+                <div class="selector">
+                    <label for="key">Key</label>
+                    <select id="key"></select>
+                </div>
+                <div class="selector">
+                    <label for="mode">Mode</label>
+                    <select id="mode"></select>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button id="submit">Update</button>
+                <button id="random">Randomize</button>
+            </div>
+        </section>
+
+        <section id="outputArea" class="panel output-panel">
+            <div id="scaleOutput" class="scale-banner"></div>
+            <div id="mainContainer" class="main-grid">
+                <div id="availableChordsContainer" class="card chords-card">
+                    <div class="card-heading">
+                        <h2>Available chords</h2>
+                        <p>Triads, sevenths, ninths, and suspended options in your key.</p>
+                    </div>
+                    <div class="chord-grid">
+                        <div id="triadsOutput" class="chordColumn"></div>
+                        <div id="seventhsOutput" class="chordColumn"></div>
+                        <div id="ninthsOutput" class="chordColumn"></div>
+                        <div id="suspendedOutput" class="chordColumn"></div>
+                    </div>
+                </div>
+            
+                <div id="chordContainer" class="card selections-card">
+                    <div id="buttonContainer" class="button-row">
+                        <button id="match">Match</button>
+                        <button id="clear">Clear</button>
+                        <button id="generate">Generate</button>
+                    </div>
+                    <div id="chordSelections">
+                        <div class="chordSelection">
+                            <label for="chord1">Chord 1</label>
+                            <select id="chord1"></select>
+                            <div id="results1" class="results"></div>
+                        </div>
+                        <div class="chordSelection">
+                            <label for="chord2">Chord 2</label>
+                            <select id="chord2"></select>
+                            <div id="results2" class="results"></div>
+                        </div>
+                        <div class="chordSelection">
+                            <label for="chord3">Chord 3</label>
+                            <select id="chord3"></select>
+                            <div id="results3" class="results"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>  
     </div>
-    <div id="outputArea">
-        <div id="scaleOutput"></div>
-        <div id="mainContainer">
-            <div id="availableChordsContainer">
-                <div id="triadsOutput" class="chordColumn"></div>
-                <div id="seventhsOutput" class="chordColumn"></div>
-                <div id="ninthsOutput" class="chordColumn"></div>
-                <div id="suspendedOutput" class="chordColumn"></div>
-            </div>
-        
-            <div id="chordContainer">
-                <div id="buttonContainer">
-                    <button id="match">Match</button>
-                    <button id="clear">Clear</button>
-                    <button id="generate">Generate</button>
-                </div>
-                <div id="chordSelections">
-                    <div class="chordSelection">
-                        <label for="chord1">Chord 1: </label>
-                        <select id="chord1"></select>
-                        <div id="results1" class="results"></div>
-                    </div>
-                    <div class="chordSelection">
-                        <label for="chord2">Chord 2: </label>
-                        <select id="chord2"></select>
-                        <div id="results2" class="results"></div>
-                    </div>
-                    <div class="chordSelection">
-                        <label for="chord3">Chord 3: </label>
-                        <select id="chord3"></select>
-                        <div id="results3" class="results"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>  
     <script src="script.js"></script>
 </body>
 </html>
