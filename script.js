@@ -304,7 +304,7 @@ function renderVerticalRows() {
   const viewport = document.querySelector(".tile-viewport");
   const rowHeight = viewport?.clientHeight || tileMetrics.rowHeight;
   const rows = [];
-  for (let i = -range; i <= range; i++) {
+  for (let i = range; i >= -range; i--) {
     let notes = currentScale.spelled;
     if (i !== 0) {
       const shiftedPc = wrap(currentScale.pitchClasses[0] + i, 12);
@@ -316,7 +316,7 @@ function renderVerticalRows() {
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${rowHeight}px;flex:0 0 auto">${row.notes.map((note, idx) =>
-      `<div class="note-label${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div></div>`
+      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer" style="height:${rowHeight * rows.length}px">${rowsHtml}</div>`;
