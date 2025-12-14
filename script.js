@@ -287,13 +287,9 @@ function renderHorizontalWithWrap(scale) {
   track.style.transition = "none";
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
-  const len = scale.length;
-  const prevSet = len === 7 ? [scale[6], ...scale.slice(0, 6)] : rotateArray(scale, -1);
-  const nextSet = len === 7 ? [...scale.slice(1), scale[0]] : rotateArray(scale, 1);
-  const extended = [...prevSet, ...scale, ...nextSet];
+  const extended = [...scale, ...scale, ...scale];
   const notes = extended.map((note, idx) => {
-    const inCenter = idx >= scale.length && idx < scale.length * 2;
-    const isTonic = inCenter && idx === scale.length;
+    const isTonic = idx === scale.length;
     return `<div class="note-label${isTonic ? " tonic" : ""}"><div>${note}</div></div>`;
   }).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
