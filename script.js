@@ -304,6 +304,7 @@ function renderVerticalRows() {
   track.style.transition = "none";
   const plusOne = buildScaleFromPc(wrap(currentScale.pitchClasses[0] + 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
   const minusOne = buildScaleFromPc(wrap(currentScale.pitchClasses[0] - 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
+  const rowHeight = tileMetrics.rowHeight;
   const rows = [
     { notes: plusOne, tag: "plus" },
     { notes: currentScale.spelled, tag: "current" },
@@ -312,7 +313,7 @@ function renderVerticalRows() {
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
-    `<div class="tile-row" style="height:${tileMetrics.rowHeight}px">${row.notes.map((note, idx) =>
+    `<div class="tile-row" style="height:${rowHeight}px;flex:0 0 auto">${row.notes.map((note, idx) =>
       `<div class="note-label${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
@@ -624,8 +625,10 @@ function setupScaleStripDrag() {
         if (notesLayer) notesLayer.style.transform = `translate3d(${baseX}px,0,0)`;
       } else {
         renderVerticalRows();
-        stepY = calcTileStep("y");
-        baseY = -stepY;
+        const viewport = document.querySelector(".tile-viewport");
+        const viewportH = viewport?.clientHeight || tileMetrics.rowHeight;
+        stepY = viewportH;
+        baseY = -viewportH;
         const notesLayer = document.getElementById("notesLayer");
         if (notesLayer) notesLayer.style.transform = `translate3d(0,${baseY}px,0)`;
       }
@@ -636,11 +639,15 @@ function setupScaleStripDrag() {
     if (!notesLayer) return;
 
     if (lockedDir === "x") {
-      notesLayer.style.transform = `translate3d(${baseX + Math.max(-180, Math.min(180, dx))}px,0,0)`;
+      const maxDx = tileMetrics.segmentWidth * 0.6;
+      const clampedDx = Math.max(-maxDx, Math.min(maxDx, dx));
+      notesLayer.style.transform = `translate3d(${baseX + clampedDx}px,0,0)`;
       applyPreview("x", dx);
     } else {
       track.classList.add("vertical-track");
-      notesLayer.style.transform = `translate3d(0,${baseY + Math.max(-180, Math.min(180, dy))}px,0)`;
+      const maxDy = (tileMetrics.rowHeight || 0) * 0.6 || 120;
+      const clampedDy = Math.max(-maxDy, Math.min(maxDy, dy));
+      notesLayer.style.transform = `translate3d(0,${baseY + clampedDy}px,0)`;
       applyPreview("y", dy);
     }
     if (e.cancelable) e.preventDefault();
