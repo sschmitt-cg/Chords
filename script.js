@@ -396,6 +396,9 @@ function updatePills() {
 // -------------------- ROMAN NUMERALS ------------------------
 
 function computeRomans(pitchClasses) {
+  if (!pitchClasses || pitchClasses.length !== 7) {
+    return ["I","II","III","IV","V","VI","VII"];
+  }
   const romans = [];
   for (let i = 0; i < pitchClasses.length; i++) {
     const root = pitchClasses[i];
@@ -600,7 +603,6 @@ function setupScaleStripDrag() {
     lastDx = 0;
     lastDy = 0;
     track.style.transition = "none";
-    renderScaleStrip(currentScale.spelled);
     setTileMetrics();
     if (strip.setPointerCapture) strip.setPointerCapture(e.pointerId);
   }
@@ -616,7 +618,8 @@ function setupScaleStripDrag() {
       if (lockedDir === "x") {
         renderHorizontalWithWrap(currentScale.spelled);
         stepX = calcTileStep("x");
-        baseX = -stepX * currentScale.spelled.length;
+        const segmentWidth = stepX * 7 - tileMetrics.gap;
+        baseX = -segmentWidth;
         const notesLayer = document.getElementById("notesLayer");
         if (notesLayer) notesLayer.style.transform = `translate3d(${baseX}px,0,0)`;
       } else {
