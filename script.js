@@ -404,44 +404,47 @@ function setupScaleStripDrag(modeWheel, keyWheel) {
   let startX = 0;
   let startY = 0;
   let dragging = false;
+  let claimed = false;
 
   function onStart(e) {
-    const point = e.touches ? e.touches[0] : e;
-    startX = point.clientX;
-    startY = point.clientY;
+    startX = e.clientX;
+    startY = e.clientY;
     dragging = true;
+    claimed = false;
+    if (strip.setPointerCapture) strip.setPointerCapture(e.pointerId);
   }
 
   function onMove(e) {
     if (!dragging) return;
-    const point = e.touches ? e.touches[0] : e;
-    const dx = point.clientX - startX;
-    const dy = point.clientY - startY;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
-    if (absX < DRAG_THRESHOLD && absY < DRAG_THRESHOLD) return;
+    if (!claimed && absX < DRAG_THRESHOLD && absY < DRAG_THRESHOLD) return;
 
+    claimed = true;
     if (absX > absY) {
       shiftMode(dx > 0 ? 1 : -1, modeWheel);
     } else {
       shiftKey(dy < 0 ? 1 : -1, keyWheel);
     }
-    startX = point.clientX;
-    startY = point.clientY;
+    startX = e.clientX;
+    startY = e.clientY;
     if (e.cancelable) e.preventDefault();
   }
 
-  function onEnd() {
+  function onEnd(e) {
     dragging = false;
+    claimed = false;
+    if (e && strip.releasePointerCapture) {
+      try { strip.releasePointerCapture(e.pointerId); } catch (_) {}
+    }
   }
 
-  strip.addEventListener("mousedown", onStart);
-  strip.addEventListener("touchstart", onStart, { passive: true });
-  window.addEventListener("mousemove", onMove, { passive: false });
-  window.addEventListener("touchmove", onMove, { passive: false });
-  window.addEventListener("mouseup", onEnd);
-  window.addEventListener("touchend", onEnd);
-  window.addEventListener("touchcancel", onEnd);
+  strip.addEventListener("pointerdown", onStart);
+  strip.addEventListener("pointermove", onMove);
+  strip.addEventListener("pointerup", onEnd);
+  strip.addEventListener("pointercancel", onEnd);
 }
 
 // -------------------- INIT ------------------------
