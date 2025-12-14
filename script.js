@@ -262,9 +262,12 @@ function renderScaleStrip(scale) {
   track.classList.remove("vertical-track");
   track.style.transition = "none";
   track.style.transform = "translate3d(0,0,0)";
-  track.innerHTML = scale.map((note, idx) =>
-    `<div class="scale-tile${idx === 0 ? " tonic" : ""}"><div>${note}</div><small>${idx + 1}</small></div>`
+  const romans = computeRomans(currentScale.pitchClasses);
+  const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
+  const notes = scale.map((note, idx) =>
+    `<div class="note-label${idx === 0 ? " tonic" : ""}"><div>${note}</div></div>`
   ).join("");
+  track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
 
 function rotateArray(arr, dir) {
@@ -282,14 +285,17 @@ function renderHorizontalWithWrap(scale) {
   const track = document.getElementById("scaleTiles");
   track.classList.remove("vertical-track");
   track.style.transition = "none";
+  const romans = computeRomans(currentScale.pitchClasses);
+  const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const prevSet = rotateArray(scale, -1);
   const nextSet = rotateArray(scale, 1);
   const extended = [...prevSet, ...scale, ...nextSet];
-  track.innerHTML = extended.map((note, idx) => {
-    const degree = ((idx % scale.length) + 1);
-    const isTonic = idx >= scale.length && idx < scale.length * 2 ? degree === 1 : false;
-    return `<div class="scale-tile${isTonic ? " tonic" : ""}"><div>${note}</div><small>${degree}</small></div>`;
+  const notes = extended.map((note, idx) => {
+    const inCenter = idx >= scale.length && idx < scale.length * 2;
+    const isTonic = inCenter && idx === scale.length;
+    return `<div class="note-label${isTonic ? " tonic" : ""}"><div>${note}</div></div>`;
   }).join("");
+  track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
 
 function renderVerticalRows() {
@@ -299,15 +305,18 @@ function renderVerticalRows() {
   const down = buildScaleFromPc(wrap(currentScale.pitchClasses[0] - 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
   const up = buildScaleFromPc(wrap(currentScale.pitchClasses[0] + 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
   const rows = [
-    { notes: down, tag: "down" },
+    { notes: up, tag: "up" },
     { notes: currentScale.spelled, tag: "current" },
-    { notes: up, tag: "up" }
+    { notes: down, tag: "down" }
   ];
-  track.innerHTML = rows.map(row =>
+  const romans = computeRomans(currentScale.pitchClasses);
+  const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
+  const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${tileMetrics.rowHeight}px">${row.notes.map((note, idx) =>
-      `<div class="scale-tile${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div><small>${idx + 1}</small></div>`
+      `<div class="note-label${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
+  track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer">${rowsHtml}</div>`;
 }
 
 function renderChordLists() {
@@ -382,6 +391,23 @@ function updatePills() {
   const modeIdx = pillPreview.mode ?? currentModeIndex;
   document.getElementById("keyPillValue").textContent = keyLabel(keyIdx);
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
+}
+
+// -------------------- ROMAN NUMERALS ------------------------
+
+function computeRomans(pitchClasses) {
+  const romans = [];
+  for (let i = 0; i < pitchClasses.length; i++) {
+    const root = pitchClasses[i];
+    const int3 = wrap(pitchClasses[(i + 2) % 7] - root, 12);
+    const int5 = wrap(pitchClasses[(i + 4) % 7] - root, 12);
+    const triad = intervalQuality(int3, int5);
+    let numeral = ["I","II","III","IV","V","VI","VII"][i];
+    if (triad.name === "minor") numeral = numeral.toLowerCase();
+    if (triad.name === "diminished") numeral = numeral.toLowerCase() + "°";
+    romans.push(numeral);
+  }
+  return romans;
 }
 
 // -------------------- STATE UPDATES ------------------------
@@ -508,7 +534,7 @@ function calcTileStep(axis) {
 
 function setupScaleStripDrag() {
   const strip = document.getElementById("scaleStrip");
-  const tiles = document.getElementById("scaleTiles");
+  const track = document.getElementById("scaleTiles");
   let startX = 0;
   let startY = 0;
   let dragging = false;
@@ -524,8 +550,10 @@ function setupScaleStripDrag() {
   const lockThreshold = 16;
 
   const resetTransforms = () => {
-    tiles.style.transition = "none";
-    tiles.style.transform = "translate3d(0,0,0)";
+    const notesLayer = document.getElementById("notesLayer");
+    if (!notesLayer) return;
+    notesLayer.style.transition = "none";
+    notesLayer.style.transform = "translate3d(0,0,0)";
   };
 
   const applyPreview = (dir, delta) => {
@@ -533,7 +561,7 @@ function setupScaleStripDrag() {
       const previewMode = wrap(currentModeIndex + (delta > 0 ? -1 : 1), MODE_NAMES.length);
       pillPreview.mode = Math.abs(delta) > commitThreshold / 2 ? previewMode : null;
     } else if (dir === "y") {
-      const previewKeyPc = wrap(currentScale.pitchClasses[0] + (delta < 0 ? 1 : -1), 12);
+      const previewKeyPc = wrap(currentScale.pitchClasses[0] + (delta > 0 ? 1 : -1), 12);
       const keyIdx = findKeyIndexForPc(previewKeyPc, currentScale.spelled[0]);
       pillPreview.key = Math.abs(delta) > commitThreshold / 2 ? keyIdx : null;
     }
@@ -541,8 +569,18 @@ function setupScaleStripDrag() {
   };
 
   const finishAnimation = (action) => {
+    const notesLayer = document.getElementById("notesLayer");
+    if (!notesLayer) {
+      action();
+      resetTransforms();
+      pillPreview = { key: null, mode: null };
+      updatePills();
+      dragCooldown = true;
+      setTimeout(() => { dragCooldown = false; }, 150);
+      return;
+    }
     const handle = () => {
-      tiles.removeEventListener("transitionend", handle);
+      notesLayer.removeEventListener("transitionend", handle);
       action();
       resetTransforms();
       pillPreview = { key: null, mode: null };
@@ -550,7 +588,7 @@ function setupScaleStripDrag() {
       dragCooldown = true;
       setTimeout(() => { dragCooldown = false; }, 150);
     };
-    tiles.addEventListener("transitionend", handle);
+    notesLayer.addEventListener("transitionend", handle);
   };
 
   function onStart(e) {
@@ -561,8 +599,9 @@ function setupScaleStripDrag() {
     lockedDir = null;
     lastDx = 0;
     lastDy = 0;
-    tiles.style.transition = "none";
+    track.style.transition = "none";
     renderScaleStrip(currentScale.spelled);
+    setTileMetrics();
     if (strip.setPointerCapture) strip.setPointerCapture(e.pointerId);
   }
 
@@ -578,22 +617,27 @@ function setupScaleStripDrag() {
         renderHorizontalWithWrap(currentScale.spelled);
         stepX = calcTileStep("x");
         baseX = -stepX * currentScale.spelled.length;
-        tiles.style.transform = `translate3d(${baseX}px,0,0)`;
+        const notesLayer = document.getElementById("notesLayer");
+        if (notesLayer) notesLayer.style.transform = `translate3d(${baseX}px,0,0)`;
       } else {
         renderVerticalRows();
         stepY = calcTileStep("y");
         baseY = -stepY;
-        tiles.style.transform = `translate3d(0,${baseY}px,0)`;
+        const notesLayer = document.getElementById("notesLayer");
+        if (notesLayer) notesLayer.style.transform = `translate3d(0,${baseY}px,0)`;
       }
     }
     if (!lockedDir) return;
 
+    const notesLayer = document.getElementById("notesLayer");
+    if (!notesLayer) return;
+
     if (lockedDir === "x") {
-      tiles.style.transform = `translate3d(${baseX + Math.max(-180, Math.min(180, dx))}px,0,0)`;
+      notesLayer.style.transform = `translate3d(${baseX + Math.max(-180, Math.min(180, dx))}px,0,0)`;
       applyPreview("x", dx);
     } else {
-      tiles.classList.add("vertical-track");
-      tiles.style.transform = `translate3d(0,${baseY + Math.max(-180, Math.min(180, dy))}px,0)`;
+      track.classList.add("vertical-track");
+      notesLayer.style.transform = `translate3d(0,${baseY + Math.max(-180, Math.min(180, dy))}px,0)`;
       applyPreview("y", dy);
     }
     if (e.cancelable) e.preventDefault();
@@ -607,32 +651,38 @@ function setupScaleStripDrag() {
     dragging = false;
     const absX = Math.abs(lastDx);
     const absY = Math.abs(lastDy);
+    const notesLayer = document.getElementById("notesLayer");
+    if (!notesLayer) return;
 
     if (lockedDir === "x" && absX >= commitThreshold) {
-      const sign = lastDx > 0 ? -1 : 1;
-      tiles.style.transition = "transform 0.2s ease";
-      tiles.style.transform = `translate3d(${baseX + sign * stepX}px,0,0)`;
-      finishAnimation(() => rotateDegree(sign));
+      const dir = lastDx < 0 ? 1 : -1;
+      const targetX = baseX + (lastDx < 0 ? -stepX : stepX);
+      notesLayer.style.transition = "transform 0.2s ease";
+      notesLayer.style.transform = `translate3d(${targetX}px,0,0)`;
+      finishAnimation(() => rotateDegree(dir));
     } else if (lockedDir === "y" && absY >= commitThreshold) {
-      const sign = lastDy < 0 ? 1 : -1;
-      tiles.style.transition = "transform 0.2s ease";
-      tiles.style.transform = `translate3d(0,${baseY + sign * stepY}px,0)`;
+      const sign = lastDy > 0 ? 1 : -1;
+      const targetY = baseY + (lastDy > 0 ? stepY : -stepY);
+      notesLayer.style.transition = "transform 0.2s ease";
+      notesLayer.style.transform = `translate3d(0,${targetY}px,0)`;
       finishAnimation(() => transposeSemitone(sign));
     } else {
-      tiles.style.transition = "transform 0.18s ease";
-      tiles.style.transform = lockedDir === "x"
+      notesLayer.style.transition = "transform 0.18s ease";
+      notesLayer.style.transform = lockedDir === "x"
         ? `translate3d(${baseX}px,0,0)`
         : lockedDir === "y"
           ? `translate3d(0,${baseY}px,0)`
           : "translate3d(0,0,0)";
       const resetAfter = () => {
-        tiles.removeEventListener("transitionend", resetAfter);
+        notesLayer.removeEventListener("transitionend", resetAfter);
         renderScaleStrip(currentScale.spelled);
         resetTransforms();
         pillPreview = { key: null, mode: null };
         updatePills();
+        dragCooldown = true;
+        setTimeout(() => { dragCooldown = false; }, 150);
       };
-      tiles.addEventListener("transitionend", resetAfter);
+      notesLayer.addEventListener("transitionend", resetAfter, { once: true });
     }
     lockedDir = null;
   }
