@@ -44,11 +44,18 @@ const KEY_OPTIONS = [
   { label: "A#/Bb", value: "Bb" },
   { label: "B", value: "B" }
 ];
-const ITEM_STRIDE = 42; // item height + gap in wheel
-const WHEEL_VIEW = 3;
-const DRAG_THRESHOLD = 70;
+
 const LETTER_TO_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const LETTERS = ["C","D","E","F","G","A","B"];
+
+// -------------------- STATE ------------------------
+
+let currentKeyIndex = 0;   // tonic pitch class index in KEY_OPTIONS
+let currentModeIndex = 0;  // mode index in MODE_NAMES
+let currentScale = { pitchClasses: [], spelled: [] };
+let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspended: [] }, degrees: [] };
+let pillPreview = { key: null, mode: null };
+let dragCooldown = false;
 
 // -------------------- HELPERS ------------------------
 
@@ -79,7 +86,6 @@ function spellScale(tonicPc, tonicName, pitchClasses) {
     for (let offset = -2; offset <= 2; offset++) {
       if (wrap(basePc + offset, 12) === pc) candidates.push(offset);
     }
-
     let chosen = candidates[0];
     if (candidates.length > 1) {
       candidates.sort((a, b) => {
@@ -93,13 +99,11 @@ function spellScale(tonicPc, tonicName, pitchClasses) {
       });
       chosen = candidates[0];
     }
-
     if (chosen === undefined) {
       const rawDiff = wrap(pc - basePc, 12);
       const alt = rawDiff > 6 ? rawDiff - 12 : rawDiff;
       chosen = alt;
     }
-
     return `${letter}${accidentalSymbol(chosen)}`;
   });
   verifyDiatonic(spelled);
@@ -122,9 +126,37 @@ function buildScaleData(keyName, modeName) {
   return { pitchClasses, spelled };
 }
 
+function buildScaleFromPc(pc, modeIdx, biasName) {
+  const keyIdx = findKeyIndexForPc(pc, biasName);
+  const keyName = keyValue(keyIdx);
+  const modeName = MODE_NAMES[modeIdx];
+  return buildScaleData(keyName, modeName);
+}
+
+function findKeyIndexForPc(pc, biasName = "") {
+  const bias = biasFromName(biasName);
+  const matches = KEY_OPTIONS
+    .map((opt, idx) => ({ idx, pc: NOTE_TO_INDEX[opt.value], label: opt.label }))
+    .filter(item => item.pc === pc);
+  if (!matches.length) return wrap(currentKeyIndex, KEY_OPTIONS.length);
+  matches.sort((a, b) => {
+    const score = (item) => {
+      let s = 0;
+      if (bias === "flat" && item.label.includes("b")) s -= 1;
+      if (bias === "sharp" && item.label.includes("#")) s -= 1;
+      return s;
+    };
+    return score(a) - score(b);
+  });
+  return matches[0].idx;
+}
+
+const keyLabel = (idx) => KEY_OPTIONS[wrap(idx, KEY_OPTIONS.length)].label;
+const keyValue = (idx) => KEY_OPTIONS[wrap(idx, KEY_OPTIONS.length)].value;
+
 // -------------------- CHORD ANALYSIS ------------------------
 
-function triadQuality(int3, int5) {
+function intervalQuality(int3, int5) {
   if (int3 === 4 && int5 === 7) return { name: "major", suffix: "", valid: true };
   if (int3 === 3 && int5 === 7) return { name: "minor", suffix: "m", valid: true };
   if (int3 === 3 && int5 === 6) return { name: "diminished", suffix: "dim", valid: true };
@@ -194,7 +226,7 @@ function analyzeChords(scaleNames, pitchClasses) {
     const int2 = wrap(pitchClasses[(i + 1) % len] - rootPc, 12);
     const int4 = wrap(pitchClasses[(i + 3) % len] - rootPc, 12);
 
-    const triad = triadQuality(int3, int5);
+    const triad = intervalQuality(int3, int5);
     const seventh = seventhQuality(triad, int7);
     const ninth = ninthQuality(seventh, int2);
 
@@ -222,146 +254,44 @@ function analyzeChords(scaleNames, pitchClasses) {
   return { categories, degrees };
 }
 
-// -------------------- STATE ------------------------
-
-let currentKeyIndex = 0;
-let currentModeIndex = 0;
-let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspended: [] }, degrees: [] };
-let currentScale = { pitchClasses: [], spelled: [] };
-
-const keyLabel = (idx) => KEY_OPTIONS[wrap(idx, KEY_OPTIONS.length)].label;
-const keyValue = (idx) => KEY_OPTIONS[wrap(idx, KEY_OPTIONS.length)].value;
-
-function findKeyIndexForPc(pc, biasName = "") {
-  const bias = biasFromName(biasName);
-  const matches = KEY_OPTIONS
-    .map((opt, idx) => ({ idx, pc: NOTE_TO_INDEX[opt.value], label: opt.label }))
-    .filter(item => item.pc === pc);
-  if (!matches.length) return wrap(currentKeyIndex, KEY_OPTIONS.length);
-  matches.sort((a, b) => {
-    const score = (item) => {
-      let s = 0;
-      if (bias === "flat" && item.label.includes("b")) s -= 1;
-      if (bias === "sharp" && item.label.includes("#")) s -= 1;
-      return s;
-    };
-    return score(a) - score(b);
-  });
-  return matches[0].idx;
-}
-
-const currentTonicPc = () => NOTE_TO_INDEX[keyValue(currentKeyIndex)];
-
-// -------------------- WHEEL LOGIC ------------------------
-
-function createWheel(containerId, trackId, items, onChange) {
-  const container = document.getElementById(containerId);
-  const track = document.getElementById(trackId);
-  container.tabIndex = 0;
-
-  let index = 0;
-  let startY = 0;
-  let dragging = false;
-
-  function renderItems() {
-    track.innerHTML = items.map((item, idx) =>
-      `<button type="button" class="wheel-item" data-idx="${idx}">${item}</button>`
-    ).join("");
-    updateActive();
-    applyTransform(0, true);
-  }
-
-  function offsetForIndex(idx, delta = 0) {
-    return ((WHEEL_VIEW / 2 - 0.5 - idx) * ITEM_STRIDE) + delta;
-  }
-
-  function applyTransform(delta = 0, animate = false) {
-    track.style.transition = animate ? "transform 0.18s ease" : "none";
-    track.style.transform = `translateY(${offsetForIndex(index, delta)}px)`;
-  }
-
-  function updateActive() {
-    const children = track.querySelectorAll(".wheel-item");
-    children.forEach(btn => {
-      btn.classList.toggle("active", Number(btn.dataset.idx) === index);
-    });
-  }
-
-  function setIndex(idx, animate = true, notify = true) {
-    index = wrap(idx, items.length);
-    updateActive();
-    applyTransform(0, animate);
-    if (notify && onChange) onChange(index);
-  }
-
-  function startDrag(y) {
-    startY = y;
-    dragging = true;
-    track.style.transition = "none";
-  }
-
-  function moveDrag(y) {
-    if (!dragging) return;
-    const delta = y - startY;
-    applyTransform(delta, false);
-  }
-
-  function endDrag(y) {
-    if (!dragging) return;
-    dragging = false;
-    const delta = y - startY;
-    const steps = Math.round(delta / ITEM_STRIDE * -1);
-    if (steps !== 0) {
-      setIndex(index + steps, true);
-    } else {
-      applyTransform(0, true);
-    }
-  }
-
-  container.addEventListener("pointerdown", (e) => {
-    startDrag(e.clientY);
-    container.setPointerCapture(e.pointerId);
-  });
-  container.addEventListener("pointermove", (e) => moveDrag(e.clientY));
-  container.addEventListener("pointerup", (e) => {
-    endDrag(e.clientY);
-    container.releasePointerCapture(e.pointerId);
-  });
-  container.addEventListener("pointercancel", () => { dragging = false; applyTransform(0, true); });
-
-  track.addEventListener("click", (e) => {
-    const button = e.target.closest(".wheel-item");
-    if (!button) return;
-    const idx = Number(button.dataset.idx);
-    setIndex(idx, true);
-  });
-
-  container.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setIndex(index - 1, true);
-    } else if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setIndex(index + 1, true);
-    }
-  });
-
-  renderItems();
-
-  return { setIndex: (idx, animate = true, notify = true) => setIndex(idx, animate, notify), getIndex: () => index };
-}
-
 // -------------------- RENDERING ------------------------
 
 function renderScaleStrip(scale) {
-  const tiles = document.getElementById("scaleTiles");
-  tiles.innerHTML = "";
-  scale.forEach((note, idx) => {
-    const tile = document.createElement("div");
-    tile.className = "scale-tile" + (idx === 0 ? " tonic" : "");
-    tile.innerHTML = `<div>${note}</div><small>${idx + 1}</small>`;
-    tiles.appendChild(tile);
-  });
+  const track = document.getElementById("scaleTiles");
+  track.classList.remove("vertical-track");
+  track.innerHTML = scale.map((note, idx) =>
+    `<div class="scale-tile${idx === 0 ? " tonic" : ""}"><div>${note}</div><small>${idx + 1}</small></div>`
+  ).join("");
+}
+
+function renderHorizontalWithWrap(scale) {
+  const track = document.getElementById("scaleTiles");
+  track.classList.remove("vertical-track");
+  const prev = scale[scale.length - 1];
+  const next = scale[1 % scale.length];
+  const extended = [prev, ...scale, next];
+  track.innerHTML = extended.map((note, idx) => {
+    const degree = ((idx + scale.length) % scale.length) + 1;
+    const isTonic = idx === 1;
+    return `<div class="scale-tile${isTonic ? " tonic" : ""}"><div>${note}</div><small>${degree}</small></div>`;
+  }).join("");
+}
+
+function renderVerticalRows() {
+  const track = document.getElementById("scaleTiles");
+  track.classList.add("vertical-track");
+  const down = buildScaleFromPc(wrap(currentScale.pitchClasses[0] - 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
+  const up = buildScaleFromPc(wrap(currentScale.pitchClasses[0] + 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
+  const rows = [
+    { notes: down, tag: "down" },
+    { notes: currentScale.spelled, tag: "current" },
+    { notes: up, tag: "up" }
+  ];
+  track.innerHTML = rows.map(row =>
+    `<div class="tile-row">${row.notes.map((note, idx) =>
+      `<div class="scale-tile${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div><small>${idx + 1}</small></div>`
+    ).join("")}</div>`
+  ).join("");
 }
 
 function renderChordLists() {
@@ -431,7 +361,57 @@ function syncAccordion() {
   });
 }
 
-function setupWheelModal(keyWheel, modeWheel) {
+function updatePills() {
+  const keyIdx = pillPreview.key ?? currentKeyIndex;
+  const modeIdx = pillPreview.mode ?? currentModeIndex;
+  document.getElementById("keyPillValue").textContent = keyLabel(keyIdx);
+  document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
+}
+
+// -------------------- STATE UPDATES ------------------------
+
+function drawFromState() {
+  const keyName = keyValue(currentKeyIndex);
+  const keyDisplay = keyLabel(currentKeyIndex);
+  const modeName = MODE_NAMES[currentModeIndex];
+  const { pitchClasses, spelled } = buildScaleData(keyName, modeName);
+  currentScale = { pitchClasses, spelled };
+
+  document.getElementById("scaleOutput").innerHTML =
+    `<h2>Scale:</h2> ${keyDisplay} ${modeName} - ${spelled.join(" - ")}`;
+
+  currentChords = analyzeChords(spelled, pitchClasses);
+  renderScaleStrip(spelled);
+  updatePills();
+  renderChordLists();
+  populateChordSelectors();
+
+  document.getElementById("results1").textContent = "";
+  document.getElementById("results2").textContent = "";
+  document.getElementById("results3").textContent = "";
+}
+
+function rotateDegree(dir) {
+  if (!currentScale.pitchClasses.length) return;
+  const newPitchClasses = dir > 0
+    ? [...currentScale.pitchClasses.slice(1), currentScale.pitchClasses[0]]
+    : [currentScale.pitchClasses[currentScale.pitchClasses.length - 1], ...currentScale.pitchClasses.slice(0, -1)];
+  const newTonicPc = newPitchClasses[0];
+  currentModeIndex = wrap(currentModeIndex + dir, MODE_NAMES.length);
+  currentKeyIndex = findKeyIndexForPc(newTonicPc, currentScale.spelled[0]);
+  drawFromState();
+}
+
+function transposeSemitone(delta) {
+  if (!currentScale.pitchClasses.length) return;
+  const newPc = wrap(currentScale.pitchClasses[0] + delta, 12);
+  currentKeyIndex = findKeyIndexForPc(newPc, currentScale.spelled[0]);
+  drawFromState();
+}
+
+// -------------------- MODALS ------------------------
+
+function setupPickerModal() {
   const modal = document.getElementById("wheelModal");
   const title = document.getElementById("wheelModalTitle");
   const list = document.getElementById("wheelModalList");
@@ -463,11 +443,10 @@ function setupWheelModal(keyWheel, modeWheel) {
     if (Number.isNaN(idx)) return;
     if (activeKind === "key") {
       currentKeyIndex = idx;
-      keyWheel.setIndex(idx, true, false);
     } else if (activeKind === "mode") {
       currentModeIndex = idx;
-      modeWheel.setIndex(idx, true, false);
     }
+    pillPreview = { key: null, mode: null };
     drawFromState();
     close();
   });
@@ -482,88 +461,73 @@ function setupWheelModal(keyWheel, modeWheel) {
   return { open };
 }
 
-// -------------------- INTERACTION ------------------------
+// -------------------- DRAG / SWIPE ------------------------
 
-function drawFromState() {
-  const keyName = keyValue(currentKeyIndex);
-  const keyDisplay = keyLabel(currentKeyIndex);
-  const modeName = MODE_NAMES[currentModeIndex];
-  const { pitchClasses, spelled } = buildScaleData(keyName, modeName);
-  currentScale = { pitchClasses, spelled };
-
-  document.getElementById("scaleOutput").innerHTML =
-    `<h2>Scale:</h2> ${keyDisplay} ${modeName} - ${spelled.join(" - ")}`;
-
-  currentChords = analyzeChords(spelled, pitchClasses);
-  renderScaleStrip(spelled);
-  renderChordLists();
-  populateChordSelectors();
-
-  document.getElementById("results1").textContent = "";
-  document.getElementById("results2").textContent = "";
-  document.getElementById("results3").textContent = "";
+function calcTileStep(axis) {
+  const track = document.getElementById("scaleTiles");
+  const first = track.children[0];
+  const second = track.children[1];
+  if (!first) return 80;
+  if (axis === "x" && second) {
+    const gap = second.getBoundingClientRect().left - first.getBoundingClientRect().right;
+    return first.getBoundingClientRect().width + (gap > 0 ? gap : 6);
+  }
+  return first.getBoundingClientRect().height + 6;
 }
 
-function rotateDegree(dir, keyWheel, modeWheel) {
-  if (!currentScale.pitchClasses.length) return;
-  const newPitchClasses = dir > 0
-    ? [...currentScale.pitchClasses.slice(1), currentScale.pitchClasses[0]]
-    : [currentScale.pitchClasses[currentScale.pitchClasses.length - 1], ...currentScale.pitchClasses.slice(0, -1)];
-  const newTonicPc = newPitchClasses[0];
-  currentModeIndex = wrap(currentModeIndex + dir, MODE_NAMES.length);
-  currentKeyIndex = findKeyIndexForPc(newTonicPc, currentScale.spelled[0]);
-  modeWheel.setIndex(currentModeIndex, true, false);
-  keyWheel.setIndex(currentKeyIndex, true, false);
-  drawFromState();
-}
-
-function transposeSemitone(delta, keyWheel) {
-  if (!currentScale.pitchClasses.length) return;
-  const newPc = wrap(currentScale.pitchClasses[0] + delta, 12);
-  currentKeyIndex = findKeyIndexForPc(newPc, currentScale.spelled[0]);
-  keyWheel.setIndex(currentKeyIndex, true, false);
-  drawFromState();
-}
-
-function setupScaleStripDrag(modeWheel, keyWheel) {
+function setupScaleStripDrag() {
   const strip = document.getElementById("scaleStrip");
   const tiles = document.getElementById("scaleTiles");
   let startX = 0;
   let startY = 0;
   let dragging = false;
-  let direction = null;
+  let lockedDir = null;
   let lastDx = 0;
   let lastDy = 0;
 
-  const resetTransform = (animate = false) => {
-    tiles.style.transition = animate ? "transform 0.16s ease" : "none";
-    tiles.style.transform = "translate(0px, 0px)";
-    if (!animate) requestAnimationFrame(() => { tiles.style.transition = "none"; });
+  const commitThreshold = 80;
+  const lockThreshold = 12;
+
+  const resetTransforms = () => {
+    tiles.style.transition = "none";
+    tiles.style.transform = "translate3d(0,0,0)";
   };
 
-  const commit = (action, axis, sign) => {
-    const offset = sign * 80;
-    tiles.style.transition = "transform 0.18s ease";
-    tiles.style.transform = axis === "x" ? `translateX(${offset}px)` : `translateY(${offset}px)`;
+  const applyPreview = (dir, delta) => {
+    if (dir === "x") {
+      const previewMode = wrap(currentModeIndex + (delta > 0 ? -1 : 1), MODE_NAMES.length);
+      pillPreview.mode = Math.abs(delta) > commitThreshold / 2 ? previewMode : null;
+    } else if (dir === "y") {
+      const previewKeyPc = wrap(currentScale.pitchClasses[0] + (delta < 0 ? 1 : -1), 12);
+      const keyIdx = findKeyIndexForPc(previewKeyPc, currentScale.spelled[0]);
+      pillPreview.key = Math.abs(delta) > commitThreshold / 2 ? keyIdx : null;
+    }
+    updatePills();
+  };
+
+  const finishAnimation = (action) => {
     const handle = () => {
       tiles.removeEventListener("transitionend", handle);
       action();
-      requestAnimationFrame(() => {
-        tiles.style.transition = "transform 0.16s ease";
-        tiles.style.transform = "translate(0px, 0px)";
-      });
+      resetTransforms();
+      pillPreview = { key: null, mode: null };
+      updatePills();
+      dragCooldown = true;
+      setTimeout(() => { dragCooldown = false; }, 150);
     };
     tiles.addEventListener("transitionend", handle);
   };
 
   function onStart(e) {
+    if (dragCooldown) return;
     startX = e.clientX;
     startY = e.clientY;
     dragging = true;
-    direction = null;
+    lockedDir = null;
     lastDx = 0;
     lastDy = 0;
     tiles.style.transition = "none";
+    renderScaleStrip(currentScale.spelled);
     if (strip.setPointerCapture) strip.setPointerCapture(e.pointerId);
   }
 
@@ -573,20 +537,25 @@ function setupScaleStripDrag(modeWheel, keyWheel) {
     const dy = e.clientY - startY;
     lastDx = dx;
     lastDy = dy;
-    const absX = Math.abs(dx);
-    const absY = Math.abs(dy);
-
-    if (!direction && (absX > 12 || absY > 12)) {
-      direction = absX > absY ? "x" : "y";
+    if (!lockedDir && (Math.abs(dx) > lockThreshold || Math.abs(dy) > lockThreshold)) {
+      lockedDir = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+      if (lockedDir === "x") {
+        renderHorizontalWithWrap(currentScale.spelled);
+      } else {
+        renderVerticalRows();
+      }
     }
+    if (!lockedDir) return;
 
-    if (direction) {
-      const clamp = (v) => Math.max(-60, Math.min(60, v));
-      const x = direction === "x" ? clamp(dx) : 0;
-      const y = direction === "y" ? clamp(dy) : 0;
-      tiles.style.transform = `translate(${x}px, ${y}px)`;
-      if (e.cancelable) e.preventDefault();
+    if (lockedDir === "x") {
+      tiles.style.transform = `translate3d(${Math.max(-140, Math.min(140, dx))}px,0,0)`;
+      applyPreview("x", dx);
+    } else {
+      tiles.classList.add("vertical-track");
+      tiles.style.transform = `translate3d(0,${Math.max(-140, Math.min(140, dy))}px,0)`;
+      applyPreview("y", dy);
     }
+    if (e.cancelable) e.preventDefault();
   }
 
   function onEnd(e) {
@@ -598,16 +567,30 @@ function setupScaleStripDrag(modeWheel, keyWheel) {
     const absX = Math.abs(lastDx);
     const absY = Math.abs(lastDy);
 
-    if (direction === "x" && absX >= DRAG_THRESHOLD) {
+    if (lockedDir === "x" && absX >= commitThreshold) {
       const sign = lastDx > 0 ? -1 : 1;
-      commit(() => rotateDegree(sign, keyWheel, modeWheel), "x", sign);
-    } else if (direction === "y" && absY >= DRAG_THRESHOLD) {
+      const step = calcTileStep("x");
+      tiles.style.transition = "transform 0.2s ease";
+      tiles.style.transform = `translate3d(${sign * step}px,0,0)`;
+      finishAnimation(() => rotateDegree(sign));
+    } else if (lockedDir === "y" && absY >= commitThreshold) {
       const sign = lastDy < 0 ? 1 : -1;
-      commit(() => transposeSemitone(sign, keyWheel), "y", sign);
+      const step = calcTileStep("y");
+      tiles.style.transition = "transform 0.2s ease";
+      tiles.style.transform = `translate3d(0,${sign * step}px,0)`;
+      finishAnimation(() => transposeSemitone(sign));
     } else {
-      resetTransform(true);
+      tiles.style.transition = "transform 0.18s ease";
+      tiles.style.transform = "translate3d(0,0,0)";
+      const resetAfter = () => {
+        tiles.removeEventListener("transitionend", resetAfter);
+        resetTransforms();
+        pillPreview = { key: null, mode: null };
+        updatePills();
+      };
+      tiles.addEventListener("transitionend", resetAfter);
     }
-    direction = null;
+    lockedDir = null;
   }
 
   strip.addEventListener("pointerdown", onStart);
@@ -619,37 +602,16 @@ function setupScaleStripDrag(modeWheel, keyWheel) {
 // -------------------- INIT ------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
-  const keyWheel = createWheel("keyWheel", "keyWheelTrack", KEY_OPTIONS.map(o => o.label), (idx) => {
-    currentKeyIndex = idx;
-    drawFromState();
-  });
-  const modeWheel = createWheel("modeWheel", "modeWheelTrack", MODE_NAMES, (idx) => {
-    currentModeIndex = idx;
-    drawFromState();
-  });
+  const modal = setupPickerModal();
+  document.getElementById("keyPill").addEventListener("click", () => modal.open("key"));
+  document.getElementById("modePill").addEventListener("click", () => modal.open("mode"));
 
-  setupScaleStripDrag(modeWheel, keyWheel);
+  setupScaleStripDrag();
   syncAccordion();
-  const modal = setupWheelModal(keyWheel, modeWheel);
-
-  const keyWheelEl = document.getElementById("keyWheel");
-  const modeWheelEl = document.getElementById("modeWheel");
-  document.getElementById("openKeyModal").addEventListener("click", () => modal.open("key"));
-  document.getElementById("openModeModal").addEventListener("click", () => modal.open("mode"));
-  keyWheelEl.addEventListener("click", (e) => {
-    if (e.target.closest(".wheel-item")) return;
-    modal.open("key");
-  });
-  modeWheelEl.addEventListener("click", (e) => {
-    if (e.target.closest(".wheel-item")) return;
-    modal.open("mode");
-  });
 
   document.getElementById("random").addEventListener("click", () => {
     currentKeyIndex = Math.floor(Math.random() * KEY_OPTIONS.length);
     currentModeIndex = Math.floor(Math.random() * MODE_NAMES.length);
-    keyWheel.setIndex(currentKeyIndex, true, false);
-    modeWheel.setIndex(currentModeIndex, true, false);
     drawFromState();
   });
 
@@ -684,7 +646,5 @@ document.addEventListener("DOMContentLoaded", () => {
     drawFromState();
   });
 
-  keyWheel.setIndex(currentKeyIndex, false, false);
-  modeWheel.setIndex(currentModeIndex, false, false);
   drawFromState();
 });

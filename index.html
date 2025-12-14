@@ -16,42 +16,24 @@
 
         <section id="inputArea" class="panel controls-panel">
             <div class="scale-stack">
-                <div class="wheel-column compact">
-                    <div class="wheel-label-row">
-                        <p class="eyebrow subtle">Key</p>
-                        <button class="ghost micro" id="openKeyModal" aria-label="Open key list">↕</button>
-                    </div>
-                    <div class="wheel compact-wheel" id="keyWheel" aria-label="Key selector">
-                        <div class="wheel-window">
-                            <div class="wheel-track" id="keyWheelTrack"></div>
-                        </div>
-                        <div class="wheel-highlight"></div>
-                        <div class="wheel-fade top"></div>
-                        <div class="wheel-fade bottom"></div>
-                    </div>
+                <div class="pill-row">
+                    <button class="pill" id="keyPill" aria-label="Select key">
+                        <span class="pill-label">Key</span>
+                        <span class="pill-value" id="keyPillValue"></span>
+                    </button>
+                    <button class="pill" id="modePill" aria-label="Select mode">
+                        <span class="pill-label">Mode</span>
+                        <span class="pill-value" id="modePillValue"></span>
+                    </button>
                 </div>
-                <div class="strip-stack">
-                    <div id="scaleStrip" class="scale-strip" aria-label="Scale strip">
+                <div id="scaleStrip" class="scale-strip" aria-label="Scale strip">
+                    <div class="tile-viewport">
                         <div id="scaleTiles" class="scale-tiles" aria-live="polite"></div>
-                        <div class="strip-hint">Swipe tiles: left/right rotate degrees · up/down transpose</div>
                     </div>
-                    <div class="inline-actions">
-                        <button id="random" class="ghost">Randomize</button>
-                    </div>
+                    <div class="strip-hint">Swipe tiles: left/right rotate degrees · up/down transpose</div>
                 </div>
-                <div class="wheel-column compact">
-                    <div class="wheel-label-row">
-                        <p class="eyebrow subtle">Mode</p>
-                        <button class="ghost micro" id="openModeModal" aria-label="Open mode list">↕</button>
-                    </div>
-                    <div class="wheel compact-wheel" id="modeWheel" aria-label="Mode selector">
-                        <div class="wheel-window">
-                            <div class="wheel-track" id="modeWheelTrack"></div>
-                        </div>
-                        <div class="wheel-highlight"></div>
-                        <div class="wheel-fade top"></div>
-                        <div class="wheel-fade bottom"></div>
-                    </div>
+                <div class="inline-actions">
+                    <button id="random" class="ghost">Randomize</button>
                 </div>
             </div>
         </section>
