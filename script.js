@@ -618,7 +618,7 @@ function setupScaleStripDrag() {
       if (lockedDir === "x") {
         renderHorizontalWithWrap(currentScale.spelled);
         stepX = calcTileStep("x");
-        const segmentWidth = stepX * 7 - tileMetrics.gap;
+        const segmentWidth = tileMetrics.segmentWidth;
         baseX = -segmentWidth;
         const notesLayer = document.getElementById("notesLayer");
         if (notesLayer) notesLayer.style.transform = `translate3d(${baseX}px,0,0)`;

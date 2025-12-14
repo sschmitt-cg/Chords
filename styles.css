@@ -381,16 +381,20 @@ button:active {
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   gap: var(--tile-gap);
   pointer-events: none;
+  z-index: 3;
+  padding-top: 4px;
 }
 
 .slot {
   flex: 0 0 var(--tile-width);
   min-width: 40px;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-left: 6px;
   color: #0f1636;
   font-weight: 800;
   font-size: 14px;
@@ -403,6 +407,7 @@ button:active {
   gap: var(--tile-gap);
   will-change: transform;
   pointer-events: none;
+  z-index: 2;
 }
 
 .notes-layer.vertical {
