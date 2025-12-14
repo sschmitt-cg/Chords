@@ -619,8 +619,8 @@ function setupScaleStripDrag() {
       if (lockedDir === "x") {
         renderHorizontalWithWrap(currentScale.spelled);
         stepX = calcTileStep("x");
-        const stepSpan = stepX * 7;
-        baseX = -stepSpan;
+        const segmentWidth = tileMetrics.segmentWidth;
+        baseX = -segmentWidth;
         const notesLayer = document.getElementById("notesLayer");
         if (notesLayer) notesLayer.style.transform = `translate3d(${baseX}px,0,0)`;
       } else {
@@ -639,7 +639,7 @@ function setupScaleStripDrag() {
     if (!notesLayer) return;
 
     if (lockedDir === "x") {
-      const maxDx = (stepX * 7) * 0.6;
+      const maxDx = tileMetrics.segmentWidth * 0.6;
       const clampedDx = Math.max(-maxDx, Math.min(maxDx, dx));
       notesLayer.style.transform = `translate3d(${baseX + clampedDx}px,0,0)`;
       applyPreview("x", dx);
