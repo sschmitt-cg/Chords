@@ -300,14 +300,18 @@ function renderVerticalRows() {
   const track = document.getElementById("scaleTiles");
   track.classList.add("vertical-track");
   track.style.transition = "none";
-  const plusOne = buildScaleFromPc(wrap(currentScale.pitchClasses[0] + 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
-  const minusOne = buildScaleFromPc(wrap(currentScale.pitchClasses[0] - 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
-  const rowHeight = tileMetrics.rowHeight;
-  const rows = [
-    { notes: plusOne, tag: "plus" },
-    { notes: currentScale.spelled, tag: "current" },
-    { notes: minusOne, tag: "minus" }
-  ];
+  const range = MAX_DRAG_STEPS;
+  const viewport = document.querySelector(".tile-viewport");
+  const rowHeight = viewport?.clientHeight || tileMetrics.rowHeight;
+  const rows = [];
+  for (let i = -range; i <= range; i++) {
+    let notes = currentScale.spelled;
+    if (i !== 0) {
+      const shiftedPc = wrap(currentScale.pitchClasses[0] + i, 12);
+      notes = buildScaleFromPc(shiftedPc, currentModeIndex, currentScale.spelled[0]).spelled;
+    }
+    rows.push({ shift: i, notes });
+  }
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
@@ -315,7 +319,7 @@ function renderVerticalRows() {
       `<div class="note-label${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
-  track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer">${rowsHtml}</div>`;
+  track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer" style="height:${rowHeight * rows.length}px">${rowsHtml}</div>`;
 }
 
 function renderChordLists() {
@@ -571,6 +575,7 @@ function setupScaleStripDrag() {
   let stepY = 0;
   let moveListener = null;
   let upListener = null;
+  let verticalRange = MAX_DRAG_STEPS;
 
   const lockThreshold = 16;
 
@@ -651,11 +656,12 @@ function setupScaleStripDrag() {
         const notesLayer = document.getElementById("notesLayer");
         if (notesLayer) notesLayer.style.transform = `translate3d(${baseX}px,0,0)`;
       } else {
+        verticalRange = MAX_DRAG_STEPS;
         renderVerticalRows();
         const viewport = document.querySelector(".tile-viewport");
         const viewportH = viewport?.clientHeight || tileMetrics.rowHeight;
         stepY = viewportH;
-        baseY = -viewportH;
+        baseY = -viewportH * verticalRange;
         const notesLayer = document.getElementById("notesLayer");
         if (notesLayer) notesLayer.style.transform = `translate3d(0,${baseY}px,0)`;
       }
@@ -666,7 +672,7 @@ function setupScaleStripDrag() {
     if (!notesLayer) return;
 
     if (lockedDir === "x") {
-      const maxDx = tileMetrics.segmentWidth * 0.6;
+      const maxDx = stepX * MAX_DRAG_STEPS;
       const clampedDx = Math.max(-maxDx, Math.min(maxDx, dx));
       notesLayer.style.transform = `translate3d(${baseX + clampedDx}px,0,0)`;
       const rawSteps = clampedDx / stepX;
