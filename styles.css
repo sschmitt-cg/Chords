@@ -313,16 +313,20 @@ button:active {
   transition: transform 0.18s ease;
   align-items: stretch;
   will-change: transform;
+  position: relative;
+  height: 100%;
 }
 
 .scale-tiles.vertical-track {
   flex-direction: column;
   gap: 0;
+  align-items: stretch;
 }
 
 .tile-row {
   display: flex;
   gap: var(--tile-gap);
+  width: 100%;
 }
  
 .tile-viewport::before,
@@ -371,6 +375,69 @@ button:active {
   border-color: var(--accent);
   background: linear-gradient(140deg, #dfe4ff, #f4f5ff);
   box-shadow: 0 8px 18px rgba(85, 104, 255, 0.25);
+}
+
+.slots-row {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--tile-gap);
+  pointer-events: none;
+  z-index: 3;
+  padding-top: 4px;
+}
+
+.slot {
+  flex: 0 0 var(--tile-width);
+  min-width: 40px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding-left: 6px;
+  color: #0f1636;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.notes-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  gap: var(--tile-gap);
+  will-change: transform;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.notes-layer.vertical {
+  flex-direction: column;
+  gap: 0;
+}
+
+.note-label {
+  flex: 0 0 var(--tile-width);
+  min-width: 40px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(140deg, #f7f8ff, #eef1ff);
+  border: 1px solid #d8ddf6;
+  border-radius: 10px;
+  box-shadow: 0 6px 12px rgba(16, 20, 52, 0.08);
+  color: #111731;
+  font-weight: 800;
+}
+
+.note-label.tonic {
+  border-color: var(--accent);
+  box-shadow: 0 8px 18px rgba(85, 104, 255, 0.25);
+}
+
+.note-label small {
+  display: block;
+  color: #5c6385;
+  font-size: 11px;
+  font-weight: 600;
 }
 
 .strip-hint {
