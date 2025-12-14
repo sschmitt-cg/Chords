@@ -293,6 +293,8 @@ button:active {
   overflow: hidden;
   width: 100%;
   height: 88px;
+  --tile-gap: 6px;
+  --tile-width: 52px;
   mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%),
               linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%),
@@ -302,7 +304,7 @@ button:active {
 .scale-tiles {
   display: flex;
   flex-wrap: nowrap;
-  gap: 6px;
+  gap: var(--tile-gap);
   touch-action: none;
   overscroll-behavior: contain;
   user-select: none;
@@ -320,7 +322,7 @@ button:active {
 
 .tile-row {
   display: flex;
-  gap: 6px;
+  gap: var(--tile-gap);
 }
  
 .tile-viewport::before,
@@ -353,7 +355,7 @@ button:active {
   color: #111731;
   background: linear-gradient(140deg, #f7f8ff, #eef1ff);
   box-shadow: 0 6px 12px rgba(16, 20, 52, 0.08);
-  flex: 1 1 0;
+  flex: 0 0 var(--tile-width);
   min-width: 40px;
   white-space: nowrap;
 }

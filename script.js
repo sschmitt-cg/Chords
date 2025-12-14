@@ -56,6 +56,7 @@ let currentScale = { pitchClasses: [], spelled: [] };
 let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspended: [] }, degrees: [] };
 let pillPreview = { key: null, mode: null };
 let dragCooldown = false;
+let tileMetrics = { gap: 6, width: 52, segmentWidth: 400, rowHeight: 88 };
 
 // -------------------- HELPERS ------------------------
 
@@ -303,7 +304,7 @@ function renderVerticalRows() {
     { notes: up, tag: "up" }
   ];
   track.innerHTML = rows.map(row =>
-    `<div class="tile-row">${row.notes.map((note, idx) =>
+    `<div class="tile-row" style="height:${tileMetrics.rowHeight}px">${row.notes.map((note, idx) =>
       `<div class="scale-tile${idx === 0 && row.tag === "current" ? " tonic" : ""}"><div>${note}</div><small>${idx + 1}</small></div>`
     ).join("")}</div>`
   ).join("");
@@ -397,6 +398,7 @@ function drawFromState() {
 
   currentChords = analyzeChords(spelled, pitchClasses);
   renderScaleStrip(spelled);
+  setTileMetrics();
   updatePills();
   renderChordLists();
   populateChordSelectors();
@@ -476,27 +478,32 @@ function setupPickerModal() {
   return { open };
 }
 
+// -------------------- METRICS ------------------------
+
+function setTileMetrics() {
+  const viewport = document.querySelector(".tile-viewport");
+  const track = document.getElementById("scaleTiles");
+  if (!viewport || !track) return;
+  const style = getComputedStyle(track);
+  const gap = parseFloat(style.gap) || 6;
+  const rawWidth = (viewport.clientWidth - gap * 6) / 7;
+  const tileWidth = Math.max(40, Math.floor(rawWidth));
+  viewport.style.setProperty("--tile-gap", `${gap}px`);
+  viewport.style.setProperty("--tile-width", `${tileWidth}px`);
+  const rowHeight = viewport.clientHeight || tileWidth + 24;
+  tileMetrics = {
+    gap,
+    width: tileWidth,
+    segmentWidth: tileWidth * 7 + gap * 6,
+    rowHeight
+  };
+}
+
 // -------------------- DRAG / SWIPE ------------------------
 
 function calcTileStep(axis) {
-  const track = document.getElementById("scaleTiles");
-  const first = track.children[0];
-  if (!first) return 80;
-  if (axis === "x") {
-    const second = track.children[1];
-    if (!second) return first.getBoundingClientRect().width + 6;
-    const gap = second.getBoundingClientRect().left - first.getBoundingClientRect().right;
-    return first.getBoundingClientRect().width + (gap > 0 ? gap : 6);
-  }
-  // vertical: track contains rows
-  const rows = Array.from(track.children).filter(el => el.classList.contains("tile-row"));
-  const row = rows[1] || rows[0] || first;
-  const secondRow = rows[2];
-  if (secondRow) {
-    const gapY = secondRow.getBoundingClientRect().top - row.getBoundingClientRect().bottom;
-    return row.getBoundingClientRect().height + (gapY > 0 ? gapY : 0);
-  }
-  return row.getBoundingClientRect().height;
+  if (axis === "x") return tileMetrics.width + tileMetrics.gap;
+  return tileMetrics.rowHeight;
 }
 
 function setupScaleStripDrag() {
@@ -513,8 +520,8 @@ function setupScaleStripDrag() {
   let stepX = 0;
   let stepY = 0;
 
-  const commitThreshold = 80;
-  const lockThreshold = 12;
+  const commitThreshold = 110;
+  const lockThreshold = 16;
 
   const resetTransforms = () => {
     tiles.style.transition = "none";
@@ -582,11 +589,11 @@ function setupScaleStripDrag() {
     if (!lockedDir) return;
 
     if (lockedDir === "x") {
-      tiles.style.transform = `translate3d(${baseX + Math.max(-160, Math.min(160, dx))}px,0,0)`;
+      tiles.style.transform = `translate3d(${baseX + Math.max(-180, Math.min(180, dx))}px,0,0)`;
       applyPreview("x", dx);
     } else {
       tiles.classList.add("vertical-track");
-      tiles.style.transform = `translate3d(0,${baseY + Math.max(-160, Math.min(160, dy))}px,0)`;
+      tiles.style.transform = `translate3d(0,${baseY + Math.max(-180, Math.min(180, dy))}px,0)`;
       applyPreview("y", dy);
     }
     if (e.cancelable) e.preventDefault();
@@ -634,6 +641,9 @@ function setupScaleStripDrag() {
   strip.addEventListener("pointermove", onMove);
   strip.addEventListener("pointerup", onEnd);
   strip.addEventListener("pointercancel", onEnd);
+  strip.addEventListener("touchmove", (e) => {
+    if (dragging && e.cancelable) e.preventDefault();
+  }, { passive: false });
 }
 
 // -------------------- INIT ------------------------
@@ -681,6 +691,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("match").addEventListener("click", () => {
     drawFromState();
+  });
+
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      setTileMetrics();
+    }, 150);
   });
 
   drawFromState();
