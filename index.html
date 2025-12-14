@@ -15,41 +15,38 @@
         </header>
 
         <section id="inputArea" class="panel controls-panel">
-            <div class="selectors">
-                <div class="selector">
-                    <label for="key">Key</label>
-                    <select id="key"></select>
-                </div>
-                <div class="selector">
-                    <label for="mode">Mode</label>
-                    <select id="mode"></select>
-                </div>
-            </div>
-            <div class="scale-strip-shell">
-                <div class="strip-header">
-                    <div>
-                        <p class="eyebrow subtle">Scale strip</p>
-                        <p class="strip-meta"><span id="stripKeyLabel"></span> - <span id="stripModeLabel"></span></p>
-                    </div>
-                    <div class="strip-controls" aria-label="Scale controls">
-                        <div class="control-group">
-                            <button type="button" id="keyUp" class="ghost" aria-label="Transpose up a semitone">↑</button>
-                            <button type="button" id="keyDown" class="ghost" aria-label="Transpose down a semitone">↓</button>
+            <div class="wheel-strip">
+                <div class="wheel-column">
+                    <p class="eyebrow subtle">Key</p>
+                    <div class="wheel" id="keyWheel" aria-label="Key selector">
+                        <div class="wheel-window">
+                            <div class="wheel-track" id="keyWheelTrack"></div>
                         </div>
-                        <div class="control-group">
-                            <button type="button" id="modeLeft" class="ghost" aria-label="Previous mode">←</button>
-                            <button type="button" id="modeRight" class="ghost" aria-label="Next mode">→</button>
-                        </div>
+                        <div class="wheel-highlight"></div>
+                        <div class="wheel-fade top"></div>
+                        <div class="wheel-fade bottom"></div>
                     </div>
                 </div>
-                <div id="scaleStrip" class="scale-strip" aria-label="Scale strip">
-                    <div id="scaleTiles" class="scale-tiles" aria-live="polite"></div>
-                    <div class="strip-hint">Drag horizontally for modes - drag vertically to transpose</div>
+                <div class="strip-stack">
+                    <div id="scaleStrip" class="scale-strip" aria-label="Scale strip">
+                        <div id="scaleTiles" class="scale-tiles" aria-live="polite"></div>
+                        <div class="strip-hint">Swipe horizontally for modes, vertically to transpose</div>
+                    </div>
+                    <div class="inline-actions">
+                        <button id="random" class="ghost">Randomize</button>
+                    </div>
                 </div>
-            </div>
-            <div class="action-buttons">
-                <button id="submit">Update</button>
-                <button id="random">Randomize</button>
+                <div class="wheel-column">
+                    <p class="eyebrow subtle">Mode</p>
+                    <div class="wheel" id="modeWheel" aria-label="Mode selector">
+                        <div class="wheel-window">
+                            <div class="wheel-track" id="modeWheelTrack"></div>
+                        </div>
+                        <div class="wheel-highlight"></div>
+                        <div class="wheel-fade top"></div>
+                        <div class="wheel-fade bottom"></div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -59,13 +56,33 @@
                 <div id="availableChordsContainer" class="card chords-card">
                     <div class="card-heading">
                         <h2>Available chords</h2>
-                        <p>Triads, sevenths, ninths, and suspended options in your key.</p>
+                        <p>Tap a category to view the shapes for this scale.</p>
                     </div>
-                    <div class="chord-grid">
-                        <div id="triadsOutput" class="chordColumn"></div>
-                        <div id="seventhsOutput" class="chordColumn"></div>
-                        <div id="ninthsOutput" class="chordColumn"></div>
-                        <div id="suspendedOutput" class="chordColumn"></div>
+                    <div class="accordion" id="chordAccordion">
+                        <div class="accordion-item open" data-target="triadsOutput">
+                            <button class="accordion-header" type="button">
+                                <span>Triads</span><span class="chevron">▾</span>
+                            </button>
+                            <div class="accordion-panel" id="triadsOutput"></div>
+                        </div>
+                        <div class="accordion-item" data-target="seventhsOutput">
+                            <button class="accordion-header" type="button">
+                                <span>7ths</span><span class="chevron">▾</span>
+                            </button>
+                            <div class="accordion-panel" id="seventhsOutput"></div>
+                        </div>
+                        <div class="accordion-item" data-target="ninthsOutput">
+                            <button class="accordion-header" type="button">
+                                <span>9ths</span><span class="chevron">▾</span>
+                            </button>
+                            <div class="accordion-panel" id="ninthsOutput"></div>
+                        </div>
+                        <div class="accordion-item" data-target="suspendedOutput">
+                            <button class="accordion-header" type="button">
+                                <span>Suspended</span><span class="chevron">▾</span>
+                            </button>
+                            <div class="accordion-panel" id="suspendedOutput"></div>
+                        </div>
                     </div>
                 </div>
             
