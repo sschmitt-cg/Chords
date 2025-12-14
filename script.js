@@ -674,7 +674,7 @@ function setupScaleStripDrag() {
       applyPreview("x", -previewSteps);
     } else {
       track.classList.add("vertical-track");
-      const maxDy = (tileMetrics.rowHeight || 0) * 0.6 || 120;
+      const maxDy = stepY * MAX_DRAG_STEPS;
       const clampedDy = Math.max(-maxDy, Math.min(maxDy, dy));
       notesLayer.style.transform = `translate3d(0,${baseY + clampedDy}px,0)`;
       const rawSteps = clampedDy / stepY;
