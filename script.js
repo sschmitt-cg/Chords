@@ -57,6 +57,7 @@ let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspen
 let pillPreview = { key: null, mode: null };
 let dragCooldown = false;
 let tileMetrics = { gap: 6, width: 52, segmentWidth: 400, rowHeight: 88 };
+const MAX_DRAG_STEPS = 12;
 
 // -------------------- HELPERS ------------------------
 
@@ -437,17 +438,28 @@ function drawFromState() {
 
 function rotateDegree(dir) {
   if (!currentScale.pitchClasses.length) return;
-  const newPitchClasses = dir > 0
-    ? [...currentScale.pitchClasses.slice(1), currentScale.pitchClasses[0]]
-    : [currentScale.pitchClasses[currentScale.pitchClasses.length - 1], ...currentScale.pitchClasses.slice(0, -1)];
+  rotateDegrees(dir);
+}
+
+function rotateDegrees(steps) {
+  if (!currentScale.pitchClasses.length) return;
+  const len = currentScale.pitchClasses.length;
+  const n = ((steps % len) + len) % len;
+  if (n === 0) return;
+  const newPitchClasses = [...currentScale.pitchClasses.slice(n), ...currentScale.pitchClasses.slice(0, n)];
   const newTonicPc = newPitchClasses[0];
-  currentModeIndex = wrap(currentModeIndex + dir, MODE_NAMES.length);
+  currentModeIndex = wrap(currentModeIndex + n, MODE_NAMES.length);
   currentKeyIndex = findKeyIndexForPc(newTonicPc, currentScale.spelled[0]);
   drawFromState();
 }
 
 function transposeSemitone(delta) {
   if (!currentScale.pitchClasses.length) return;
+  transposeSemitoneBy(delta);
+}
+
+function transposeSemitoneBy(delta) {
+  if (!currentScale.pitchClasses.length || delta === 0) return;
   const newPc = wrap(currentScale.pitchClasses[0] + delta, 12);
   currentKeyIndex = findKeyIndexForPc(newPc, currentScale.spelled[0]);
   drawFromState();
@@ -533,6 +545,17 @@ function calcTileStep(axis) {
   return tileMetrics.rowHeight;
 }
 
+function previewRotateState(steps) {
+  const len = currentScale.pitchClasses.length;
+  if (!len) return { keyIdx: currentKeyIndex, modeIdx: currentModeIndex };
+  const n = ((steps % len) + len) % len;
+  const rotated = [...currentScale.pitchClasses.slice(n), ...currentScale.pitchClasses.slice(0, n)];
+  const tonicPc = rotated[0];
+  const keyIdx = findKeyIndexForPc(tonicPc, currentScale.spelled[0]);
+  const modeIdx = wrap(currentModeIndex + n, MODE_NAMES.length);
+  return { keyIdx, modeIdx };
+}
+
 function setupScaleStripDrag() {
   const strip = document.getElementById("scaleStrip");
   const track = document.getElementById("scaleTiles");
@@ -546,8 +569,9 @@ function setupScaleStripDrag() {
   let baseY = 0;
   let stepX = 0;
   let stepY = 0;
+  let moveListener = null;
+  let upListener = null;
 
-  const commitThreshold = 110;
   const lockThreshold = 16;
 
   const resetTransforms = () => {
@@ -557,14 +581,15 @@ function setupScaleStripDrag() {
     notesLayer.style.transform = "translate3d(0,0,0)";
   };
 
-  const applyPreview = (dir, delta) => {
+  const applyPreview = (dir, steps) => {
     if (dir === "x") {
-      const previewMode = wrap(currentModeIndex + (delta > 0 ? -1 : 1), MODE_NAMES.length);
-      pillPreview.mode = Math.abs(delta) > commitThreshold / 2 ? previewMode : null;
+      const { keyIdx, modeIdx } = previewRotateState(steps);
+      pillPreview.mode = modeIdx;
+      pillPreview.key = keyIdx;
     } else if (dir === "y") {
-      const previewKeyPc = wrap(currentScale.pitchClasses[0] + (delta > 0 ? 1 : -1), 12);
+      const previewKeyPc = wrap(currentScale.pitchClasses[0] + steps, 12);
       const keyIdx = findKeyIndexForPc(previewKeyPc, currentScale.spelled[0]);
-      pillPreview.key = Math.abs(delta) > commitThreshold / 2 ? keyIdx : null;
+      pillPreview.key = keyIdx;
     }
     updatePills();
   };
@@ -603,6 +628,11 @@ function setupScaleStripDrag() {
     track.style.transition = "none";
     setTileMetrics();
     if (strip.setPointerCapture) strip.setPointerCapture(e.pointerId);
+    moveListener = (ev) => onMove(ev);
+    upListener = (ev) => onEnd(ev);
+    window.addEventListener("pointermove", moveListener);
+    window.addEventListener("pointerup", upListener);
+    window.addEventListener("pointercancel", upListener);
   }
 
   function onMove(e) {
@@ -639,13 +669,17 @@ function setupScaleStripDrag() {
       const maxDx = tileMetrics.segmentWidth * 0.6;
       const clampedDx = Math.max(-maxDx, Math.min(maxDx, dx));
       notesLayer.style.transform = `translate3d(${baseX + clampedDx}px,0,0)`;
-      applyPreview("x", dx);
+      const rawSteps = clampedDx / stepX;
+      const previewSteps = Math.max(-MAX_DRAG_STEPS, Math.min(MAX_DRAG_STEPS, Math.round(rawSteps)));
+      applyPreview("x", -previewSteps);
     } else {
       track.classList.add("vertical-track");
       const maxDy = (tileMetrics.rowHeight || 0) * 0.6 || 120;
       const clampedDy = Math.max(-maxDy, Math.min(maxDy, dy));
       notesLayer.style.transform = `translate3d(0,${baseY + clampedDy}px,0)`;
-      applyPreview("y", dy);
+      const rawSteps = clampedDy / stepY;
+      const previewSteps = Math.max(-MAX_DRAG_STEPS, Math.min(MAX_DRAG_STEPS, Math.round(rawSteps)));
+      applyPreview("y", previewSteps);
     }
     if (e.cancelable) e.preventDefault();
   }
@@ -661,37 +695,51 @@ function setupScaleStripDrag() {
     const notesLayer = document.getElementById("notesLayer");
     if (!notesLayer) return;
 
-    if (lockedDir === "x" && absX >= commitThreshold) {
-      const dir = lastDx < 0 ? 1 : -1;
-      const targetX = baseX + (lastDx < 0 ? -stepX : stepX);
+    if (lockedDir === "x") {
+      const finalStepsRaw = lastDx / stepX;
+      const finalSteps = Math.max(-MAX_DRAG_STEPS, Math.min(MAX_DRAG_STEPS, Math.round(finalStepsRaw)));
+      const targetX = baseX + finalSteps * stepX;
       notesLayer.style.transition = "transform 0.2s ease";
       notesLayer.style.transform = `translate3d(${targetX}px,0,0)`;
-      finishAnimation(() => rotateDegree(dir));
-    } else if (lockedDir === "y" && absY >= commitThreshold) {
-      const sign = lastDy > 0 ? 1 : -1;
-      const targetY = baseY + (lastDy > 0 ? stepY : -stepY);
+      if (finalSteps !== 0) {
+        finishAnimation(() => rotateDegrees(-finalSteps));
+      } else {
+        const resetAfter = () => {
+          notesLayer.removeEventListener("transitionend", resetAfter);
+          renderScaleStrip(currentScale.spelled);
+          resetTransforms();
+          pillPreview = { key: null, mode: null };
+          updatePills();
+          dragCooldown = true;
+          setTimeout(() => { dragCooldown = false; }, 150);
+        };
+        notesLayer.addEventListener("transitionend", resetAfter, { once: true });
+      }
+    } else if (lockedDir === "y") {
+      const finalStepsRaw = lastDy / stepY;
+      const finalSteps = Math.max(-MAX_DRAG_STEPS, Math.min(MAX_DRAG_STEPS, Math.round(finalStepsRaw)));
+      const targetY = baseY + finalSteps * stepY;
       notesLayer.style.transition = "transform 0.2s ease";
       notesLayer.style.transform = `translate3d(0,${targetY}px,0)`;
-      finishAnimation(() => transposeSemitone(sign));
-    } else {
-      notesLayer.style.transition = "transform 0.18s ease";
-      notesLayer.style.transform = lockedDir === "x"
-        ? `translate3d(${baseX}px,0,0)`
-        : lockedDir === "y"
-          ? `translate3d(0,${baseY}px,0)`
-          : "translate3d(0,0,0)";
-      const resetAfter = () => {
-        notesLayer.removeEventListener("transitionend", resetAfter);
-        renderScaleStrip(currentScale.spelled);
-        resetTransforms();
-        pillPreview = { key: null, mode: null };
-        updatePills();
-        dragCooldown = true;
-        setTimeout(() => { dragCooldown = false; }, 150);
-      };
-      notesLayer.addEventListener("transitionend", resetAfter, { once: true });
+      if (finalSteps !== 0) {
+        finishAnimation(() => transposeSemitoneBy(finalSteps));
+      } else {
+        const resetAfter = () => {
+          notesLayer.removeEventListener("transitionend", resetAfter);
+          renderScaleStrip(currentScale.spelled);
+          resetTransforms();
+          pillPreview = { key: null, mode: null };
+          updatePills();
+          dragCooldown = true;
+          setTimeout(() => { dragCooldown = false; }, 150);
+        };
+        notesLayer.addEventListener("transitionend", resetAfter, { once: true });
+      }
     }
     lockedDir = null;
+    window.removeEventListener("pointermove", moveListener);
+    window.removeEventListener("pointerup", upListener);
+    window.removeEventListener("pointercancel", upListener);
   }
 
   strip.addEventListener("pointerdown", onStart);
