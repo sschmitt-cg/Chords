@@ -289,8 +289,14 @@ button:active {
 }
 
 .tile-viewport {
+  position: relative;
   overflow: hidden;
   width: 100%;
+  height: 88px;
+  mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%),
+              linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%),
+                      linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
 }
 
 .scale-tiles {
@@ -309,11 +315,33 @@ button:active {
 
 .scale-tiles.vertical-track {
   flex-direction: column;
+  gap: 0;
 }
 
 .tile-row {
   display: flex;
   gap: 6px;
+}
+ 
+.tile-viewport::before,
+.tile-viewport::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  z-index: 1;
+}
+
+.tile-viewport::before {
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0) 18px),
+    linear-gradient(270deg, rgba(255,255,255,0.9), rgba(255,255,255,0) 18px);
+}
+
+.tile-viewport::after {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.9), rgba(255,255,255,0) 18px),
+    linear-gradient(0deg, rgba(255,255,255,0.9), rgba(255,255,255,0) 18px);
 }
 
 .scale-tile {
@@ -447,6 +475,10 @@ button:active {
 
   .scale-strip {
     padding: 8px;
+  }
+
+  .tile-viewport {
+    height: 78px;
   }
 
   .scale-banner {

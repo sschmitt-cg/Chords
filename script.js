@@ -259,20 +259,34 @@ function analyzeChords(scaleNames, pitchClasses) {
 function renderScaleStrip(scale) {
   const track = document.getElementById("scaleTiles");
   track.classList.remove("vertical-track");
+  track.style.transition = "none";
+  track.style.transform = "translate3d(0,0,0)";
   track.innerHTML = scale.map((note, idx) =>
     `<div class="scale-tile${idx === 0 ? " tonic" : ""}"><div>${note}</div><small>${idx + 1}</small></div>`
   ).join("");
 }
 
+function rotateArray(arr, dir) {
+  if (!arr.length) return arr;
+  const copy = [...arr];
+  if (dir > 0) {
+    copy.push(copy.shift());
+  } else {
+    copy.unshift(copy.pop());
+  }
+  return copy;
+}
+
 function renderHorizontalWithWrap(scale) {
   const track = document.getElementById("scaleTiles");
   track.classList.remove("vertical-track");
-  const prev = scale[scale.length - 1];
-  const next = scale[1 % scale.length];
-  const extended = [prev, ...scale, next];
+  track.style.transition = "none";
+  const prevSet = rotateArray(scale, -1);
+  const nextSet = rotateArray(scale, 1);
+  const extended = [...prevSet, ...scale, ...nextSet];
   track.innerHTML = extended.map((note, idx) => {
-    const degree = ((idx + scale.length) % scale.length) + 1;
-    const isTonic = idx === 1;
+    const degree = ((idx % scale.length) + 1);
+    const isTonic = idx >= scale.length && idx < scale.length * 2 ? degree === 1 : false;
     return `<div class="scale-tile${isTonic ? " tonic" : ""}"><div>${note}</div><small>${degree}</small></div>`;
   }).join("");
 }
@@ -280,6 +294,7 @@ function renderHorizontalWithWrap(scale) {
 function renderVerticalRows() {
   const track = document.getElementById("scaleTiles");
   track.classList.add("vertical-track");
+  track.style.transition = "none";
   const down = buildScaleFromPc(wrap(currentScale.pitchClasses[0] - 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
   const up = buildScaleFromPc(wrap(currentScale.pitchClasses[0] + 1, 12), currentModeIndex, currentScale.spelled[0]).spelled;
   const rows = [
@@ -466,13 +481,22 @@ function setupPickerModal() {
 function calcTileStep(axis) {
   const track = document.getElementById("scaleTiles");
   const first = track.children[0];
-  const second = track.children[1];
   if (!first) return 80;
-  if (axis === "x" && second) {
+  if (axis === "x") {
+    const second = track.children[1];
+    if (!second) return first.getBoundingClientRect().width + 6;
     const gap = second.getBoundingClientRect().left - first.getBoundingClientRect().right;
     return first.getBoundingClientRect().width + (gap > 0 ? gap : 6);
   }
-  return first.getBoundingClientRect().height + 6;
+  // vertical: track contains rows
+  const rows = Array.from(track.children).filter(el => el.classList.contains("tile-row"));
+  const row = rows[1] || rows[0] || first;
+  const secondRow = rows[2];
+  if (secondRow) {
+    const gapY = secondRow.getBoundingClientRect().top - row.getBoundingClientRect().bottom;
+    return row.getBoundingClientRect().height + (gapY > 0 ? gapY : 0);
+  }
+  return row.getBoundingClientRect().height;
 }
 
 function setupScaleStripDrag() {
@@ -484,6 +508,10 @@ function setupScaleStripDrag() {
   let lockedDir = null;
   let lastDx = 0;
   let lastDy = 0;
+  let baseX = 0;
+  let baseY = 0;
+  let stepX = 0;
+  let stepY = 0;
 
   const commitThreshold = 80;
   const lockThreshold = 12;
@@ -541,18 +569,24 @@ function setupScaleStripDrag() {
       lockedDir = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
       if (lockedDir === "x") {
         renderHorizontalWithWrap(currentScale.spelled);
+        stepX = calcTileStep("x");
+        baseX = -stepX * currentScale.spelled.length;
+        tiles.style.transform = `translate3d(${baseX}px,0,0)`;
       } else {
         renderVerticalRows();
+        stepY = calcTileStep("y");
+        baseY = -stepY;
+        tiles.style.transform = `translate3d(0,${baseY}px,0)`;
       }
     }
     if (!lockedDir) return;
 
     if (lockedDir === "x") {
-      tiles.style.transform = `translate3d(${Math.max(-140, Math.min(140, dx))}px,0,0)`;
+      tiles.style.transform = `translate3d(${baseX + Math.max(-160, Math.min(160, dx))}px,0,0)`;
       applyPreview("x", dx);
     } else {
       tiles.classList.add("vertical-track");
-      tiles.style.transform = `translate3d(0,${Math.max(-140, Math.min(140, dy))}px,0)`;
+      tiles.style.transform = `translate3d(0,${baseY + Math.max(-160, Math.min(160, dy))}px,0)`;
       applyPreview("y", dy);
     }
     if (e.cancelable) e.preventDefault();
@@ -569,21 +603,24 @@ function setupScaleStripDrag() {
 
     if (lockedDir === "x" && absX >= commitThreshold) {
       const sign = lastDx > 0 ? -1 : 1;
-      const step = calcTileStep("x");
       tiles.style.transition = "transform 0.2s ease";
-      tiles.style.transform = `translate3d(${sign * step}px,0,0)`;
+      tiles.style.transform = `translate3d(${baseX + sign * stepX}px,0,0)`;
       finishAnimation(() => rotateDegree(sign));
     } else if (lockedDir === "y" && absY >= commitThreshold) {
       const sign = lastDy < 0 ? 1 : -1;
-      const step = calcTileStep("y");
       tiles.style.transition = "transform 0.2s ease";
-      tiles.style.transform = `translate3d(0,${sign * step}px,0)`;
+      tiles.style.transform = `translate3d(0,${baseY + sign * stepY}px,0)`;
       finishAnimation(() => transposeSemitone(sign));
     } else {
       tiles.style.transition = "transform 0.18s ease";
-      tiles.style.transform = "translate3d(0,0,0)";
+      tiles.style.transform = lockedDir === "x"
+        ? `translate3d(${baseX}px,0,0)`
+        : lockedDir === "y"
+          ? `translate3d(0,${baseY}px,0)`
+          : "translate3d(0,0,0)";
       const resetAfter = () => {
         tiles.removeEventListener("transitionend", resetAfter);
+        renderScaleStrip(currentScale.spelled);
         resetTransforms();
         pillPreview = { key: null, mode: null };
         updatePills();
