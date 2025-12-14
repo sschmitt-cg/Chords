@@ -13,7 +13,6 @@ const NOTE_TO_INDEX = {
 const SHARP_NOTES = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
 const FLAT_NOTES  = ["C","Db","D","Eb","E","F","Gb","G","Ab","A","Bb","B"];
 
-// Interval patterns (in semitones) for common modes
 const SCALE_PATTERNS = {
   "Ionian (Major)": [0,2,4,5,7,9,11],
   "Dorian":         [0,2,3,5,7,9,10],
@@ -24,26 +23,55 @@ const SCALE_PATTERNS = {
   "Locrian":        [0,1,3,5,6,8,10]
 };
 
-// use sharps for keys with sharps, flats for flat keys
+const MODE_NAMES = [
+  "Ionian (Major)",
+  "Dorian",
+  "Phrygian",
+  "Lydian",
+  "Mixolydian",
+  "Aeolian (Minor)",
+  "Locrian"
+];
+
+const KEY_OPTIONS = [
+  { label: "C", value: "C" },
+  { label: "C#/Db", value: "C#" },
+  { label: "D", value: "D" },
+  { label: "D#/Eb", value: "Eb" },
+  { label: "E", value: "E" },
+  { label: "F", value: "F" },
+  { label: "F#/Gb", value: "F#" },
+  { label: "G", value: "G" },
+  { label: "G#/Ab", value: "Ab" },
+  { label: "A", value: "A" },
+  { label: "A#/Bb", value: "Bb" },
+  { label: "B", value: "B" }
+];
+const ITEM_STRIDE = 42; // item height + gap in wheel
+const WHEEL_VIEW = 5;
+const DRAG_THRESHOLD = 36;
+
+// -------------------- HELPERS ------------------------
+
+function wrap(value, size) {
+  return (value % size + size) % size;
+}
+
 function chooseNoteNamesForKey(keyName) {
   const flatKeys  = ["F","Bb","Eb","Ab","Db","Gb","Cb"];
   const sharpKeys = ["G","D","A","E","B","F#","C#"];
 
   if (flatKeys.includes(keyName)) return FLAT_NOTES;
   if (sharpKeys.includes(keyName)) return SHARP_NOTES;
-  // default: sharps are more common
-  return SHARP_NOTES;
+  return keyName.includes("b") ? FLAT_NOTES : SHARP_NOTES;
 }
 
-function buildScale(key, modeName) {
-  const tonicIndex = NOTE_TO_INDEX[key];
+function buildScale(keyName, modeName) {
+  const tonicIndex = NOTE_TO_INDEX[keyName];
   const pattern    = SCALE_PATTERNS[modeName];
-  const noteNames  = chooseNoteNamesForKey(key);
-
+  const noteNames  = chooseNoteNamesForKey(keyName);
   return pattern.map(step => noteNames[(tonicIndex + step) % 12]);
 }
-
-// -------------------- CHORD ANALYSIS ----------------------------
 
 function intervalFrom(root, note) {
   const a = NOTE_TO_INDEX[root];
@@ -51,123 +79,245 @@ function intervalFrom(root, note) {
   return (b - a + 12) % 12;
 }
 
-function analyzeChords(scaleNotes) {
-  const chords = [];
-  const len = scaleNotes.length;
+// -------------------- CHORD ANALYSIS ------------------------
+
+function triadQuality(int3, int5) {
+  if (int3 === 4 && int5 === 7) return { name: "major", suffix: "", valid: true };
+  if (int3 === 3 && int5 === 7) return { name: "minor", suffix: "m", valid: true };
+  if (int3 === 3 && int5 === 6) return { name: "diminished", suffix: "dim", valid: true };
+  if (int3 === 4 && int5 === 8) return { name: "augmented", suffix: "aug", valid: true };
+  return { name: "unknown", suffix: "?", valid: false };
+}
+
+function seventhQuality(triadQual, int7) {
+  if (triadQual.name === "major") {
+    if (int7 === 11) return { label: "maj7", valid: true };
+    if (int7 === 10) return { label: "7", valid: true };
+  }
+  if (triadQual.name === "minor") {
+    if (int7 === 10) return { label: "m7", valid: true };
+    if (int7 === 11) return { label: "m(maj7)", valid: true };
+  }
+  if (triadQual.name === "diminished") {
+    if (int7 === 10) return { label: "m7b5", valid: true };
+    if (int7 === 9) return { label: "dim7", valid: true };
+  }
+  if (triadQual.name === "augmented") {
+    if (int7 === 10) return { label: "7#5", valid: true };
+    if (int7 === 11) return { label: "maj7#5", valid: true };
+  }
+  return { label: "?7", valid: false };
+}
+
+function ninthQuality(seventhQual, int9) {
+  const hasMajorNine = int9 === 2 || int9 === 14;
+  if (!seventhQual.valid) return { label: `${seventhQual.label || "?7"}9`, valid: false };
+
+  switch (seventhQual.label) {
+    case "maj7": return { label: hasMajorNine ? "maj9" : "maj9?", valid: hasMajorNine };
+    case "7": return { label: hasMajorNine ? "9" : "9?", valid: hasMajorNine };
+    case "m7": return { label: hasMajorNine ? "m9" : "m9?", valid: hasMajorNine };
+    case "m(maj7)": return { label: hasMajorNine ? "m(maj9)" : "m(maj9?)", valid: hasMajorNine };
+    case "m7b5": return { label: hasMajorNine ? "m9b5" : "m9b5?", valid: hasMajorNine };
+    case "dim7": return { label: hasMajorNine ? "dim9" : "dim9?", valid: hasMajorNine };
+    case "7#5": return { label: hasMajorNine ? "9#5" : "9#5?", valid: hasMajorNine };
+    case "maj7#5": return { label: hasMajorNine ? "maj9#5" : "maj9#5?", valid: hasMajorNine };
+    default: return { label: `${seventhQual.label}9`, valid: hasMajorNine };
+  }
+}
+
+function analyzeChords(scale) {
+  const len = scale.length;
+  const categories = {
+    triads: [],
+    sevenths: [],
+    ninths: [],
+    suspended: []
+  };
+  const degrees = [];
 
   for (let i = 0; i < len; i++) {
-    const root  = scaleNotes[i];
-    const third = scaleNotes[(i + 2) % len];
-    const fifth = scaleNotes[(i + 4) % len];
-    const seventh = scaleNotes[(i + 6) % len];
-    const second  = scaleNotes[(i + 1) % len];
-    const fourth  = scaleNotes[(i + 3) % len];
+    const root  = scale[i];
+    const third = scale[(i + 2) % len];
+    const fifth = scale[(i + 4) % len];
+    const seventhNote = scale[(i + 6) % len];
+    const second  = scale[(i + 1) % len];
+    const fourth  = scale[(i + 3) % len];
 
     const int3 = intervalFrom(root, third);
     const int5 = intervalFrom(root, fifth);
-    const int7 = intervalFrom(root, seventh);
+    const int7 = intervalFrom(root, seventhNote);
+    const int2 = intervalFrom(root, second);
+    const int4 = intervalFrom(root, fourth);
 
-    let triadQuality, seventhSymbol, ninthSymbol;
+    const triad = triadQuality(int3, int5);
+    const seventh = seventhQuality(triad, int7);
+    const ninth = ninthQuality(seventh, int2);
 
-    if (int3 === 4 && int5 === 7) {        // major triad
-      triadQuality  = "";
-      seventhSymbol = (int7 === 11) ? "maj7" : "7";
-      ninthSymbol   = (int7 === 11) ? "maj9" : "9";
-    } else if (int3 === 3 && int5 === 7) { // minor triad
-      triadQuality  = "m";
-      seventhSymbol = (int7 === 10) ? "m7" : "m(maj7)";
-      ninthSymbol   = (int7 === 10) ? "m9" : "m(maj9)";
-    } else if (int3 === 3 && int5 === 6) { // diminished
-      triadQuality  = "dim";
-      seventhSymbol = (int7 === 9) ? "m7b5" : "dim7";
-      ninthSymbol   = (int7 === 9) ? "m9b5" : "dim9";
-    } else {
-      triadQuality  = "?";
-      seventhSymbol = "?7";
-      ninthSymbol   = "?9";
-    }
+    const triadName = `${root}${triad.suffix}`;
+    const seventhName = `${root}${seventh.label}`;
+    const ninthName = `${root}${ninth.label}`;
 
-    const triadName   = `${root}${triadQuality}`;
-    const seventhName = `${root}${seventhSymbol}`;
-    const ninthName   = `${root}${ninthSymbol}`;
+    const triadNotes = `${root} - ${third} - ${fifth}`;
+    const seventhNotes = `${root} - ${third} - ${fifth} - ${seventhNote}`;
+    const ninthNotes = `${root} - ${third} - ${fifth} - ${seventhNote} - ${second}`;
 
-    const triadNotes   = `${root} - ${third} - ${fifth}`;
-    const seventhNotes = `${root} - ${third} - ${fifth} - ${seventh}`;
-    const ninthNotes   = `${root} - ${third} - ${fifth} - ${seventh} - ${second}`;
-    const sus2Notes    = `${root} - ${second} - ${fifth}`;
-    const sus4Notes    = `${root} - ${fourth} - ${fifth}`;
+    categories.triads.push({ name: triadName, notes: triadNotes, valid: triad.valid });
+    categories.sevenths.push({ name: seventhName, notes: seventhNotes, valid: seventh.valid });
+    categories.ninths.push({ name: ninthName, notes: ninthNotes, valid: ninth.valid });
+    categories.suspended.push({ name: `${root}sus2`, notes: `${root} - ${second} - ${fifth}`, valid: int2 === 2 });
+    categories.suspended.push({ name: `${root}sus4`, notes: `${root} - ${fourth} - ${fifth}`, valid: int4 === 5 });
 
-    chords.push({
-      degree: i + 1,
-      root,
-      triadName,
-      triadNotes,
-      seventhName,
-      seventhNotes,
-      ninthName,
-      ninthNotes,
-      sus2Name: `${root}sus2`,
-      sus4Name: `${root}sus4`,
-      sus2Notes,
-      sus4Notes
+    degrees.push({
+      triad: { name: triadName, notes: triadNotes },
+      seventh: { name: seventhName, notes: seventhNotes },
+      ninth: { name: ninthName, notes: ninthNotes }
     });
   }
 
-  return chords;
+  return { categories, degrees };
 }
 
-// -------------------- UI HELPERS ----------------------------
+// -------------------- STATE ------------------------
 
-function populateKeyAndModeDropdowns() {
-  const keySelect  = document.getElementById("key");
-  const modeSelect = document.getElementById("mode");
+let currentKeyIndex = 0;
+let currentModeIndex = 0;
+let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspended: [] }, degrees: [] };
 
-  // clear any existing options
-  keySelect.innerHTML = "";
-  modeSelect.innerHTML = "";
+const keyLabel = (idx) => KEY_OPTIONS[wrap(idx, KEY_OPTIONS.length)].label;
+const keyValue = (idx) => KEY_OPTIONS[wrap(idx, KEY_OPTIONS.length)].value;
 
-  const keyOrder = ["C","C#","Db","D","D#","Eb","E","F","F#","Gb","G","G#","Ab","A","A#","Bb","B"];
+// -------------------- WHEEL LOGIC ------------------------
 
-  keyOrder.forEach(k => {
-    const opt = document.createElement("option");
-    opt.value = k;
-    opt.textContent = k;
-    keySelect.appendChild(opt);
+function createWheel(containerId, trackId, items, onChange) {
+  const container = document.getElementById(containerId);
+  const track = document.getElementById(trackId);
+  container.tabIndex = 0;
+
+  let index = 0;
+  let startY = 0;
+  let dragging = false;
+
+  function renderItems() {
+    track.innerHTML = items.map((item, idx) =>
+      `<button type="button" class="wheel-item" data-idx="${idx}">${item}</button>`
+    ).join("");
+    updateActive();
+    applyTransform(0, true);
+  }
+
+  function offsetForIndex(idx, delta = 0) {
+    return ((WHEEL_VIEW / 2 - 0.5 - idx) * ITEM_STRIDE) + delta;
+  }
+
+  function applyTransform(delta = 0, animate = false) {
+    track.style.transition = animate ? "transform 0.18s ease" : "none";
+    track.style.transform = `translateY(${offsetForIndex(index, delta)}px)`;
+  }
+
+  function updateActive() {
+    const children = track.querySelectorAll(".wheel-item");
+    children.forEach(btn => {
+      btn.classList.toggle("active", Number(btn.dataset.idx) === index);
+    });
+  }
+
+  function setIndex(idx, animate = true, notify = true) {
+    index = wrap(idx, items.length);
+    updateActive();
+    applyTransform(0, animate);
+    if (notify && onChange) onChange(index);
+  }
+
+  function startDrag(y) {
+    startY = y;
+    dragging = true;
+    track.style.transition = "none";
+  }
+
+  function moveDrag(y) {
+    if (!dragging) return;
+    const delta = y - startY;
+    applyTransform(delta, false);
+  }
+
+  function endDrag(y) {
+    if (!dragging) return;
+    dragging = false;
+    const delta = y - startY;
+    const steps = Math.round(delta / ITEM_STRIDE * -1);
+    if (steps !== 0) {
+      setIndex(index + steps, true);
+    } else {
+      applyTransform(0, true);
+    }
+  }
+
+  container.addEventListener("pointerdown", (e) => {
+    startDrag(e.clientY);
+    container.setPointerCapture(e.pointerId);
+  });
+  container.addEventListener("pointermove", (e) => moveDrag(e.clientY));
+  container.addEventListener("pointerup", (e) => {
+    endDrag(e.clientY);
+    container.releasePointerCapture(e.pointerId);
+  });
+  container.addEventListener("pointercancel", () => { dragging = false; applyTransform(0, true); });
+
+  track.addEventListener("click", (e) => {
+    const button = e.target.closest(".wheel-item");
+    if (!button) return;
+    const idx = Number(button.dataset.idx);
+    setIndex(idx, true);
   });
 
-  Object.keys(SCALE_PATTERNS).forEach(m => {
-    const opt = document.createElement("option");
-    opt.value = m;
-    opt.textContent = m;
-    modeSelect.appendChild(opt);
+  container.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setIndex(index - 1, true);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setIndex(index + 1, true);
+    }
   });
 
-  keySelect.value  = "C";
-  modeSelect.value = "Ionian (Major)";
+  renderItems();
+
+  return { setIndex: (idx, animate = true, notify = true) => setIndex(idx, animate, notify), getIndex: () => index };
 }
 
-function renderChordColumns(chords) {
-  const triadsDiv     = document.getElementById("triadsOutput");
-  const seventhsDiv   = document.getElementById("seventhsOutput");
-  const ninthsDiv     = document.getElementById("ninthsOutput");
-  const suspendedDiv  = document.getElementById("suspendedOutput");
+// -------------------- RENDERING ------------------------
 
-  triadsDiv.innerHTML    = "<h2>Triads:</h2>";
-  seventhsDiv.innerHTML  = "<h2>Sevenths:</h2>";
-  ninthsDiv.innerHTML    = "<h2>Ninths:</h2>";
-  suspendedDiv.innerHTML = "<h2>Suspended:</h2>";
-
-  chords.forEach(ch => {
-    triadsDiv.innerHTML   += `${ch.triadName}&nbsp;&nbsp; ${ch.triadNotes}<br>`;
-    seventhsDiv.innerHTML += `${ch.seventhName}&nbsp;&nbsp; ${ch.seventhNotes}<br>`;
-    ninthsDiv.innerHTML   += `${ch.ninthName}&nbsp;&nbsp; ${ch.ninthNotes}<br>`;
-    suspendedDiv.innerHTML +=
-      `${ch.sus2Name}&nbsp;&nbsp; ${ch.sus2Notes}<br>` +
-      `${ch.sus4Name}&nbsp;&nbsp; ${ch.sus4Notes}<br>`;
+function renderScaleStrip(scale) {
+  const tiles = document.getElementById("scaleTiles");
+  tiles.innerHTML = "";
+  scale.forEach((note, idx) => {
+    const tile = document.createElement("div");
+    tile.className = "scale-tile" + (idx === 0 ? " tonic" : "");
+    tile.innerHTML = `<div>${note}</div><small>${idx + 1}</small>`;
+    tiles.appendChild(tile);
   });
 }
 
-function populateChordSelectors(chords) {
+function renderChordLists() {
+  const { triads, sevenths, ninths, suspended } = currentChords.categories;
+  const renderPanel = (elId, items) => {
+    const el = document.getElementById(elId);
+    el.innerHTML = items.map(ch => `
+      <div class="chord-row${ch.valid ? "" : " warning"}">
+        <div class="chord-name">${ch.name}</div>
+        <div class="chord-notes">${ch.notes}</div>
+      </div>
+    `).join("");
+  };
+
+  renderPanel("triadsOutput", triads);
+  renderPanel("seventhsOutput", sevenths);
+  renderPanel("ninthsOutput", ninths);
+  renderPanel("suspendedOutput", suspended);
+}
+
+function populateChordSelectors() {
   const selects = [
     document.getElementById("chord1"),
     document.getElementById("chord2"),
@@ -175,76 +325,148 @@ function populateChordSelectors(chords) {
   ];
 
   selects.forEach(sel => {
-    sel.innerHTML = ""; // clear
+    sel.innerHTML = "";
     const emptyOpt = document.createElement("option");
     emptyOpt.value = "";
     emptyOpt.textContent = "--";
     sel.appendChild(emptyOpt);
 
-    chords.forEach((ch, idx) => {
+    currentChords.degrees.forEach((deg, idx) => {
       const opt = document.createElement("option");
       opt.value = String(idx);
-      opt.textContent = ch.triadName;
+      opt.textContent = deg.triad.name;
       sel.appendChild(opt);
     });
   });
 }
 
-function updateChordResult(selectEl, resultEl, chords) {
+function updateChordResult(selectEl, resultEl) {
   const idx = parseInt(selectEl.value, 10);
   if (isNaN(idx)) {
     resultEl.textContent = "";
     return;
   }
-  const ch = chords[idx];
+  const deg = currentChords.degrees[idx];
   resultEl.innerHTML =
-    `<b>${ch.triadName}</b>: ${ch.triadNotes}<br>` +
-    `<b>${ch.seventhName}</b>: ${ch.seventhNotes}<br>` +
-    `<b>${ch.ninthName}</b>: ${ch.ninthNotes}`;
+    `<b>${deg.triad.name}</b>: ${deg.triad.notes}<br>` +
+    `<b>${deg.seventh.name}</b>: ${deg.seventh.notes}<br>` +
+    `<b>${deg.ninth.name}</b>: ${deg.ninth.notes}`;
 }
 
-// -------------------- MAIN DRAW FUNCTION ----------------------------
+function syncAccordion() {
+  const accordion = document.getElementById("chordAccordion");
+  if (!accordion) return;
+  accordion.addEventListener("click", (e) => {
+    const header = e.target.closest(".accordion-header");
+    if (!header) return;
+    const item = header.parentElement;
+    const wasOpen = item.classList.contains("open");
+    accordion.querySelectorAll(".accordion-item").forEach(el => el.classList.remove("open"));
+    if (!wasOpen) item.classList.add("open");
+  });
+}
 
-let currentChords = [];
+// -------------------- INTERACTION ------------------------
 
-function drawForCurrentSelection() {
-  const key  = document.getElementById("key").value;
-  const mode = document.getElementById("mode").value;
-
-  const scale = buildScale(key, mode);
-  currentChords = analyzeChords(scale);
+function drawFromState() {
+  const keyName = keyValue(currentKeyIndex);
+  const keyDisplay = keyLabel(currentKeyIndex);
+  const modeName = MODE_NAMES[currentModeIndex];
+  const scale = buildScale(keyName, modeName);
 
   document.getElementById("scaleOutput").innerHTML =
-    `<h2>Scale:</h2> ${scale.join(" - ")}`;
+    `<h2>Scale:</h2> ${keyDisplay} ${modeName} - ${scale.join(" - ")}`;
 
-  renderChordColumns(currentChords);
-  populateChordSelectors(currentChords);
+  currentChords = analyzeChords(scale);
+  renderScaleStrip(scale);
+  renderChordLists();
+  populateChordSelectors();
 
-  // clear chord results
   document.getElementById("results1").textContent = "";
   document.getElementById("results2").textContent = "";
   document.getElementById("results3").textContent = "";
 }
 
-// -------------------- INIT & EVENT WIRING ----------------------------
+function shiftMode(delta, modeWheel) {
+  currentModeIndex = wrap(currentModeIndex + delta, MODE_NAMES.length);
+  modeWheel.setIndex(currentModeIndex, true, false);
+  drawFromState();
+}
+
+function shiftKey(delta, keyWheel) {
+  currentKeyIndex = wrap(currentKeyIndex + delta, KEY_OPTIONS.length);
+  keyWheel.setIndex(currentKeyIndex, true, false);
+  drawFromState();
+}
+
+function setupScaleStripDrag(modeWheel, keyWheel) {
+  const strip = document.getElementById("scaleStrip");
+  let startX = 0;
+  let startY = 0;
+  let dragging = false;
+
+  function onStart(e) {
+    const point = e.touches ? e.touches[0] : e;
+    startX = point.clientX;
+    startY = point.clientY;
+    dragging = true;
+  }
+
+  function onMove(e) {
+    if (!dragging) return;
+    const point = e.touches ? e.touches[0] : e;
+    const dx = point.clientX - startX;
+    const dy = point.clientY - startY;
+    const absX = Math.abs(dx);
+    const absY = Math.abs(dy);
+    if (absX < DRAG_THRESHOLD && absY < DRAG_THRESHOLD) return;
+
+    if (absX > absY) {
+      shiftMode(dx > 0 ? 1 : -1, modeWheel);
+    } else {
+      shiftKey(dy < 0 ? 1 : -1, keyWheel);
+    }
+    startX = point.clientX;
+    startY = point.clientY;
+    if (e.cancelable) e.preventDefault();
+  }
+
+  function onEnd() {
+    dragging = false;
+  }
+
+  strip.addEventListener("mousedown", onStart);
+  strip.addEventListener("touchstart", onStart, { passive: true });
+  window.addEventListener("mousemove", onMove, { passive: false });
+  window.addEventListener("touchmove", onMove, { passive: false });
+  window.addEventListener("mouseup", onEnd);
+  window.addEventListener("touchend", onEnd);
+  window.addEventListener("touchcancel", onEnd);
+}
+
+// -------------------- INIT ------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
-  populateKeyAndModeDropdowns();
-  drawForCurrentSelection(); // initial C Ionian display
-
-  const keySelect  = document.getElementById("key");
-  const modeSelect = document.getElementById("mode");
-
-  document.getElementById("submit").addEventListener("click", drawForCurrentSelection);
-  document.getElementById("random").addEventListener("click", () => {
-    const keyOpts  = Array.from(keySelect.options);
-    const modeOpts = Array.from(modeSelect.options);
-    keySelect.value  = keyOpts[Math.floor(Math.random() * keyOpts.length)].value;
-    modeSelect.value = modeOpts[Math.floor(Math.random() * modeOpts.length)].value;
-    drawForCurrentSelection();
+  const keyWheel = createWheel("keyWheel", "keyWheelTrack", KEY_OPTIONS.map(o => o.label), (idx) => {
+    currentKeyIndex = idx;
+    drawFromState();
+  });
+  const modeWheel = createWheel("modeWheel", "modeWheelTrack", MODE_NAMES, (idx) => {
+    currentModeIndex = idx;
+    drawFromState();
   });
 
-  // chord selector behaviour
+  setupScaleStripDrag(modeWheel, keyWheel);
+  syncAccordion();
+
+  document.getElementById("random").addEventListener("click", () => {
+    currentKeyIndex = Math.floor(Math.random() * KEY_OPTIONS.length);
+    currentModeIndex = Math.floor(Math.random() * MODE_NAMES.length);
+    keyWheel.setIndex(currentKeyIndex, true, false);
+    modeWheel.setIndex(currentModeIndex, true, false);
+    drawFromState();
+  });
+
   const chord1 = document.getElementById("chord1");
   const chord2 = document.getElementById("chord2");
   const chord3 = document.getElementById("chord3");
@@ -252,28 +474,31 @@ document.addEventListener("DOMContentLoaded", () => {
   const res2   = document.getElementById("results2");
   const res3   = document.getElementById("results3");
 
-  chord1.addEventListener("change", () => updateChordResult(chord1, res1, currentChords));
-  chord2.addEventListener("change", () => updateChordResult(chord2, res2, currentChords));
-  chord3.addEventListener("change", () => updateChordResult(chord3, res3, currentChords));
+  chord1.addEventListener("change", () => updateChordResult(chord1, res1));
+  chord2.addEventListener("change", () => updateChordResult(chord2, res2));
+  chord3.addEventListener("change", () => updateChordResult(chord3, res3));
 
-  // Match / Clear / Generate controls:
   document.getElementById("clear").addEventListener("click", () => {
     [chord1, chord2, chord3].forEach(sel => sel.value = "");
     [res1, res2, res3].forEach(r => r.textContent = "");
   });
 
   document.getElementById("generate").addEventListener("click", () => {
-    if (!currentChords.length) return;
-    const n = currentChords.length;
+    if (!currentChords.degrees.length) return;
+    const n = currentChords.degrees.length;
     chord1.value = String(Math.floor(Math.random() * n));
     chord2.value = String(Math.floor(Math.random() * n));
     chord3.value = String(Math.floor(Math.random() * n));
-    updateChordResult(chord1, res1, currentChords);
-    updateChordResult(chord2, res2, currentChords);
-    updateChordResult(chord3, res3, currentChords);
+    updateChordResult(chord1, res1);
+    updateChordResult(chord2, res2);
+    updateChordResult(chord3, res3);
   });
 
-  // For now, Match just re-draws based on current key/mode;
-  // you can later extend it to do whatever matching logic you had in mind.
-  document.getElementById("match").addEventListener("click", drawForCurrentSelection);
+  document.getElementById("match").addEventListener("click", () => {
+    drawFromState();
+  });
+
+  keyWheel.setIndex(currentKeyIndex, false, false);
+  modeWheel.setIndex(currentModeIndex, false, false);
+  drawFromState();
 });
