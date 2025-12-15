@@ -443,9 +443,21 @@ function updatePills() {
   const modeIdx = pillPreview.mode ?? currentModeIndex;
   const pref = enharmonicPreferenceByPc[pc] || null;
   const display = computeDisplayScale(pc, modeIdx, pref);
-  document.getElementById("keyPillValue").textContent = display.tonicLabel;
+  const keyValueEl = document.getElementById("keyPillValue");
+  if (isEnharmonicPc(pc)) {
+    const labels = ENHARMONIC_OPTIONS[pc];
+    const isSharp = display.tonicLabel.includes("#");
+    keyValueEl.innerHTML = `
+      <span class="key-dual" role="button" tabindex="0" aria-label="Toggle enharmonic spelling">
+        <span class="key-opt key-opt--sharp ${isSharp ? "is-active" : ""}">${labels.sharp}</span>
+        <span class="key-slash">/</span>
+        <span class="key-opt key-opt--flat ${!isSharp ? "is-active" : ""}">${labels.flat}</span>
+      </span>
+    `;
+  } else {
+    keyValueEl.textContent = display.tonicLabel;
+  }
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
-  updateEnharmonicToggle(display.preferenceUsed, display.tonicLabel, pc);
 }
 
 function updateEnharmonicToggle(activePref, tonicLabel, pcOverride = null) {
@@ -866,20 +878,27 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   document.getElementById("modePill").addEventListener("click", () => modal.open("mode"));
-  const prefSharpBtn = document.getElementById("prefSharp");
-  const prefFlatBtn = document.getElementById("prefFlat");
-
-  const setEnharmonicPreference = (pref) => {
-    if (!isEnharmonicPc(currentKeyPc)) return;
-    enharmonicPreferenceByPc[currentKeyPc] = pref;
-    drawFromState();
-  };
-
-  const stop = (fn) => (e) => { e.stopPropagation(); e.preventDefault(); fn(); };
-  prefSharpBtn.addEventListener("click", stop(() => setEnharmonicPreference("sharp")));
-  prefFlatBtn.addEventListener("click", stop(() => setEnharmonicPreference("flat")));
 
   currentKeyPc = NOTE_TO_INDEX[keyValue(currentKeyIndex)];
+  const handleDualToggle = (e) => {
+    const dual = e.target.closest(".key-dual");
+    if (!dual) return;
+    e.stopPropagation();
+    e.preventDefault();
+    if (!isEnharmonicPc(currentKeyPc)) return;
+    const currentPref = enharmonicPreferenceByPc[currentKeyPc];
+    const nextPref = currentPref === "sharp" ? "flat" : "sharp";
+    enharmonicPreferenceByPc[currentKeyPc] = nextPref;
+    drawFromState();
+  };
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".key-dual")) handleDualToggle(e);
+  });
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.closest(".key-dual")) {
+      handleDualToggle(e);
+    }
+  });
   setupScaleStripDrag();
   syncAccordion();
 
