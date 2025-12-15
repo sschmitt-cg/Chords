@@ -455,6 +455,12 @@ function updateEnharmonicToggle(activePref, tonicLabel, pcOverride = null) {
   if (!isEnharmonicPc(pc)) {
     toggle.classList.remove("visible");
     toggle.setAttribute("aria-hidden", "true");
+    const sharpBtn = document.getElementById("prefSharp");
+    const flatBtn = document.getElementById("prefFlat");
+    if (sharpBtn && flatBtn) {
+      sharpBtn.classList.remove("active");
+      flatBtn.classList.remove("active");
+    }
     return;
   }
   toggle.classList.add("visible");
