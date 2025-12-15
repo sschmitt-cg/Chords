@@ -488,12 +488,27 @@ function computeRomans(pitchClasses) {
 
 // -------------------- STATE UPDATES ------------------------
 
-function drawFromState() {
-  const pref = enharmonicPreferenceByPc[currentKeyPc] || null;
-  const display = computeDisplayScale(currentKeyPc, currentModeIndex, pref);
-  currentKeyIndex = display.keyIdx;
-  currentKeyPc = display.pitchClasses[0];
-  currentScale = { pitchClasses: display.pitchClasses, spelled: display.spelled };
+function drawFromState(options = {}) {
+  const { forcedSpelled, forcedPitchClasses, forcedTonicLabel, skipRespell } = options;
+  let display;
+  if (forcedSpelled && forcedPitchClasses && forcedTonicLabel && skipRespell) {
+    currentScale = { pitchClasses: forcedPitchClasses, spelled: forcedSpelled };
+    currentKeyPc = forcedPitchClasses[0];
+    currentKeyIndex = findKeyIndexForPc(currentKeyPc, forcedTonicLabel);
+    display = {
+      tonicLabel: forcedTonicLabel,
+      spelled: forcedSpelled,
+      pitchClasses: forcedPitchClasses,
+      preferenceUsed: null,
+      keyIdx: currentKeyIndex
+    };
+  } else {
+    const pref = enharmonicPreferenceByPc[currentKeyPc] || null;
+    display = computeDisplayScale(currentKeyPc, currentModeIndex, pref);
+    currentKeyIndex = display.keyIdx;
+    currentKeyPc = display.pitchClasses[0];
+    currentScale = { pitchClasses: display.pitchClasses, spelled: display.spelled };
+  }
   const modeName = MODE_NAMES[currentModeIndex];
 
   document.getElementById("scaleOutput").innerHTML =
@@ -523,9 +538,15 @@ function rotateDegrees(steps) {
   const n = ((steps % len) + len) % len;
   if (n === 0) return;
   const newPitchClasses = [...currentScale.pitchClasses.slice(n), ...currentScale.pitchClasses.slice(0, n)];
+  const rotatedSpelled = rotateArray(currentScale.spelled, n);
   currentModeIndex = wrap(currentModeIndex + n, MODE_NAMES.length);
   currentKeyPc = newPitchClasses[0];
-  drawFromState();
+  drawFromState({
+    forcedSpelled: rotatedSpelled,
+    forcedPitchClasses: newPitchClasses,
+    forcedTonicLabel: rotatedSpelled[0],
+    skipRespell: true
+  });
 }
 
 function transposeSemitone(delta) {
