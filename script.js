@@ -55,7 +55,7 @@ let currentModeIndex = 0;  // mode index in MODE_NAMES
 let currentKeyPc = 0;
 let currentScale = { pitchClasses: [], spelled: [] };
 let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspended: [] }, degrees: [] };
-let pillPreview = { keyPc: null, mode: null };
+let pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
 let dragCooldown = false;
 let tileMetrics = { gap: 6, width: 52, segmentWidth: 400, rowHeight: 88 };
 const MAX_DRAG_STEPS = 12;
@@ -441,9 +441,13 @@ function syncAccordion() {
 function updatePills() {
   const pc = pillPreview.keyPc ?? currentKeyPc;
   const modeIdx = pillPreview.mode ?? currentModeIndex;
-  const pref = enharmonicPreferenceByPc[pc] || null;
-  const display = computeDisplayScale(pc, modeIdx, pref);
-  document.getElementById("keyPillValue").textContent = display.tonicLabel;
+  if (pillPreview.forceNoRespell && pillPreview.tonicLabelOverride) {
+    document.getElementById("keyPillValue").textContent = pillPreview.tonicLabelOverride;
+  } else {
+    const pref = enharmonicPreferenceByPc[pc] || null;
+    const display = computeDisplayScale(pc, modeIdx, pref);
+    document.getElementById("keyPillValue").textContent = display.tonicLabel;
+  }
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
 }
 
@@ -656,11 +660,20 @@ function setupScaleStripDrag() {
   const applyPreview = (dir, steps) => {
     if (dir === "x") {
       const { keyPc, modeIdx } = previewRotateState(steps);
+      const len = currentScale.spelled.length;
+      const n = ((steps % len) + len) % len;
+      const rotatedSpelled = rotateArray(currentScale.spelled, n);
       pillPreview.mode = modeIdx;
       pillPreview.keyPc = keyPc;
+      pillPreview.forceNoRespell = true;
+      pillPreview.spelledOverride = rotatedSpelled;
+      pillPreview.tonicLabelOverride = rotatedSpelled[0];
     } else if (dir === "y") {
       const previewKeyPc = wrap(currentScale.pitchClasses[0] + steps, 12);
       pillPreview.keyPc = previewKeyPc;
+      pillPreview.forceNoRespell = false;
+      pillPreview.spelledOverride = null;
+      pillPreview.tonicLabelOverride = null;
     }
     updatePills();
   };
@@ -670,7 +683,7 @@ function setupScaleStripDrag() {
     if (!notesLayer) {
       action();
       resetTransforms();
-      pillPreview = { keyPc: null, mode: null };
+      pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
       updatePills();
       dragCooldown = true;
       setTimeout(() => { dragCooldown = false; }, 150);
@@ -680,7 +693,7 @@ function setupScaleStripDrag() {
       notesLayer.removeEventListener("transitionend", handle);
       action();
       resetTransforms();
-      pillPreview = { keyPc: null, mode: null };
+      pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
       updatePills();
       dragCooldown = true;
       setTimeout(() => { dragCooldown = false; }, 150);
@@ -780,7 +793,7 @@ function setupScaleStripDrag() {
           notesLayer.removeEventListener("transitionend", resetAfter);
           renderScaleStrip(currentScale.spelled);
           resetTransforms();
-          pillPreview = { keyPc: null, mode: null };
+          pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
           updatePills();
           dragCooldown = true;
           setTimeout(() => { dragCooldown = false; }, 150);
@@ -800,7 +813,7 @@ function setupScaleStripDrag() {
           notesLayer.removeEventListener("transitionend", resetAfter);
           renderScaleStrip(currentScale.spelled);
           resetTransforms();
-          pillPreview = { keyPc: null, mode: null };
+          pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
           updatePills();
           dragCooldown = true;
           setTimeout(() => { dragCooldown = false; }, 150);
