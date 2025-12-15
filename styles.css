@@ -87,6 +87,7 @@ body {
   gap: 10px;
   align-items: stretch;
   min-height: 64px;
+  flex-wrap: nowrap;
 }
 
 .pill {
@@ -119,8 +120,45 @@ body {
 }
 
 #keyPill {
-  flex: 0 0 32%;
+  flex: 0 0 30%;
   min-width: 110px;
+}
+
+#enharmonicToggle {
+  display: none;
+  flex: 0 0 64px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #f7f8ff;
+  border: 1px solid #dfe3fb;
+  border-radius: 12px;
+  padding: 6px;
+}
+
+#enharmonicToggle.visible {
+  display: flex;
+}
+
+.tiny-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #dfe3fb;
+  background: #fff;
+  color: #0f1636;
+  font-weight: 800;
+  cursor: pointer;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.tiny-toggle.active {
+  background: #e7eaff;
+  border-color: var(--accent);
+  color: #1f2655;
 }
 
 #modePill {
