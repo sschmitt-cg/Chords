@@ -857,7 +857,14 @@ function setupScaleStripDrag() {
 
 document.addEventListener("DOMContentLoaded", () => {
   const modal = setupPickerModal();
-  document.getElementById("keyPill").addEventListener("click", () => modal.open("key"));
+  const keyPillEl = document.getElementById("keyPill");
+  keyPillEl.addEventListener("click", () => modal.open("key"));
+  keyPillEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      modal.open("key");
+    }
+  });
   document.getElementById("modePill").addEventListener("click", () => modal.open("mode"));
   const prefSharpBtn = document.getElementById("prefSharp");
   const prefFlatBtn = document.getElementById("prefFlat");

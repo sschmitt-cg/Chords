@@ -141,19 +141,26 @@ body {
 }
 
 .enharmonic-toggle {
-  display: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  background: #f7f8ff;
-  border: 1px solid #dfe3fb;
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 10px;
   padding: 4px 6px;
   height: 32px;
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
 }
 
 .enharmonic-toggle.visible {
-  display: inline-flex;
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+  background: #f7f8ff;
+  border: 1px solid #dfe3fb;
 }
 
 .tiny-toggle {
