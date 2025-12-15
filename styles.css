@@ -137,7 +137,7 @@ body {
 }
 
 .enharmonic-toggle {
-  display: none;
+  display: none !important;
   align-items: center;
   justify-content: center;
   gap: 4px;
@@ -149,7 +149,7 @@ body {
 }
 
 .enharmonic-toggle.visible {
-  display: inline-flex;
+  display: inline-flex !important;
 }
 
 .tiny-toggle {

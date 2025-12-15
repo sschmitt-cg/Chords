@@ -859,8 +859,9 @@ document.addEventListener("DOMContentLoaded", () => {
     drawFromState();
   };
 
-  prefSharpBtn.addEventListener("click", () => setEnharmonicPreference("sharp"));
-  prefFlatBtn.addEventListener("click", () => setEnharmonicPreference("flat"));
+  const stop = (fn) => (e) => { e.stopPropagation(); e.preventDefault(); fn(); };
+  prefSharpBtn.addEventListener("click", stop(() => setEnharmonicPreference("sharp")));
+  prefFlatBtn.addEventListener("click", stop(() => setEnharmonicPreference("flat")));
 
   currentKeyPc = NOTE_TO_INDEX[keyValue(currentKeyIndex)];
   setupScaleStripDrag();
