@@ -870,8 +870,12 @@ function setupScaleStripDrag() {
 document.addEventListener("DOMContentLoaded", () => {
   const modal = setupPickerModal();
   const keyPillEl = document.getElementById("keyPill");
-  keyPillEl.addEventListener("click", () => modal.open("key"));
+  keyPillEl.addEventListener("click", (e) => {
+    if (e.target.closest(".key-dual")) return;
+    modal.open("key");
+  });
   keyPillEl.addEventListener("keydown", (e) => {
+    if (e.target.closest(".key-dual")) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       modal.open("key");
