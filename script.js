@@ -445,17 +445,26 @@ function updatePills() {
   const display = computeDisplayScale(pc, modeIdx, pref);
   document.getElementById("keyPillValue").textContent = display.tonicLabel;
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
+  updateEnharmonicToggle(display.preferenceUsed, display.tonicLabel, pc);
 }
 
-function updateEnharmonicToggle(activePref, tonicLabel) {
+function updateEnharmonicToggle(activePref, tonicLabel, pcOverride = null) {
   const toggle = document.getElementById("enharmonicToggle");
   if (!toggle) return;
-  const pc = currentKeyPc;
+  const pc = pcOverride ?? currentKeyPc;
   if (!isEnharmonicPc(pc)) {
     toggle.classList.remove("visible");
+    toggle.setAttribute("aria-hidden", "true");
+    const sharpBtn = document.getElementById("prefSharp");
+    const flatBtn = document.getElementById("prefFlat");
+    if (sharpBtn && flatBtn) {
+      sharpBtn.classList.remove("active");
+      flatBtn.classList.remove("active");
+    }
     return;
   }
   toggle.classList.add("visible");
+  toggle.removeAttribute("aria-hidden");
   const sharpBtn = document.getElementById("prefSharp");
   const flatBtn = document.getElementById("prefFlat");
   sharpBtn.classList.toggle("active", activePref === "sharp");
@@ -848,7 +857,14 @@ function setupScaleStripDrag() {
 
 document.addEventListener("DOMContentLoaded", () => {
   const modal = setupPickerModal();
-  document.getElementById("keyPill").addEventListener("click", () => modal.open("key"));
+  const keyPillEl = document.getElementById("keyPill");
+  keyPillEl.addEventListener("click", () => modal.open("key"));
+  keyPillEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      modal.open("key");
+    }
+  });
   document.getElementById("modePill").addEventListener("click", () => modal.open("mode"));
   const prefSharpBtn = document.getElementById("prefSharp");
   const prefFlatBtn = document.getElementById("prefFlat");
@@ -859,8 +875,9 @@ document.addEventListener("DOMContentLoaded", () => {
     drawFromState();
   };
 
-  prefSharpBtn.addEventListener("click", () => setEnharmonicPreference("sharp"));
-  prefFlatBtn.addEventListener("click", () => setEnharmonicPreference("flat"));
+  const stop = (fn) => (e) => { e.stopPropagation(); e.preventDefault(); fn(); };
+  prefSharpBtn.addEventListener("click", stop(() => setEnharmonicPreference("sharp")));
+  prefFlatBtn.addEventListener("click", stop(() => setEnharmonicPreference("flat")));
 
   currentKeyPc = NOTE_TO_INDEX[keyValue(currentKeyIndex)];
   setupScaleStripDrag();

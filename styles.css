@@ -121,28 +121,51 @@ body {
 
 #keyPill {
   flex: 0 0 30%;
-  min-width: 110px;
+  min-width: 140px;
+  justify-content: space-between;
 }
 
-#enharmonicToggle {
-  display: none;
-  flex: 0 0 64px;
+.key-pill .pill-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+.key-pill .pill-value {
+  max-width: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.enharmonic-toggle {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  background: #f7f8ff;
-  border: 1px solid #dfe3fb;
-  border-radius: 12px;
-  padding: 6px;
+  gap: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 4px 6px;
+  height: 32px;
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
 }
 
-#enharmonicToggle.visible {
-  display: flex;
+.enharmonic-toggle.visible {
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+  background: #f7f8ff;
+  border: 1px solid #dfe3fb;
 }
 
 .tiny-toggle {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 8px;
   border: 1px solid #dfe3fb;
   background: #fff;

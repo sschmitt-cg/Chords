@@ -17,13 +17,15 @@
         <section id="inputArea" class="panel controls-panel">
             <div class="scale-stack">
                 <div class="pill-row">
-                    <button class="pill" id="keyPill" aria-label="Select key">
+                    <div class="pill key-pill" id="keyPill" role="button" tabindex="0" aria-label="Select key">
                         <span class="pill-label">Key</span>
-                        <span class="pill-value" id="keyPillValue"></span>
-                    </button>
-                    <div class="enharmonic-toggle" id="enharmonicToggle" aria-label="Enharmonic preference">
-                        <button type="button" id="prefSharp" class="tiny-toggle" aria-label="Prefer sharp spelling">♯</button>
-                        <button type="button" id="prefFlat" class="tiny-toggle" aria-label="Prefer flat spelling">♭</button>
+                        <span class="pill-right">
+                          <span class="pill-value" id="keyPillValue"></span>
+                          <span class="enharmonic-toggle" id="enharmonicToggle" aria-label="Enharmonic preference">
+                            <button type="button" id="prefSharp" class="tiny-toggle" aria-label="Prefer sharp spelling">♯</button>
+                            <button type="button" id="prefFlat" class="tiny-toggle" aria-label="Prefer flat spelling">♭</button>
+                          </span>
+                        </span>
                     </div>
                     <button class="pill" id="modePill" aria-label="Select mode">
                         <span class="pill-label">Mode</span>
