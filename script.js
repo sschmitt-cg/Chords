@@ -445,17 +445,20 @@ function updatePills() {
   const display = computeDisplayScale(pc, modeIdx, pref);
   document.getElementById("keyPillValue").textContent = display.tonicLabel;
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
+  updateEnharmonicToggle(display.preferenceUsed, display.tonicLabel, pc);
 }
 
-function updateEnharmonicToggle(activePref, tonicLabel) {
+function updateEnharmonicToggle(activePref, tonicLabel, pcOverride = null) {
   const toggle = document.getElementById("enharmonicToggle");
   if (!toggle) return;
-  const pc = currentKeyPc;
+  const pc = pcOverride ?? currentKeyPc;
   if (!isEnharmonicPc(pc)) {
     toggle.classList.remove("visible");
+    toggle.setAttribute("aria-hidden", "true");
     return;
   }
   toggle.classList.add("visible");
+  toggle.removeAttribute("aria-hidden");
   const sharpBtn = document.getElementById("prefSharp");
   const flatBtn = document.getElementById("prefFlat");
   sharpBtn.classList.toggle("active", activePref === "sharp");

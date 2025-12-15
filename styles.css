@@ -130,10 +130,14 @@ body {
   align-items: center;
   gap: 6px;
   min-width: 0;
+  justify-content: flex-end;
 }
 
 .key-pill .pill-value {
-  max-width: 80px;
+  max-width: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .enharmonic-toggle {
