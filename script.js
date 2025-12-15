@@ -172,6 +172,25 @@ function accidentalScore(spelled) {
   }, 0);
 }
 
+function bestEnharmonicLabel(pc, modeIdx) {
+  if (!isEnharmonicPc(pc)) {
+    const idx = findKeyIndexForPc(pc);
+    return { preferred: null, combinedLabel: keyLabel(idx) };
+  }
+  const { sharp, flat } = ENHARMONIC_OPTIONS[pc];
+  const sharpScale = computeDisplayScale(pc, modeIdx, "sharp");
+  const flatScale = computeDisplayScale(pc, modeIdx, "flat");
+  const sharpScore = accidentalScore(sharpScale.spelled);
+  const flatScore = accidentalScore(flatScale.spelled);
+  let preferred = "flat";
+  if (sharpScore < flatScore) preferred = "sharp";
+  else if (flatScore < sharpScore) preferred = "flat";
+  else preferred = enharmonicPreferenceByPc[pc] || "flat";
+  const first = preferred === "sharp" ? sharp : flat;
+  const second = preferred === "sharp" ? flat : sharp;
+  return { preferred, combinedLabel: `${first}/${second}` };
+}
+
 function computeDisplayScale(pc, modeIdx, forcedPreference = null) {
   const modeName = MODE_NAMES[modeIdx];
   let preferenceUsed = forcedPreference;
@@ -443,9 +462,21 @@ function updatePills() {
   const modeIdx = pillPreview.mode ?? currentModeIndex;
   const pref = enharmonicPreferenceByPc[pc] || null;
   const display = computeDisplayScale(pc, modeIdx, pref);
-  document.getElementById("keyPillValue").textContent = display.tonicLabel;
+  const keyValueEl = document.getElementById("keyPillValue");
+  if (isEnharmonicPc(pc)) {
+    const labels = ENHARMONIC_OPTIONS[pc];
+    const isSharp = display.tonicLabel.includes("#");
+    keyValueEl.innerHTML = `
+      <span class="key-dual" role="button" tabindex="0" aria-label="Toggle enharmonic spelling">
+        <span class="key-opt key-opt--sharp ${isSharp ? "is-active" : ""}">${labels.sharp}</span>
+        <span class="key-slash">/</span>
+        <span class="key-opt key-opt--flat ${!isSharp ? "is-active" : ""}">${labels.flat}</span>
+      </span>
+    `;
+  } else {
+    keyValueEl.textContent = display.tonicLabel;
+  }
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
-  updateEnharmonicToggle(display.preferenceUsed, display.tonicLabel, pc);
 }
 
 function updateEnharmonicToggle(activePref, tonicLabel, pcOverride = null) {
@@ -577,12 +608,25 @@ function setupPickerModal() {
 
   const open = (kind) => {
     activeKind = kind;
-    const items = kind === "key" ? KEY_OPTIONS.map(o => o.label) : MODE_NAMES;
     const currentIdx = kind === "key" ? currentKeyIndex : currentModeIndex;
     title.textContent = kind === "key" ? "Select key" : "Select mode";
-    list.innerHTML = items.map((label, idx) =>
-      `<button type="button" role="option" data-idx="${idx}" class="${idx === currentIdx ? "active" : ""}">${label}</button>`
-    ).join("");
+    if (kind === "key") {
+      const items = KEY_OPTIONS.map((opt, idx) => {
+        const pc = NOTE_TO_INDEX[opt.value];
+        if (isEnharmonicPc(pc)) {
+          const { preferred, combinedLabel } = bestEnharmonicLabel(pc, currentModeIndex);
+          return { label: combinedLabel, idx, pref: preferred };
+        }
+        return { label: opt.label, idx, pref: null };
+      });
+      list.innerHTML = items.map(({ label, idx, pref }) =>
+        `<button type="button" role="option" data-idx="${idx}" data-pref="${pref ?? ""}" class="${idx === currentIdx ? "active" : ""}">${label}</button>`
+      ).join("");
+    } else {
+      list.innerHTML = MODE_NAMES.map((label, idx) =>
+        `<button type="button" role="option" data-idx="${idx}" class="${idx === currentModeIndex ? "active" : ""}">${label}</button>`
+      ).join("");
+    }
     modal.classList.remove("hidden");
     list.focus();
   };
@@ -595,10 +639,15 @@ function setupPickerModal() {
     if (activeKind === "key") {
       currentKeyIndex = idx;
       currentKeyPc = NOTE_TO_INDEX[keyValue(idx)];
+      const pref = btn.dataset.pref;
+      if (pref) {
+        const pc = currentKeyPc;
+        if (isEnharmonicPc(pc)) enharmonicPreferenceByPc[pc] = pref;
+      }
     } else if (activeKind === "mode") {
       currentModeIndex = idx;
     }
-    pillPreview = { keyPc: null, mode: null };
+    pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
     drawFromState();
     close();
   });
@@ -858,28 +907,39 @@ function setupScaleStripDrag() {
 document.addEventListener("DOMContentLoaded", () => {
   const modal = setupPickerModal();
   const keyPillEl = document.getElementById("keyPill");
-  keyPillEl.addEventListener("click", () => modal.open("key"));
+  keyPillEl.addEventListener("click", (e) => {
+    if (e.target.closest(".key-dual")) return;
+    modal.open("key");
+  });
   keyPillEl.addEventListener("keydown", (e) => {
+    if (e.target.closest(".key-dual")) return;
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       modal.open("key");
     }
   });
   document.getElementById("modePill").addEventListener("click", () => modal.open("mode"));
-  const prefSharpBtn = document.getElementById("prefSharp");
-  const prefFlatBtn = document.getElementById("prefFlat");
-
-  const setEnharmonicPreference = (pref) => {
-    if (!isEnharmonicPc(currentKeyPc)) return;
-    enharmonicPreferenceByPc[currentKeyPc] = pref;
-    drawFromState();
-  };
-
-  const stop = (fn) => (e) => { e.stopPropagation(); e.preventDefault(); fn(); };
-  prefSharpBtn.addEventListener("click", stop(() => setEnharmonicPreference("sharp")));
-  prefFlatBtn.addEventListener("click", stop(() => setEnharmonicPreference("flat")));
 
   currentKeyPc = NOTE_TO_INDEX[keyValue(currentKeyIndex)];
+  const handleDualToggle = (e) => {
+    const dual = e.target.closest(".key-dual");
+    if (!dual) return;
+    e.stopPropagation();
+    e.preventDefault();
+    if (!isEnharmonicPc(currentKeyPc)) return;
+    const currentPref = enharmonicPreferenceByPc[currentKeyPc];
+    const nextPref = currentPref === "sharp" ? "flat" : "sharp";
+    enharmonicPreferenceByPc[currentKeyPc] = nextPref;
+    drawFromState();
+  };
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".key-dual")) handleDualToggle(e);
+  });
+  document.addEventListener("keydown", (e) => {
+    if ((e.key === "Enter" || e.key === " ") && e.target.closest(".key-dual")) {
+      handleDualToggle(e);
+    }
+  });
   setupScaleStripDrag();
   syncAccordion();
 
