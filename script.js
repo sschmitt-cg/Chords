@@ -172,6 +172,25 @@ function accidentalScore(spelled) {
   }, 0);
 }
 
+function bestEnharmonicLabel(pc, modeIdx) {
+  if (!isEnharmonicPc(pc)) {
+    const idx = findKeyIndexForPc(pc);
+    return { preferred: null, combinedLabel: keyLabel(idx) };
+  }
+  const { sharp, flat } = ENHARMONIC_OPTIONS[pc];
+  const sharpScale = computeDisplayScale(pc, modeIdx, "sharp");
+  const flatScale = computeDisplayScale(pc, modeIdx, "flat");
+  const sharpScore = accidentalScore(sharpScale.spelled);
+  const flatScore = accidentalScore(flatScale.spelled);
+  let preferred = "flat";
+  if (sharpScore < flatScore) preferred = "sharp";
+  else if (flatScore < sharpScore) preferred = "flat";
+  else preferred = enharmonicPreferenceByPc[pc] || "flat";
+  const first = preferred === "sharp" ? sharp : flat;
+  const second = preferred === "sharp" ? flat : sharp;
+  return { preferred, combinedLabel: `${first}/${second}` };
+}
+
 function computeDisplayScale(pc, modeIdx, forcedPreference = null) {
   const modeName = MODE_NAMES[modeIdx];
   let preferenceUsed = forcedPreference;
@@ -589,12 +608,25 @@ function setupPickerModal() {
 
   const open = (kind) => {
     activeKind = kind;
-    const items = kind === "key" ? KEY_OPTIONS.map(o => o.label) : MODE_NAMES;
     const currentIdx = kind === "key" ? currentKeyIndex : currentModeIndex;
     title.textContent = kind === "key" ? "Select key" : "Select mode";
-    list.innerHTML = items.map((label, idx) =>
-      `<button type="button" role="option" data-idx="${idx}" class="${idx === currentIdx ? "active" : ""}">${label}</button>`
-    ).join("");
+    if (kind === "key") {
+      const items = KEY_OPTIONS.map((opt, idx) => {
+        const pc = NOTE_TO_INDEX[opt.value];
+        if (isEnharmonicPc(pc)) {
+          const { preferred, combinedLabel } = bestEnharmonicLabel(pc, currentModeIndex);
+          return { label: combinedLabel, idx, pref: preferred };
+        }
+        return { label: opt.label, idx, pref: null };
+      });
+      list.innerHTML = items.map(({ label, idx, pref }) =>
+        `<button type="button" role="option" data-idx="${idx}" data-pref="${pref ?? ""}" class="${idx === currentIdx ? "active" : ""}">${label}</button>`
+      ).join("");
+    } else {
+      list.innerHTML = MODE_NAMES.map((label, idx) =>
+        `<button type="button" role="option" data-idx="${idx}" class="${idx === currentModeIndex ? "active" : ""}">${label}</button>`
+      ).join("");
+    }
     modal.classList.remove("hidden");
     list.focus();
   };
@@ -607,10 +639,15 @@ function setupPickerModal() {
     if (activeKind === "key") {
       currentKeyIndex = idx;
       currentKeyPc = NOTE_TO_INDEX[keyValue(idx)];
+      const pref = btn.dataset.pref;
+      if (pref) {
+        const pc = currentKeyPc;
+        if (isEnharmonicPc(pc)) enharmonicPreferenceByPc[pc] = pref;
+      }
     } else if (activeKind === "mode") {
       currentModeIndex = idx;
     }
-    pillPreview = { keyPc: null, mode: null };
+    pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
     drawFromState();
     close();
   });
