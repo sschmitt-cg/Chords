@@ -52,12 +52,21 @@ const LETTERS = ["C","D","E","F","G","A","B"];
 
 let currentKeyIndex = 0;   // tonic pitch class index in KEY_OPTIONS
 let currentModeIndex = 0;  // mode index in MODE_NAMES
+let currentKeyPc = 0;
 let currentScale = { pitchClasses: [], spelled: [] };
 let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspended: [] }, degrees: [] };
-let pillPreview = { key: null, mode: null };
+let pillPreview = { keyPc: null, mode: null };
 let dragCooldown = false;
 let tileMetrics = { gap: 6, width: 52, segmentWidth: 400, rowHeight: 88 };
 const MAX_DRAG_STEPS = 12;
+const enharmonicPreferenceByPc = {};
+const ENHARMONIC_OPTIONS = {
+  1: { sharp: "C#", flat: "Db" },
+  3: { sharp: "D#", flat: "Eb" },
+  6: { sharp: "F#", flat: "Gb" },
+  8: { sharp: "G#", flat: "Ab" },
+  10: { sharp: "A#", flat: "Bb" }
+};
 
 // -------------------- HELPERS ------------------------
 
@@ -128,13 +137,6 @@ function buildScaleData(keyName, modeName) {
   return { pitchClasses, spelled };
 }
 
-function buildScaleFromPc(pc, modeIdx, biasName) {
-  const keyIdx = findKeyIndexForPc(pc, biasName);
-  const keyName = keyValue(keyIdx);
-  const modeName = MODE_NAMES[modeIdx];
-  return buildScaleData(keyName, modeName);
-}
-
 function findKeyIndexForPc(pc, biasName = "") {
   const bias = biasFromName(biasName);
   const matches = KEY_OPTIONS
@@ -155,6 +157,52 @@ function findKeyIndexForPc(pc, biasName = "") {
 
 const keyLabel = (idx) => KEY_OPTIONS[wrap(idx, KEY_OPTIONS.length)].label;
 const keyValue = (idx) => KEY_OPTIONS[wrap(idx, KEY_OPTIONS.length)].value;
+const keyIndexFromPc = (pc, prefLabel = "") => findKeyIndexForPc(pc, prefLabel);
+
+function isEnharmonicPc(pc) {
+  return Boolean(ENHARMONIC_OPTIONS[wrap(pc, 12)]);
+}
+
+function accidentalScore(spelled) {
+  return spelled.reduce((sum, note) => {
+    const acc = (note.match(/[#b]/g) || []).length;
+    if (acc === 0) return sum;
+    if (acc === 1) return sum + 1;
+    return sum + 3;
+  }, 0);
+}
+
+function computeDisplayScale(pc, modeIdx, forcedPreference = null) {
+  const modeName = MODE_NAMES[modeIdx];
+  let preferenceUsed = forcedPreference;
+  let tonicLabel;
+  if (isEnharmonicPc(pc)) {
+    const { sharp, flat } = ENHARMONIC_OPTIONS[pc];
+    if (!preferenceUsed) {
+      const sharpScale = buildScaleData(sharp, modeName);
+      const flatScale = buildScaleData(flat, modeName);
+      const sharpScore = accidentalScore(sharpScale.spelled);
+      const flatScore = accidentalScore(flatScale.spelled);
+      if (sharpScore < flatScore) preferenceUsed = "sharp";
+      else if (flatScore < sharpScore) preferenceUsed = "flat";
+      else preferenceUsed = enharmonicPreferenceByPc[pc] || "flat";
+    }
+    tonicLabel = preferenceUsed === "sharp" ? sharp : flat;
+  } else {
+    preferenceUsed = null;
+    const idx = findKeyIndexForPc(pc);
+    tonicLabel = keyValue(idx);
+  }
+  const scaleData = buildScaleData(tonicLabel, modeName);
+  const keyIdx = findKeyIndexForPc(pc, tonicLabel);
+  return {
+    tonicLabel,
+    pitchClasses: scaleData.pitchClasses,
+    spelled: scaleData.spelled,
+    keyIdx,
+    preferenceUsed
+  };
+}
 
 // -------------------- CHORD ANALYSIS ------------------------
 
@@ -308,7 +356,8 @@ function renderVerticalRows() {
     let notes = currentScale.spelled;
     if (i !== 0) {
       const shiftedPc = wrap(currentScale.pitchClasses[0] + i, 12);
-      notes = buildScaleFromPc(shiftedPc, currentModeIndex, currentScale.spelled[0]).spelled;
+      const pref = enharmonicPreferenceByPc[shiftedPc] || null;
+      notes = computeDisplayScale(shiftedPc, currentModeIndex, pref).spelled;
     }
     rows.push({ shift: i, notes });
   }
@@ -390,10 +439,27 @@ function syncAccordion() {
 }
 
 function updatePills() {
-  const keyIdx = pillPreview.key ?? currentKeyIndex;
+  const pc = pillPreview.keyPc ?? currentKeyPc;
   const modeIdx = pillPreview.mode ?? currentModeIndex;
-  document.getElementById("keyPillValue").textContent = keyLabel(keyIdx);
+  const pref = enharmonicPreferenceByPc[pc] || null;
+  const display = computeDisplayScale(pc, modeIdx, pref);
+  document.getElementById("keyPillValue").textContent = display.tonicLabel;
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
+}
+
+function updateEnharmonicToggle(activePref, tonicLabel) {
+  const toggle = document.getElementById("enharmonicToggle");
+  if (!toggle) return;
+  const pc = currentKeyPc;
+  if (!isEnharmonicPc(pc)) {
+    toggle.classList.remove("visible");
+    return;
+  }
+  toggle.classList.add("visible");
+  const sharpBtn = document.getElementById("prefSharp");
+  const flatBtn = document.getElementById("prefFlat");
+  sharpBtn.classList.toggle("active", activePref === "sharp");
+  flatBtn.classList.toggle("active", activePref === "flat");
 }
 
 // -------------------- ROMAN NUMERALS ------------------------
@@ -419,19 +485,21 @@ function computeRomans(pitchClasses) {
 // -------------------- STATE UPDATES ------------------------
 
 function drawFromState() {
-  const keyName = keyValue(currentKeyIndex);
-  const keyDisplay = keyLabel(currentKeyIndex);
+  const pref = enharmonicPreferenceByPc[currentKeyPc] || null;
+  const display = computeDisplayScale(currentKeyPc, currentModeIndex, pref);
+  currentKeyIndex = display.keyIdx;
+  currentKeyPc = display.pitchClasses[0];
+  currentScale = { pitchClasses: display.pitchClasses, spelled: display.spelled };
   const modeName = MODE_NAMES[currentModeIndex];
-  const { pitchClasses, spelled } = buildScaleData(keyName, modeName);
-  currentScale = { pitchClasses, spelled };
 
   document.getElementById("scaleOutput").innerHTML =
-    `<h2>Scale:</h2> ${keyDisplay} ${modeName} - ${spelled.join(" - ")}`;
+    `<h2>Scale:</h2> ${display.tonicLabel} ${modeName} - ${display.spelled.join(" - ")}`;
 
-  currentChords = analyzeChords(spelled, pitchClasses);
-  renderScaleStrip(spelled);
+  currentChords = analyzeChords(display.spelled, display.pitchClasses);
+  renderScaleStrip(display.spelled);
   setTileMetrics();
   updatePills();
+  updateEnharmonicToggle(display.preferenceUsed, display.tonicLabel);
   renderChordLists();
   populateChordSelectors();
 
@@ -451,9 +519,8 @@ function rotateDegrees(steps) {
   const n = ((steps % len) + len) % len;
   if (n === 0) return;
   const newPitchClasses = [...currentScale.pitchClasses.slice(n), ...currentScale.pitchClasses.slice(0, n)];
-  const newTonicPc = newPitchClasses[0];
   currentModeIndex = wrap(currentModeIndex + n, MODE_NAMES.length);
-  currentKeyIndex = findKeyIndexForPc(newTonicPc, currentScale.spelled[0]);
+  currentKeyPc = newPitchClasses[0];
   drawFromState();
 }
 
@@ -465,7 +532,7 @@ function transposeSemitone(delta) {
 function transposeSemitoneBy(delta) {
   if (!currentScale.pitchClasses.length || delta === 0) return;
   const newPc = wrap(currentScale.pitchClasses[0] + delta, 12);
-  currentKeyIndex = findKeyIndexForPc(newPc, currentScale.spelled[0]);
+  currentKeyPc = newPc;
   drawFromState();
 }
 
@@ -503,10 +570,11 @@ function setupPickerModal() {
     if (Number.isNaN(idx)) return;
     if (activeKind === "key") {
       currentKeyIndex = idx;
+      currentKeyPc = NOTE_TO_INDEX[keyValue(idx)];
     } else if (activeKind === "mode") {
       currentModeIndex = idx;
     }
-    pillPreview = { key: null, mode: null };
+    pillPreview = { keyPc: null, mode: null };
     drawFromState();
     close();
   });
@@ -551,13 +619,12 @@ function calcTileStep(axis) {
 
 function previewRotateState(steps) {
   const len = currentScale.pitchClasses.length;
-  if (!len) return { keyIdx: currentKeyIndex, modeIdx: currentModeIndex };
+  if (!len) return { keyPc: currentKeyPc, modeIdx: currentModeIndex };
   const n = ((steps % len) + len) % len;
   const rotated = [...currentScale.pitchClasses.slice(n), ...currentScale.pitchClasses.slice(0, n)];
   const tonicPc = rotated[0];
-  const keyIdx = findKeyIndexForPc(tonicPc, currentScale.spelled[0]);
   const modeIdx = wrap(currentModeIndex + n, MODE_NAMES.length);
-  return { keyIdx, modeIdx };
+  return { keyPc: tonicPc, modeIdx };
 }
 
 function setupScaleStripDrag() {
@@ -588,13 +655,12 @@ function setupScaleStripDrag() {
 
   const applyPreview = (dir, steps) => {
     if (dir === "x") {
-      const { keyIdx, modeIdx } = previewRotateState(steps);
+      const { keyPc, modeIdx } = previewRotateState(steps);
       pillPreview.mode = modeIdx;
-      pillPreview.key = keyIdx;
+      pillPreview.keyPc = keyPc;
     } else if (dir === "y") {
       const previewKeyPc = wrap(currentScale.pitchClasses[0] + steps, 12);
-      const keyIdx = findKeyIndexForPc(previewKeyPc, currentScale.spelled[0]);
-      pillPreview.key = keyIdx;
+      pillPreview.keyPc = previewKeyPc;
     }
     updatePills();
   };
@@ -604,7 +670,7 @@ function setupScaleStripDrag() {
     if (!notesLayer) {
       action();
       resetTransforms();
-      pillPreview = { key: null, mode: null };
+      pillPreview = { keyPc: null, mode: null };
       updatePills();
       dragCooldown = true;
       setTimeout(() => { dragCooldown = false; }, 150);
@@ -614,7 +680,7 @@ function setupScaleStripDrag() {
       notesLayer.removeEventListener("transitionend", handle);
       action();
       resetTransforms();
-      pillPreview = { key: null, mode: null };
+      pillPreview = { keyPc: null, mode: null };
       updatePills();
       dragCooldown = true;
       setTimeout(() => { dragCooldown = false; }, 150);
@@ -714,7 +780,7 @@ function setupScaleStripDrag() {
           notesLayer.removeEventListener("transitionend", resetAfter);
           renderScaleStrip(currentScale.spelled);
           resetTransforms();
-          pillPreview = { key: null, mode: null };
+          pillPreview = { keyPc: null, mode: null };
           updatePills();
           dragCooldown = true;
           setTimeout(() => { dragCooldown = false; }, 150);
@@ -734,7 +800,7 @@ function setupScaleStripDrag() {
           notesLayer.removeEventListener("transitionend", resetAfter);
           renderScaleStrip(currentScale.spelled);
           resetTransforms();
-          pillPreview = { key: null, mode: null };
+          pillPreview = { keyPc: null, mode: null };
           updatePills();
           dragCooldown = true;
           setTimeout(() => { dragCooldown = false; }, 150);
@@ -763,12 +829,25 @@ document.addEventListener("DOMContentLoaded", () => {
   const modal = setupPickerModal();
   document.getElementById("keyPill").addEventListener("click", () => modal.open("key"));
   document.getElementById("modePill").addEventListener("click", () => modal.open("mode"));
+  const prefSharpBtn = document.getElementById("prefSharp");
+  const prefFlatBtn = document.getElementById("prefFlat");
 
+  const setEnharmonicPreference = (pref) => {
+    if (!isEnharmonicPc(currentKeyPc)) return;
+    enharmonicPreferenceByPc[currentKeyPc] = pref;
+    drawFromState();
+  };
+
+  prefSharpBtn.addEventListener("click", () => setEnharmonicPreference("sharp"));
+  prefFlatBtn.addEventListener("click", () => setEnharmonicPreference("flat"));
+
+  currentKeyPc = NOTE_TO_INDEX[keyValue(currentKeyIndex)];
   setupScaleStripDrag();
   syncAccordion();
 
   document.getElementById("random").addEventListener("click", () => {
     currentKeyIndex = Math.floor(Math.random() * KEY_OPTIONS.length);
+    currentKeyPc = NOTE_TO_INDEX[keyValue(currentKeyIndex)];
     currentModeIndex = Math.floor(Math.random() * MODE_NAMES.length);
     drawFromState();
   });
