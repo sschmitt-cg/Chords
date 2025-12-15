@@ -441,13 +441,9 @@ function syncAccordion() {
 function updatePills() {
   const pc = pillPreview.keyPc ?? currentKeyPc;
   const modeIdx = pillPreview.mode ?? currentModeIndex;
-  if (pillPreview.forceNoRespell && pillPreview.tonicLabelOverride) {
-    document.getElementById("keyPillValue").textContent = pillPreview.tonicLabelOverride;
-  } else {
-    const pref = enharmonicPreferenceByPc[pc] || null;
-    const display = computeDisplayScale(pc, modeIdx, pref);
-    document.getElementById("keyPillValue").textContent = display.tonicLabel;
-  }
+  const pref = enharmonicPreferenceByPc[pc] || null;
+  const display = computeDisplayScale(pc, modeIdx, pref);
+  document.getElementById("keyPillValue").textContent = display.tonicLabel;
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
 }
 
@@ -538,15 +534,9 @@ function rotateDegrees(steps) {
   const n = ((steps % len) + len) % len;
   if (n === 0) return;
   const newPitchClasses = [...currentScale.pitchClasses.slice(n), ...currentScale.pitchClasses.slice(0, n)];
-  const rotatedSpelled = rotateArray(currentScale.spelled, n);
   currentModeIndex = wrap(currentModeIndex + n, MODE_NAMES.length);
   currentKeyPc = newPitchClasses[0];
-  drawFromState({
-    forcedSpelled: rotatedSpelled,
-    forcedPitchClasses: newPitchClasses,
-    forcedTonicLabel: rotatedSpelled[0],
-    skipRespell: true
-  });
+  drawFromState();
 }
 
 function transposeSemitone(delta) {
@@ -681,14 +671,11 @@ function setupScaleStripDrag() {
   const applyPreview = (dir, steps) => {
     if (dir === "x") {
       const { keyPc, modeIdx } = previewRotateState(steps);
-      const len = currentScale.spelled.length;
-      const n = ((steps % len) + len) % len;
-      const rotatedSpelled = rotateArray(currentScale.spelled, n);
       pillPreview.mode = modeIdx;
       pillPreview.keyPc = keyPc;
-      pillPreview.forceNoRespell = true;
-      pillPreview.spelledOverride = rotatedSpelled;
-      pillPreview.tonicLabelOverride = rotatedSpelled[0];
+      pillPreview.forceNoRespell = false;
+      pillPreview.spelledOverride = null;
+      pillPreview.tonicLabelOverride = null;
     } else if (dir === "y") {
       const previewKeyPc = wrap(currentScale.pitchClasses[0] + steps, 12);
       pillPreview.keyPc = previewKeyPc;
