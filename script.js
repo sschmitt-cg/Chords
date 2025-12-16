@@ -442,6 +442,8 @@ function renderChordLists() {
       const itemEl = document.querySelector(`.accordion-item[data-target="${panel}"]`);
       if (!panelEl || !itemEl) return;
       if (idx === 0) {
+        const header = itemEl.querySelector(".accordion-header span");
+        if (header) header.textContent = `Chords rooted on ${selectedRootNote}`;
         panelEl.innerHTML = flatList.map(ch => `
           <div class="chord-row${ch.valid ? "" : " warning"}">
             <div class="chord-name">${ch.name}</div>
@@ -451,6 +453,8 @@ function renderChordLists() {
         itemEl.style.display = "";
         itemEl.classList.add("open");
       } else {
+        const header = itemEl.querySelector(".accordion-header span");
+        if (header) header.textContent = "";
         panelEl.innerHTML = "";
         itemEl.style.display = "none";
         itemEl.classList.remove("open");
