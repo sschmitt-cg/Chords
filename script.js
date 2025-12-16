@@ -406,34 +406,71 @@ function renderVerticalRows() {
 }
 
 function renderChordLists() {
+  const allBtn = document.getElementById("allChordsBtn");
+  const headingDesc = document.querySelector("#availableChordsContainer .card-heading p");
   const accordion = document.getElementById("chordAccordion");
-  if (accordion) accordion.querySelectorAll(".accordion-item").forEach(el => el.classList.remove("open"));
   const data = filteredChords || currentChords;
+  const isFiltered = Boolean(selectedRootNote);
+  if (allBtn) allBtn.style.display = isFiltered ? "" : "none";
+  if (headingDesc) headingDesc.textContent = isFiltered
+    ? `Chords rooted on ${selectedRootNote}`
+    : "Tap a category to view the shapes for this scale.";
+
   const categories = [
     { key: "triads", panel: "triadsOutput" },
     { key: "sevenths", panel: "seventhsOutput" },
     { key: "ninths", panel: "ninthsOutput" },
     { key: "suspended", panel: "suspendedOutput" }
   ];
-  categories.forEach(({ key, panel }) => {
-    const items = data.categories[key] || [];
-    const panelEl = document.getElementById(panel);
-    const itemEl = document.querySelector(`.accordion-item[data-target="${panel}"]`);
-    if (!panelEl || !itemEl) return;
-    if (!items.length) {
-      panelEl.innerHTML = "";
-      itemEl.style.display = "none";
-      itemEl.classList.remove("open");
-      return;
-    }
-    itemEl.style.display = "";
-    panelEl.innerHTML = items.map(ch => `
-      <div class="chord-row${ch.valid ? "" : " warning"}">
-        <div class="chord-name">${ch.name}</div>
-        <div class="chord-notes">${ch.notes}</div>
-      </div>
-    `).join("");
-  });
+
+  if (isFiltered) {
+    const flatList = Object.values(currentChords.categories)
+      .flat()
+      .filter(ch => {
+        const m = ch.name.match(/^([A-G][b#]?)/);
+        return m && m[1] === selectedRootNote;
+      });
+    const first = categories[0];
+    categories.forEach(({ panel }, idx) => {
+      const panelEl = document.getElementById(panel);
+      const itemEl = document.querySelector(`.accordion-item[data-target="${panel}"]`);
+      if (!panelEl || !itemEl) return;
+      if (idx === 0) {
+        panelEl.innerHTML = flatList.map(ch => `
+          <div class="chord-row${ch.valid ? "" : " warning"}">
+            <div class="chord-name">${ch.name}</div>
+            <div class="chord-notes">${ch.notes}</div>
+          </div>
+        `).join("");
+        itemEl.style.display = "";
+        itemEl.classList.add("open");
+      } else {
+        panelEl.innerHTML = "";
+        itemEl.style.display = "none";
+        itemEl.classList.remove("open");
+      }
+    });
+  } else {
+    categories.forEach(({ key, panel }) => {
+      const items = data.categories[key] || [];
+      const panelEl = document.getElementById(panel);
+      const itemEl = document.querySelector(`.accordion-item[data-target="${panel}"]`);
+      if (!panelEl || !itemEl) return;
+      if (!items.length) {
+        panelEl.innerHTML = "";
+        itemEl.style.display = "none";
+        itemEl.classList.remove("open");
+        return;
+      }
+      itemEl.style.display = "";
+      panelEl.innerHTML = items.map(ch => `
+        <div class="chord-row${ch.valid ? "" : " warning"}">
+          <div class="chord-name">${ch.name}</div>
+          <div class="chord-notes">${ch.notes}</div>
+        </div>
+      `).join("");
+    });
+  }
 }
 
 function clearRootFilter() {
