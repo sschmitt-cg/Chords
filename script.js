@@ -415,12 +415,10 @@ function renderChordLists() {
   const data = filteredChords || currentChords;
   const isFiltered = Boolean(selectedRootNote);
   if (allBtn) {
-    allBtn.style.display = "";
+    allBtn.style.display = isFiltered ? "" : "none";
     allBtn.disabled = !isFiltered;
   }
-  if (headingDesc) headingDesc.textContent = isFiltered
-    ? `Chords rooted on ${selectedRootNote}`
-    : "Tap a category to view the shapes for this scale.";
+  if (headingDesc) headingDesc.textContent = "Tap a category to view the shapes for this scale.";
 
   const categories = [
     { key: "triads", panel: "triadsOutput" },
@@ -473,6 +471,12 @@ function renderChordLists() {
         return;
       }
       itemEl.style.display = "";
+      const header = itemEl.querySelector(".accordion-header span");
+      if (header) header.textContent = itemEl.dataset.target.includes("triads") ? "Triads"
+        : itemEl.dataset.target.includes("sevenths") ? "7ths"
+        : itemEl.dataset.target.includes("ninths") ? "9ths"
+        : itemEl.dataset.target.includes("suspended") ? "Suspended"
+        : header.textContent;
       panelEl.innerHTML = items.map(ch => `
         <div class="chord-row${ch.valid ? "" : " warning"}">
           <div class="chord-name">${ch.name}</div>
