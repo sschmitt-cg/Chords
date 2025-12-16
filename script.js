@@ -55,6 +55,11 @@ let currentModeIndex = 0;  // mode index in MODE_NAMES
 let currentKeyPc = 0;
 let currentScale = { pitchClasses: [], spelled: [] };
 let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspended: [] }, degrees: [] };
+let filteredChords = null;
+let selectedRootNote = null;
+let stripDragging = false;
+let tapStart = null;
+const TAP_MOVE_THRESHOLD = 10;
 let pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
 let dragCooldown = false;
 let tileMetrics = { gap: 6, width: 52, segmentWidth: 400, rowHeight: 88 };
@@ -323,6 +328,18 @@ function analyzeChords(scaleNames, pitchClasses) {
   return { categories, degrees };
 }
 
+function filterChordsByRoot(chordsObj, rootLabel) {
+  if (!rootLabel) return chordsObj;
+  const filtered = {};
+  Object.entries(chordsObj.categories).forEach(([cat, items]) => {
+    filtered[cat] = items.filter(ch => {
+      const m = ch.name.match(/^([A-G][b#x♯♭]{0,2})/);
+      return m && m[1] === rootLabel;
+    });
+  });
+  return { categories: filtered, degrees: chordsObj.degrees };
+}
+
 // -------------------- RENDERING ------------------------
 
 function renderScaleStrip(scale) {
@@ -333,7 +350,7 @@ function renderScaleStrip(scale) {
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const notes = scale.map((note, idx) =>
-    `<div class="note-label${idx === 0 ? " tonic" : ""}"><div>${note}</div></div>`
+    `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
@@ -358,7 +375,8 @@ function renderHorizontalWithWrap(scale) {
   const extended = [...scale, ...scale, ...scale];
   const notes = extended.map((note, idx) => {
     const isTonic = idx === scale.length;
-    return `<div class="note-label${isTonic ? " tonic" : ""}"><div>${note}</div></div>`;
+    const isSelected = selectedRootNote === note && idx >= scale.length && idx < scale.length * 2;
+    return `<div class="note-label${isTonic ? " tonic" : ""}${isSelected ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`;
   }).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
@@ -384,28 +402,105 @@ function renderVerticalRows() {
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${rowHeight}px;flex:0 0 auto">${row.notes.map((note, idx) =>
-      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}"><div>${note}</div></div>`
+      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer" style="height:${rowHeight * rows.length}px">${rowsHtml}</div>`;
 }
 
 function renderChordLists() {
-  const { triads, sevenths, ninths, suspended } = currentChords.categories;
-  const renderPanel = (elId, items) => {
-    const el = document.getElementById(elId);
-    el.innerHTML = items.map(ch => `
-      <div class="chord-row${ch.valid ? "" : " warning"}">
-        <div class="chord-name">${ch.name}</div>
-        <div class="chord-notes">${ch.notes}</div>
-      </div>
-    `).join("");
-  };
+  const allBtn = document.getElementById("allChordsBtn");
+  const headingDesc = document.querySelector("#availableChordsContainer .card-heading p");
+  const accordion = document.getElementById("chordAccordion");
+  const data = filteredChords || currentChords;
+  const isFiltered = Boolean(selectedRootNote);
+  if (allBtn) {
+    allBtn.style.display = isFiltered ? "" : "none";
+    allBtn.disabled = !isFiltered;
+  }
+  if (headingDesc) headingDesc.textContent = "Tap a category to view the shapes for this scale.";
 
-  renderPanel("triadsOutput", triads);
-  renderPanel("seventhsOutput", sevenths);
-  renderPanel("ninthsOutput", ninths);
-  renderPanel("suspendedOutput", suspended);
+  const categories = [
+    { key: "triads", panel: "triadsOutput" },
+    { key: "sevenths", panel: "seventhsOutput" },
+    { key: "ninths", panel: "ninthsOutput" },
+    { key: "suspended", panel: "suspendedOutput" }
+  ];
+
+  if (isFiltered) {
+    const flatList = Object.values(currentChords.categories)
+      .flat()
+      .filter(ch => {
+        const m = ch.name.match(/^([A-G][b#]?)/);
+        return m && m[1] === selectedRootNote;
+      });
+    const first = categories[0];
+    categories.forEach(({ panel }, idx) => {
+      const panelEl = document.getElementById(panel);
+      const itemEl = document.querySelector(`.accordion-item[data-target="${panel}"]`);
+      if (!panelEl || !itemEl) return;
+      if (idx === 0) {
+        const header = itemEl.querySelector(".accordion-header span");
+        if (header) header.textContent = `Chords rooted on ${selectedRootNote}`;
+        panelEl.innerHTML = flatList.map(ch => `
+          <div class="chord-row${ch.valid ? "" : " warning"}">
+            <div class="chord-name">${ch.name}</div>
+            <div class="chord-notes">${ch.notes}</div>
+          </div>
+        `).join("");
+        itemEl.style.display = "";
+        itemEl.classList.add("open");
+      } else {
+        const header = itemEl.querySelector(".accordion-header span");
+        if (header) header.textContent = "";
+        panelEl.innerHTML = "";
+        itemEl.style.display = "none";
+        itemEl.classList.remove("open");
+      }
+    });
+  } else {
+    categories.forEach(({ key, panel }) => {
+      const items = data.categories[key] || [];
+      const panelEl = document.getElementById(panel);
+      const itemEl = document.querySelector(`.accordion-item[data-target="${panel}"]`);
+      if (!panelEl || !itemEl) return;
+      if (!items.length) {
+        panelEl.innerHTML = "";
+        itemEl.style.display = "none";
+        itemEl.classList.remove("open");
+        return;
+      }
+      itemEl.style.display = "";
+      const header = itemEl.querySelector(".accordion-header span");
+      if (header) header.textContent = itemEl.dataset.target.includes("triads") ? "Triads"
+        : itemEl.dataset.target.includes("sevenths") ? "7ths"
+        : itemEl.dataset.target.includes("ninths") ? "9ths"
+        : itemEl.dataset.target.includes("suspended") ? "Suspended"
+        : header.textContent;
+      panelEl.innerHTML = items.map(ch => `
+        <div class="chord-row${ch.valid ? "" : " warning"}">
+          <div class="chord-name">${ch.name}</div>
+          <div class="chord-notes">${ch.notes}</div>
+        </div>
+      `).join("");
+    });
+  }
+}
+
+function clearRootFilter() {
+  selectedRootNote = null;
+  filteredChords = null;
+  renderScaleStrip(currentScale.spelled);
+  setTileMetrics();
+  renderChordLists();
+}
+
+function handleRootTap(note) {
+  selectedRootNote = note;
+  filteredChords = filterChordsByRoot(currentChords, selectedRootNote);
+  renderScaleStrip(currentScale.spelled);
+  setTileMetrics();
+  renderChordLists();
 }
 
 function populateChordSelectors() {
@@ -447,6 +542,7 @@ function updateChordResult(selectEl, resultEl) {
 function syncAccordion() {
   const accordion = document.getElementById("chordAccordion");
   if (!accordion) return;
+  accordion.querySelectorAll(".accordion-item").forEach(el => el.classList.remove("open"));
   accordion.addEventListener("click", (e) => {
     const header = e.target.closest(".accordion-header");
     if (!header) return;
@@ -477,29 +573,6 @@ function updatePills() {
     keyValueEl.textContent = display.tonicLabel;
   }
   document.getElementById("modePillValue").textContent = MODE_NAMES[modeIdx];
-}
-
-function updateEnharmonicToggle(activePref, tonicLabel, pcOverride = null) {
-  const toggle = document.getElementById("enharmonicToggle");
-  if (!toggle) return;
-  const pc = pcOverride ?? currentKeyPc;
-  if (!isEnharmonicPc(pc)) {
-    toggle.classList.remove("visible");
-    toggle.setAttribute("aria-hidden", "true");
-    const sharpBtn = document.getElementById("prefSharp");
-    const flatBtn = document.getElementById("prefFlat");
-    if (sharpBtn && flatBtn) {
-      sharpBtn.classList.remove("active");
-      flatBtn.classList.remove("active");
-    }
-    return;
-  }
-  toggle.classList.add("visible");
-  toggle.removeAttribute("aria-hidden");
-  const sharpBtn = document.getElementById("prefSharp");
-  const flatBtn = document.getElementById("prefFlat");
-  sharpBtn.classList.toggle("active", activePref === "sharp");
-  flatBtn.classList.toggle("active", activePref === "flat");
 }
 
 // -------------------- ROMAN NUMERALS ------------------------
@@ -547,14 +620,12 @@ function drawFromState(options = {}) {
   }
   const modeName = MODE_NAMES[currentModeIndex];
 
-  document.getElementById("scaleOutput").innerHTML =
-    `<h2>Scale:</h2> ${display.tonicLabel} ${modeName} - ${display.spelled.join(" - ")}`;
-
   currentChords = analyzeChords(display.spelled, display.pitchClasses);
   renderScaleStrip(display.spelled);
   setTileMetrics();
   updatePills();
-  updateEnharmonicToggle(display.preferenceUsed, display.tonicLabel);
+  selectedRootNote = null;
+  filteredChords = null;
   renderChordLists();
   populateChordSelectors();
 
@@ -769,6 +840,8 @@ function setupScaleStripDrag() {
 
   function onStart(e) {
     if (dragCooldown) return;
+    stripDragging = true;
+    tapStart = { x: e.clientX, y: e.clientY, time: performance.now() };
     startX = e.clientX;
     startY = e.clientY;
     dragging = true;
@@ -888,9 +961,25 @@ function setupScaleStripDrag() {
       }
     }
     lockedDir = null;
+    stripDragging = false;
     window.removeEventListener("pointermove", moveListener);
     window.removeEventListener("pointerup", upListener);
     window.removeEventListener("pointercancel", upListener);
+
+    // Tap detection for root filtering
+    const movedFar = Math.abs(lastDx) > TAP_MOVE_THRESHOLD || Math.abs(lastDy) > TAP_MOVE_THRESHOLD || lockedDir !== null;
+    if (tapStart && !movedFar) {
+      const dx = Math.abs((e ? e.clientX : tapStart.x) - tapStart.x);
+      const dy = Math.abs((e ? e.clientY : tapStart.y) - tapStart.y);
+      if (dx < TAP_MOVE_THRESHOLD && dy < TAP_MOVE_THRESHOLD) {
+        const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+        const noteEl = targetEl ? targetEl.closest(".note-label") : null;
+        if (noteEl && noteEl.dataset.note) {
+          handleRootTap(noteEl.dataset.note);
+        }
+      }
+    }
+    tapStart = null;
   }
 
   strip.addEventListener("pointerdown", onStart);
@@ -940,6 +1029,23 @@ document.addEventListener("DOMContentLoaded", () => {
       handleDualToggle(e);
     }
   });
+
+  const allChordsBtn = document.getElementById("allChordsBtn");
+  if (allChordsBtn) {
+    allChordsBtn.addEventListener("click", () => clearRootFilter());
+  }
+
+  const scaleTiles = document.getElementById("scaleTiles");
+  if (scaleTiles) {
+    scaleTiles.addEventListener("click", (e) => {
+      if (stripDragging) return;
+      const noteEl = e.target.closest(".note-label");
+      if (!noteEl) return;
+      const note = noteEl.textContent.trim();
+      if (!note) return;
+      handleRootTap(note);
+    });
+  }
   setupScaleStripDrag();
   syncAccordion();
 

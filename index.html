@@ -41,15 +41,22 @@
         </section>
 
         <section id="outputArea" class="panel output-panel">
-            <div id="scaleOutput" class="scale-banner"></div>
             <div id="mainContainer" class="main-grid">
-                <div id="availableChordsContainer" class="card chords-card">
+                    <div id="availableChordsContainer" class="card chords-card">
                     <div class="card-heading">
-                        <h2>Available chords</h2>
-                        <p>Tap a category to view the shapes for this scale.</p>
+                        <div class="heading-row">
+                          <div>
+                            <h2>Available chords</h2>
+                            <p id="chordHeadingDesc">Tap a category to view the shapes for this scale.</p>
+                          </div>
+                          <div class="heading-actions">
+                            <span id="rootFilterStatus" class="filter-status"></span>
+                            <button id="allChordsBtn" class="ghost micro" style="display:none;">All Chords</button>
+                          </div>
+                        </div>
                     </div>
                     <div class="accordion" id="chordAccordion">
-                        <div class="accordion-item open" data-target="triadsOutput">
+                        <div class="accordion-item" data-target="triadsOutput">
                             <button class="accordion-header" type="button">
                                 <span>Triads</span><span class="chevron">▾</span>
                             </button>
