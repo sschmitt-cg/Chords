@@ -520,7 +520,7 @@ button:active {
   display: flex;
   gap: var(--tile-gap);
   will-change: transform;
-  pointer-events: none;
+  pointer-events: auto;
   z-index: 2;
 }
 
