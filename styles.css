@@ -326,6 +326,17 @@ button:active {
   margin: 0 0 4px;
 }
 
+.heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-status {
+  font-size: 12px;
+  color: #5c6385;
+}
+
 .card-heading p {
   margin: 0;
   color: var(--muted);
@@ -546,6 +557,11 @@ button:active {
 .note-label.tonic {
   border-color: var(--accent);
   box-shadow: 0 8px 18px rgba(85, 104, 255, 0.25);
+}
+
+.note-label.root-selected {
+  outline: 2px solid #7c6dff;
+  outline-offset: 2px;
 }
 
 .note-label.root-selected {

@@ -58,6 +58,8 @@ let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspen
 let filteredChords = null;
 let selectedRootNote = null;
 let stripDragging = false;
+let tapStart = null;
+const TAP_MOVE_THRESHOLD = 10;
 let pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
 let dragCooldown = false;
 let tileMetrics = { gap: 6, width: 52, segmentWidth: 400, rowHeight: 88 };
@@ -331,7 +333,7 @@ function filterChordsByRoot(chordsObj, rootLabel) {
   const filtered = {};
   Object.entries(chordsObj.categories).forEach(([cat, items]) => {
     filtered[cat] = items.filter(ch => {
-      const m = ch.name.match(/^([A-G][b#]?)/);
+      const m = ch.name.match(/^([A-G][b#x♯♭]{0,2})/);
       return m && m[1] === rootLabel;
     });
   });
@@ -348,7 +350,7 @@ function renderScaleStrip(scale) {
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const notes = scale.map((note, idx) =>
-    `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}"><div>${note}</div></div>`
+    `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
@@ -373,7 +375,8 @@ function renderHorizontalWithWrap(scale) {
   const extended = [...scale, ...scale, ...scale];
   const notes = extended.map((note, idx) => {
     const isTonic = idx === scale.length;
-    return `<div class="note-label${isTonic ? " tonic" : ""}"><div>${note}</div></div>`;
+    const isSelected = selectedRootNote === note && idx >= scale.length && idx < scale.length * 2;
+    return `<div class="note-label${isTonic ? " tonic" : ""}${isSelected ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`;
   }).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
@@ -399,7 +402,7 @@ function renderVerticalRows() {
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${rowHeight}px;flex:0 0 auto">${row.notes.map((note, idx) =>
-      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}"><div>${note}</div></div>`
+      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer" style="height:${rowHeight * rows.length}px">${rowsHtml}</div>`;
@@ -827,6 +830,7 @@ function setupScaleStripDrag() {
   function onStart(e) {
     if (dragCooldown) return;
     stripDragging = true;
+    tapStart = { x: e.clientX, y: e.clientY, time: performance.now() };
     startX = e.clientX;
     startY = e.clientY;
     dragging = true;
@@ -950,6 +954,19 @@ function setupScaleStripDrag() {
     window.removeEventListener("pointermove", moveListener);
     window.removeEventListener("pointerup", upListener);
     window.removeEventListener("pointercancel", upListener);
+
+    // Tap detection for root filtering
+    if (tapStart && !dragging) {
+      const dx = Math.abs((e ? e.clientX : tapStart.x) - tapStart.x);
+      const dy = Math.abs((e ? e.clientY : tapStart.y) - tapStart.y);
+      if (dx < TAP_MOVE_THRESHOLD && dy < TAP_MOVE_THRESHOLD) {
+        const noteEl = (e && e.target) ? e.target.closest(".note-label") : null;
+        if (noteEl && noteEl.dataset.note) {
+          handleRootTap(noteEl.dataset.note);
+        }
+      }
+    }
+    tapStart = null;
   }
 
   strip.addEventListener("pointerdown", onStart);

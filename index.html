@@ -42,14 +42,17 @@
 
         <section id="outputArea" class="panel output-panel">
             <div id="mainContainer" class="main-grid">
-                <div id="availableChordsContainer" class="card chords-card">
+                    <div id="availableChordsContainer" class="card chords-card">
                     <div class="card-heading">
                         <div class="heading-row">
                           <div>
                             <h2>Available chords</h2>
-                            <p>Tap a category to view the shapes for this scale.</p>
+                            <p id="chordHeadingDesc">Tap a category to view the shapes for this scale.</p>
                           </div>
-                          <button id="allChordsBtn" class="ghost micro">All Chords</button>
+                          <div class="heading-actions">
+                            <span id="rootFilterStatus" class="filter-status"></span>
+                            <button id="allChordsBtn" class="ghost micro" style="display:none;">All Chords</button>
+                          </div>
                         </div>
                     </div>
                     <div class="accordion" id="chordAccordion">
