@@ -414,7 +414,10 @@ function renderChordLists() {
   const accordion = document.getElementById("chordAccordion");
   const data = filteredChords || currentChords;
   const isFiltered = Boolean(selectedRootNote);
-  if (allBtn) allBtn.style.display = isFiltered ? "" : "none";
+  if (allBtn) {
+    allBtn.style.display = "";
+    allBtn.disabled = !isFiltered;
+  }
   if (headingDesc) headingDesc.textContent = isFiltered
     ? `Chords rooted on ${selectedRootNote}`
     : "Tap a category to view the shapes for this scale.";
@@ -956,11 +959,13 @@ function setupScaleStripDrag() {
     window.removeEventListener("pointercancel", upListener);
 
     // Tap detection for root filtering
-    if (tapStart && !dragging) {
+    const movedFar = Math.abs(lastDx) > TAP_MOVE_THRESHOLD || Math.abs(lastDy) > TAP_MOVE_THRESHOLD || lockedDir !== null;
+    if (tapStart && !movedFar) {
       const dx = Math.abs((e ? e.clientX : tapStart.x) - tapStart.x);
       const dy = Math.abs((e ? e.clientY : tapStart.y) - tapStart.y);
       if (dx < TAP_MOVE_THRESHOLD && dy < TAP_MOVE_THRESHOLD) {
-        const noteEl = (e && e.target) ? e.target.closest(".note-label") : null;
+        const targetEl = document.elementFromPoint(e.clientX, e.clientY);
+        const noteEl = targetEl ? targetEl.closest(".note-label") : null;
         if (noteEl && noteEl.dataset.note) {
           handleRootTap(noteEl.dataset.note);
         }
