@@ -315,6 +315,17 @@ button:active {
   font-size: 18px;
 }
 
+.heading-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.heading-row h2 {
+  margin: 0 0 4px;
+}
+
 .card-heading p {
   margin: 0;
   color: var(--muted);
@@ -529,11 +540,17 @@ button:active {
   box-shadow: 0 6px 12px rgba(16, 20, 52, 0.08);
   color: #111731;
   font-weight: 800;
+  cursor: pointer;
 }
 
 .note-label.tonic {
   border-color: var(--accent);
   box-shadow: 0 8px 18px rgba(85, 104, 255, 0.25);
+}
+
+.note-label.root-selected {
+  outline: 2px solid #7c6dff;
+  outline-offset: 2px;
 }
 
 .note-label small {
