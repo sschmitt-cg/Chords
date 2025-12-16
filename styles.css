@@ -37,44 +37,52 @@ body {
 }
 
 .page-header {
-  text-align: left;
+  text-align: center;
   color: #f4f6ff;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .app-title {
   margin: 0;
-  font-size: clamp(20px, 3vw, 26px);
-  letter-spacing: 0.3px;
+  font-size: clamp(17px, 3vw, 20px);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(244, 246, 255, 0.9);
 }
 
 .title-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  justify-content: center;
 }
 
 .info-button {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  border: 1px solid #cfd6ff;
-  background: rgba(255,255,255,0.15);
+  width: clamp(24px, 3vw, 28px);
+  height: clamp(24px, 3vw, 28px);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
   color: #f4f6ff;
   font-weight: 700;
+  font-size: 14px;
+  line-height: 1;
   cursor: pointer;
-  display: grid;
-  place-items: center;
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
 
 .info-button:hover {
-  background: rgba(255,255,255,0.25);
-  border-color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 
 .info-button:active {
-  transform: translateY(1px);
+  transform: scale(0.97);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .panel {
