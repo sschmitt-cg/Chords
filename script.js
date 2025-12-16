@@ -1095,5 +1095,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }, 150);
   });
 
+  // Info modal wiring
+  const infoBtn = document.getElementById("infoButton");
+  const infoModal = document.getElementById("infoModal");
+  const infoBackdrop = infoModal?.querySelector(".wheel-modal-backdrop");
+  const closeInfo = document.getElementById("closeInfoModal");
+  const openInfo = () => {
+    if (infoModal) infoModal.classList.remove("hidden");
+  };
+  const closeInfoModal = () => {
+    if (infoModal) infoModal.classList.add("hidden");
+  };
+  if (infoBtn) infoBtn.addEventListener("click", openInfo);
+  if (closeInfo) closeInfo.addEventListener("click", closeInfoModal);
+  if (infoBackdrop) infoBackdrop.addEventListener("click", closeInfoModal);
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && infoModal && !infoModal.classList.contains("hidden")) {
+      closeInfoModal();
+    }
+  });
+
   drawFromState();
 });
