@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Music Theory Helper</title>
+    <title>Tonal Explorer</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="page-shell">
         <header class="page-header">
-            <p class="eyebrow">Chord companion</p>
-            <h1>Music Theory Helper</h1>
-            <p class="subhead">Explore keys, modes, and harmonies without leaving the browser.</p>
+            <div class="title-row">
+                <p class="eyebrow">Tonal Explorer</p>
+                <button id="infoButton" class="info-button" aria-label="About Tonal Explorer">i</button>
+            </div>
         </header>
 
         <section id="inputArea" class="panel controls-panel">
@@ -32,7 +33,6 @@
                     <div class="tile-viewport">
                         <div id="scaleTiles" class="scale-tiles" aria-live="polite"></div>
                     </div>
-                    <div class="strip-hint">Swipe tiles: left/right to shift notes (mode change) · up/down to shift by semitones (key change)</div>
                 </div>
                 <div class="inline-actions">
                     <button id="random" class="ghost">Randomize</button>
@@ -118,6 +118,28 @@
                 <button id="closeWheelModal" class="ghost micro" aria-label="Close">✕</button>
             </div>
             <div class="wheel-modal-list" id="wheelModalList" role="listbox" tabindex="-1"></div>
+        </div>
+    </div>
+    <div id="infoModal" class="wheel-modal hidden" role="dialog" aria-modal="true">
+        <div class="wheel-modal-backdrop"></div>
+        <div class="wheel-modal-content info-modal">
+            <div class="wheel-modal-header">
+                <h3>Music Theory Helper</h3>
+                <button id="closeInfoModal" class="ghost micro" aria-label="Close info">✕</button>
+            </div>
+            <div class="info-body">
+                <p class="subhead">Explore keys, modes, and harmonies without leaving the browser.</p>
+                <hr>
+                <div class="info-howto">
+                    <p class="eyebrow subtle">How to use</p>
+                    <ul>
+                        <li>Swipe notes left/right to rotate through modes.</li>
+                        <li>Swipe notes up/down to change key.</li>
+                        <li>Tap a note to see chords rooted on that note.</li>
+                        <li>Use the Key and Mode selectors for direct selection.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>
