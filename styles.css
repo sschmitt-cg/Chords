@@ -42,13 +42,12 @@ body {
   margin-bottom: 14px;
 }
 
-.app-title {
-  margin: 0;
-  font-size: clamp(17px, 3vw, 20px);
-  letter-spacing: 2px;
+.eyebrow {
   text-transform: uppercase;
-  font-weight: 600;
-  color: rgba(244, 246, 255, 0.9);
+  letter-spacing: 2px;
+  font-size: 12px;
+  color: #a9b4e2;
+  margin: 0;
 }
 
 .title-row {
@@ -66,7 +65,7 @@ body {
   background: rgba(255, 255, 255, 0.08);
   color: #f4f6ff;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   display: inline-flex;
