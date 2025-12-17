@@ -42,7 +42,23 @@
 
         <section id="outputArea" class="panel output-panel">
             <div id="mainContainer" class="main-grid">
-                    <div id="availableChordsContainer" class="card chords-card">
+                <div id="instrumentContainer" class="card instruments-card">
+                    <div class="card-heading">
+                        <div class="heading-row">
+                            <div>
+                                <h2>Instrument visualizers</h2>
+                            </div>
+                            <div class="heading-actions">
+                                <button id="clearChordHighlight" class="ghost micro" style="display:none;">All notes</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="instrument-stack">
+                        <div id="keyboardVisualizer" class="instrument keyboard" aria-label="Keyboard visualizer"></div>
+                        <div id="fretboardVisualizer" class="instrument fretboard" aria-label="Guitar fretboard"></div>
+                    </div>
+                </div>
+                <div id="availableChordsContainer" class="card chords-card">
                     <div class="card-heading">
                         <div class="heading-row">
                           <div>
@@ -83,7 +99,7 @@
                     </div>
                 </div>
             
-                <div id="chordContainer" class="card selections-card">
+                <div id="chordContainer" class="card selections-card is-hidden">
                     <div id="buttonContainer" class="button-row">
                         <button id="match">Match</button>
                         <button id="clear">Clear</button>
