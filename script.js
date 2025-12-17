@@ -481,13 +481,17 @@ function renderKeyboardVisualizer() {
   if (!container) return;
   container.innerHTML = "";
 
-  const blackRow = document.createElement("div");
-  blackRow.className = "keyboard-row keyboard-row--black";
+  const shell = document.createElement("div");
+  shell.className = "keyboard-shell";
 
   const whiteRow = document.createElement("div");
-  whiteRow.className = "keyboard-row keyboard-row--white";
+  whiteRow.className = "keyboard-white";
+
+  const blackRow = document.createElement("div");
+  blackRow.className = "keyboard-black";
 
   const whitePcs = [0, 2, 4, 5, 7, 9, 11, 0, 2, 4, 5, 7, 9, 11];
+  const whiteCount = whitePcs.length;
   whitePcs.forEach(pc => {
     const key = document.createElement("div");
     key.className = "key white";
@@ -496,48 +500,97 @@ function renderKeyboardVisualizer() {
   });
 
   const blackKeys = [
-    { pc: 1, col: 1 },
-    { pc: 3, col: 2 },
-    { pc: 6, col: 4 },
-    { pc: 8, col: 5 },
-    { pc: 10, col: 6 },
-    { pc: 1, col: 8 },
-    { pc: 3, col: 9 },
-    { pc: 6, col: 11 },
-    { pc: 8, col: 12 },
-    { pc: 10, col: 13 }
+    { pc: 1, whiteIndex: 0 },
+    { pc: 3, whiteIndex: 1 },
+    { pc: 6, whiteIndex: 3 },
+    { pc: 8, whiteIndex: 4 },
+    { pc: 10, whiteIndex: 5 },
+    { pc: 1, whiteIndex: 7 },
+    { pc: 3, whiteIndex: 8 },
+    { pc: 6, whiteIndex: 10 },
+    { pc: 8, whiteIndex: 11 },
+    { pc: 10, whiteIndex: 12 }
   ];
-  blackKeys.forEach(({ pc, col }) => {
+  blackKeys.forEach(({ pc, whiteIndex }) => {
     const key = document.createElement("div");
     key.className = "key black";
     key.dataset.pc = pc;
-    key.style.gridColumn = String(col);
+    const left = ((whiteIndex + 1) / whiteCount) * 100;
+    key.style.left = `${left}%`;
     blackRow.appendChild(key);
   });
 
-  container.appendChild(blackRow);
-  container.appendChild(whiteRow);
+  shell.appendChild(whiteRow);
+  shell.appendChild(blackRow);
+  container.appendChild(shell);
 }
 
 function renderFretboardVisualizer() {
   const container = document.getElementById("fretboardVisualizer");
   if (!container) return;
   container.innerHTML = "";
-  const openStrings = [4, 9, 2, 7, 11, 4];
-  openStrings.forEach(openPc => {
-    const row = document.createElement("div");
-    row.className = "fret-row";
-    for (let fret = 0; fret <= 12; fret += 1) {
-      const cell = document.createElement("div");
-      cell.className = "fret";
-      cell.dataset.pc = wrap(openPc + fret, 12);
-      const dot = document.createElement("span");
-      dot.className = "fret-dot";
-      cell.appendChild(dot);
-      row.appendChild(cell);
+  const shell = document.createElement("div");
+  shell.className = "fretboard-shell";
+  shell.style.setProperty("--string-count", "6");
+  shell.style.setProperty("--fret-count", "13");
+
+  const lineLayer = document.createElement("div");
+  lineLayer.className = "fretboard-lines";
+
+  for (let s = 0; s < 6; s += 1) {
+    const stringLine = document.createElement("div");
+    stringLine.className = "string-line";
+    stringLine.style.setProperty("--string-index", s);
+    lineLayer.appendChild(stringLine);
+  }
+
+  for (let f = 0; f <= 12; f += 1) {
+    const fretLine = document.createElement("div");
+    fretLine.className = "fret-line";
+    fretLine.style.setProperty("--fret-index", f);
+    if (f === 0) fretLine.classList.add("nut");
+    lineLayer.appendChild(fretLine);
+  }
+
+  const markerLayer = document.createElement("div");
+  markerLayer.className = "fretboard-markers";
+  const markerFrets = [3, 5, 7, 9, 12];
+  markerFrets.forEach((fret) => {
+    if (fret === 12) {
+      ["35%", "65%"].forEach(y => {
+        const marker = document.createElement("div");
+        marker.className = "fret-marker";
+        marker.style.setProperty("--fret-index", fret);
+        marker.style.setProperty("--marker-y", y);
+        markerLayer.appendChild(marker);
+      });
+    } else {
+      const marker = document.createElement("div");
+      marker.className = "fret-marker";
+      marker.style.setProperty("--fret-index", fret);
+      marker.style.setProperty("--marker-y", "50%");
+      markerLayer.appendChild(marker);
     }
-    container.appendChild(row);
   });
+
+  const noteLayer = document.createElement("div");
+  noteLayer.className = "fretboard-notes";
+  const openStrings = [4, 9, 2, 7, 11, 4];
+  openStrings.forEach((openPc, stringIdx) => {
+    for (let fret = 0; fret <= 12; fret += 1) {
+      const note = document.createElement("div");
+      note.className = "fret-note";
+      note.dataset.pc = wrap(openPc + fret, 12);
+      note.style.setProperty("--string-index", stringIdx);
+      note.style.setProperty("--fret-index", fret);
+      noteLayer.appendChild(note);
+    }
+  });
+
+  shell.appendChild(lineLayer);
+  shell.appendChild(markerLayer);
+  shell.appendChild(noteLayer);
+  container.appendChild(shell);
 }
 
 function updateInstrumentHighlights() {
@@ -546,7 +599,7 @@ function updateInstrumentHighlights() {
     : activeScalePitchClasses;
   const dimOthers = Boolean(activeChordPitchClasses && activeChordPitchClasses.size);
   const colorMap = getDegreeColorMap();
-  const elements = document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret");
+  const elements = document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note");
   elements.forEach(el => {
     const pc = Number(el.dataset.pc);
     const color = colorMap.get(pc) || "#7c6dff";
@@ -583,7 +636,7 @@ function renderChordLists() {
     allBtn.style.display = isFiltered ? "" : "none";
     allBtn.disabled = !isFiltered;
   }
-  if (headingDesc) headingDesc.textContent = "Tap a category to view the shapes for this scale.";
+  if (headingDesc) headingDesc.textContent = "";
 
   const categories = [
     { key: "triads", panel: "triadsOutput" },

@@ -425,63 +425,73 @@ button:active {
   gap: 12px;
 }
 
+.main-grid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
 .instrument {
   background: #f8f9ff;
   border: 1px solid #e3e6f7;
   border-radius: 14px;
   padding: 12px;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
 .keyboard {
-  display: grid;
-  gap: 6px;
-  min-width: 520px;
+  width: 100%;
 }
 
-.keyboard-row {
-  display: grid;
-  grid-template-columns: repeat(14, minmax(18px, 1fr));
-  gap: 4px;
+.keyboard-black {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 52px;
+  pointer-events: none;
+}
+
+.keyboard-shell {
   position: relative;
+  width: 100%;
+  --white-count: 14;
 }
 
-.keyboard-row--black {
-  height: 40px;
-  margin-bottom: -20px;
-  z-index: 2;
-}
-
-.keyboard-row--white {
-  height: 70px;
-  z-index: 1;
+.keyboard-white {
+  display: grid;
+  grid-template-columns: repeat(var(--white-count), 1fr);
+  gap: 4px;
+  height: 84px;
+  align-items: stretch;
 }
 
 .key {
   border-radius: 8px;
   border: 1px solid #d6dbf2;
-  background: #fdfdff;
+  background: #edf0f7;
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 }
 
 .key.black {
-  background: #1a1f38;
-  border-color: #0f1326;
-  height: 100%;
-  width: 60%;
-  justify-self: center;
+  position: absolute;
+  top: 0;
+  height: 52px;
+  width: calc(100% / var(--white-count) * 0.6);
+  background: #2c3146;
+  border-color: #1a1f33;
   border-radius: 6px;
+  transform: translateX(-50%);
+  z-index: 2;
 }
 
 .key.lit {
-  background: var(--deg-color, #7c6dff);
+  background: color-mix(in srgb, var(--deg-color, #7c6dff) 28%, #edf0f7);
   border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 20%);
   box-shadow: 0 0 10px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 60%);
 }
 
 .key.black.lit {
-  background: color-mix(in srgb, var(--deg-color, #7c6dff), #0b0f20 20%);
+  background: color-mix(in srgb, var(--deg-color, #7c6dff) 45%, #2c3146);
   border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 40%);
 }
 
@@ -490,44 +500,83 @@ button:active {
 }
 
 .fretboard {
-  display: grid;
-  gap: 6px;
-  min-width: 640px;
+.fretboard {
+  width: 100%;
 }
 
-.fret-row {
-  display: grid;
-  grid-template-columns: repeat(13, minmax(26px, 1fr));
-  gap: 6px;
+.fretboard-shell {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background: #eef1fb;
+  border-radius: 12px;
+  border: 1px solid #d8def3;
 }
 
-.fret {
-  background: #fdfdff;
-  border: 1px solid #e0e4f7;
-  border-radius: 8px;
-  min-height: 28px;
-  display: grid;
-  place-items: center;
-  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+.fretboard-lines,
+.fretboard-markers,
+.fretboard-notes {
+  position: absolute;
+  inset: 0;
 }
 
-.fret-dot {
-  width: 12px;
-  height: 12px;
+.string-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(22, 26, 48, 0.25);
+  top: calc(var(--string-index) * 100% / (var(--string-count) - 1));
+}
+
+.fret-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(22, 26, 48, 0.2);
+  left: calc(var(--fret-index) * 100% / (var(--fret-count) - 1));
+}
+
+.fret-line.nut {
+  width: 4px;
+  background: rgba(22, 26, 48, 0.6);
+}
+
+.fret-marker {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(80, 90, 125, 0.35);
+  left: calc(var(--fret-index) * 100% / (var(--fret-count) - 1));
+  top: var(--marker-y);
+  transform: translate(-50%, -50%);
+}
+
+.fret-note {
+  position: absolute;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
   background: transparent;
   box-shadow: none;
+  opacity: 0;
+  left: calc(var(--fret-index) * 100% / (var(--fret-count) - 1));
+  top: calc(var(--string-index) * 100% / (var(--string-count) - 1));
+  transform: translate(-50%, -50%);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 }
 
-.fret.lit .fret-dot {
+.fret-note.lit {
+  opacity: 1;
   background: var(--deg-color, #7c6dff);
   box-shadow: 0 0 10px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 55%);
-  transform: scale(1.05);
+  transform: translate(-50%, -50%) scale(1.05);
 }
 
-.fret.dim {
-  opacity: 0.35;
+.fret-note.dim {
+  opacity: 0.2;
 }
 
 .button-row {
@@ -871,6 +920,12 @@ button:active {
   }
 }
 
+@media (max-width: 720px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
   .controls-panel {
     gap: 8px;
@@ -890,6 +945,7 @@ button:active {
 
   .main-grid {
     gap: 8px;
+    grid-template-columns: 1fr;
   }
 
   .scale-tiles {
