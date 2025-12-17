@@ -575,7 +575,8 @@ function renderFretboardVisualizer() {
 
   const noteLayer = document.createElement("div");
   noteLayer.className = "fretboard-notes";
-  const openStrings = [4, 9, 2, 7, 11, 4];
+  // High E to low E to match top-to-bottom visual order.
+  const openStrings = [4, 11, 7, 2, 9, 4];
   openStrings.forEach((openPc, stringIdx) => {
     for (let fret = 0; fret <= 12; fret += 1) {
       const note = document.createElement("div");
