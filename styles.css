@@ -42,6 +42,15 @@ body {
   margin-bottom: 18px;
 }
 
+.app-title {
+  margin: 0;
+  font-size: clamp(17px, 3vw, 20px);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: rgba(244, 246, 255, 0.9);
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -59,10 +68,10 @@ body {
 }
 
 .info-button {
-  width: clamp(22px, 3vw, 24px);
-  height: clamp(22px, 3vw, 24px);
+  width: clamp(20px, 3vw, 24px);
+  height: clamp(20px, 3vw, 24px);
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: none;
   background: rgba(255, 255, 255, 0.08);
   color: #f4f6ff;
   font-weight: 600;
@@ -77,7 +86,6 @@ body {
 
 .info-button:hover {
   background: rgba(255, 255, 255, 0.16);
-  border-color: rgba(255, 255, 255, 0.3);
 }
 
 .info-button:active {
@@ -393,16 +401,6 @@ button:active {
   text-align: left;
 }
 
-.info-modal .wheel-modal-header .ghost.micro {
-  min-width: auto;
-  width: clamp(24px, 3vw, 28px);
-  height: clamp(24px, 3vw, 28px);
-  padding: 0;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 .card-heading p {
   margin: 0;
   color: var(--muted);
@@ -810,7 +808,8 @@ button:active {
   flex: 1 1 auto;
 }
 
-#closeWheelModal {
+#closeWheelModal,
+#closeInfoModal {
   width: 40px;
   height: 40px;
   min-width: 40px;
