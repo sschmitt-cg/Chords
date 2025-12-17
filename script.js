@@ -57,6 +57,9 @@ let currentScale = { pitchClasses: [], spelled: [] };
 let currentChords = { categories: { triads: [], sevenths: [], ninths: [], suspended: [] }, degrees: [] };
 let filteredChords = null;
 let selectedRootNote = null;
+let activeScalePitchClasses = new Set();
+let activeChordPitchClasses = null;
+let selectedChordName = null;
 let stripDragging = false;
 let tapStart = null;
 const TAP_MOVE_THRESHOLD = 10;
@@ -72,6 +75,15 @@ const ENHARMONIC_OPTIONS = {
   8: { sharp: "G#", flat: "Ab" },
   10: { sharp: "A#", flat: "Bb" }
 };
+const DEGREE_COLORS = [
+  "#ff6f6f",
+  "#ff9f43",
+  "#ffd166",
+  "#5cd39b",
+  "#4cc9f0",
+  "#7c6dff",
+  "#b392f0"
+];
 
 // -------------------- HELPERS ------------------------
 
@@ -228,6 +240,49 @@ function computeDisplayScale(pc, modeIdx, forcedPreference = null) {
   };
 }
 
+function escapeAttr(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function noteNameToPc(note) {
+  if (!note) return null;
+  const match = note.trim().match(/^([A-Ga-g])([#bx♯♭]{0,2})/);
+  if (!match) return null;
+  const letter = match[1].toUpperCase();
+  const basePc = LETTER_TO_PC[letter];
+  if (basePc === undefined) return null;
+  const accidentals = match[2]
+    .replace(/♯/g, "#")
+    .replace(/♭/g, "b");
+  let offset = 0;
+  for (const char of accidentals) {
+    if (char === "#") offset += 1;
+    if (char === "b") offset -= 1;
+    if (char === "x") offset += 2;
+  }
+  return wrap(basePc + offset, 12);
+}
+
+function chordNotesToPcs(notes) {
+  if (!notes) return [];
+  return notes.split("-")
+    .map(note => note.trim())
+    .map(noteNameToPc)
+    .filter(pc => pc !== null);
+}
+
+function getDegreeColorMap() {
+  const map = new Map();
+  currentScale.pitchClasses.forEach((pc, idx) => {
+    map.set(pc, DEGREE_COLORS[idx]);
+  });
+  return map;
+}
+
 // -------------------- CHORD ANALYSIS ------------------------
 
 function intervalQuality(int3, int5) {
@@ -350,7 +405,7 @@ function renderScaleStrip(scale) {
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const notes = scale.map((note, idx) =>
-    `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`
+    `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${DEGREE_COLORS[idx]}"><div>${note}</div></div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
@@ -376,7 +431,8 @@ function renderHorizontalWithWrap(scale) {
   const notes = extended.map((note, idx) => {
     const isTonic = idx === scale.length;
     const isSelected = selectedRootNote === note && idx >= scale.length && idx < scale.length * 2;
-    return `<div class="note-label${isTonic ? " tonic" : ""}${isSelected ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`;
+    const color = DEGREE_COLORS[idx % scale.length];
+    return `<div class="note-label${isTonic ? " tonic" : ""}${isSelected ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${color}"><div>${note}</div></div>`;
   }).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
@@ -402,10 +458,118 @@ function renderVerticalRows() {
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${rowHeight}px;flex:0 0 auto">${row.notes.map((note, idx) =>
-      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}"><div>${note}</div></div>`
+      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${DEGREE_COLORS[idx]}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer" style="height:${rowHeight * rows.length}px">${rowsHtml}</div>`;
+}
+
+function renderChordRow(chord) {
+  const isSelected = selectedChordName === chord.name;
+  return `
+    <div class="chord-row${chord.valid ? "" : " warning"}${isSelected ? " selected" : ""}"
+      data-chord-name="${escapeAttr(chord.name)}"
+      data-notes="${escapeAttr(chord.notes)}">
+      <div class="chord-name">${chord.name}</div>
+      <div class="chord-notes">${chord.notes}</div>
+    </div>
+  `;
+}
+
+function renderKeyboardVisualizer() {
+  const container = document.getElementById("keyboardVisualizer");
+  if (!container) return;
+  container.innerHTML = "";
+
+  const blackRow = document.createElement("div");
+  blackRow.className = "keyboard-row keyboard-row--black";
+
+  const whiteRow = document.createElement("div");
+  whiteRow.className = "keyboard-row keyboard-row--white";
+
+  const whitePcs = [0, 2, 4, 5, 7, 9, 11, 0, 2, 4, 5, 7, 9, 11];
+  whitePcs.forEach(pc => {
+    const key = document.createElement("div");
+    key.className = "key white";
+    key.dataset.pc = pc;
+    whiteRow.appendChild(key);
+  });
+
+  const blackKeys = [
+    { pc: 1, col: 1 },
+    { pc: 3, col: 2 },
+    { pc: 6, col: 4 },
+    { pc: 8, col: 5 },
+    { pc: 10, col: 6 },
+    { pc: 1, col: 8 },
+    { pc: 3, col: 9 },
+    { pc: 6, col: 11 },
+    { pc: 8, col: 12 },
+    { pc: 10, col: 13 }
+  ];
+  blackKeys.forEach(({ pc, col }) => {
+    const key = document.createElement("div");
+    key.className = "key black";
+    key.dataset.pc = pc;
+    key.style.gridColumn = String(col);
+    blackRow.appendChild(key);
+  });
+
+  container.appendChild(blackRow);
+  container.appendChild(whiteRow);
+}
+
+function renderFretboardVisualizer() {
+  const container = document.getElementById("fretboardVisualizer");
+  if (!container) return;
+  container.innerHTML = "";
+  const openStrings = [4, 9, 2, 7, 11, 4];
+  openStrings.forEach(openPc => {
+    const row = document.createElement("div");
+    row.className = "fret-row";
+    for (let fret = 0; fret <= 12; fret += 1) {
+      const cell = document.createElement("div");
+      cell.className = "fret";
+      cell.dataset.pc = wrap(openPc + fret, 12);
+      const dot = document.createElement("span");
+      dot.className = "fret-dot";
+      cell.appendChild(dot);
+      row.appendChild(cell);
+    }
+    container.appendChild(row);
+  });
+}
+
+function updateInstrumentHighlights() {
+  const highlightSet = activeChordPitchClasses && activeChordPitchClasses.size
+    ? activeChordPitchClasses
+    : activeScalePitchClasses;
+  const dimOthers = Boolean(activeChordPitchClasses && activeChordPitchClasses.size);
+  const colorMap = getDegreeColorMap();
+  const elements = document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret");
+  elements.forEach(el => {
+    const pc = Number(el.dataset.pc);
+    const color = colorMap.get(pc) || "#7c6dff";
+    el.style.setProperty("--deg-color", color);
+    if (highlightSet && highlightSet.has(pc)) {
+      el.classList.add("lit");
+      el.classList.remove("dim");
+    } else {
+      el.classList.remove("lit");
+      if (dimOthers) el.classList.add("dim");
+      else el.classList.remove("dim");
+    }
+  });
+
+  const clearBtn = document.getElementById("clearChordHighlight");
+  if (clearBtn) clearBtn.style.display = dimOthers ? "" : "none";
+}
+
+function updateChordHighlightUI() {
+  updateInstrumentHighlights();
+  document.querySelectorAll(".chord-row").forEach(row => {
+    row.classList.toggle("selected", row.dataset.chordName === selectedChordName);
+  });
 }
 
 function renderChordLists() {
@@ -414,6 +578,7 @@ function renderChordLists() {
   const accordion = document.getElementById("chordAccordion");
   const data = filteredChords || currentChords;
   const isFiltered = Boolean(selectedRootNote);
+  const availableNames = new Set();
   if (allBtn) {
     allBtn.style.display = isFiltered ? "" : "none";
     allBtn.disabled = !isFiltered;
@@ -442,12 +607,10 @@ function renderChordLists() {
       if (idx === 0) {
         const header = itemEl.querySelector(".accordion-header span");
         if (header) header.textContent = `Chords rooted on ${selectedRootNote}`;
-        panelEl.innerHTML = flatList.map(ch => `
-          <div class="chord-row${ch.valid ? "" : " warning"}">
-            <div class="chord-name">${ch.name}</div>
-            <div class="chord-notes">${ch.notes}</div>
-          </div>
-        `).join("");
+        panelEl.innerHTML = flatList.map(ch => {
+          availableNames.add(ch.name);
+          return renderChordRow(ch);
+        }).join("");
         itemEl.style.display = "";
         itemEl.classList.add("open");
       } else {
@@ -477,14 +640,19 @@ function renderChordLists() {
         : itemEl.dataset.target.includes("ninths") ? "9ths"
         : itemEl.dataset.target.includes("suspended") ? "Suspended"
         : header.textContent;
-      panelEl.innerHTML = items.map(ch => `
-        <div class="chord-row${ch.valid ? "" : " warning"}">
-          <div class="chord-name">${ch.name}</div>
-          <div class="chord-notes">${ch.notes}</div>
-        </div>
-      `).join("");
+      panelEl.innerHTML = items.map(ch => {
+        availableNames.add(ch.name);
+        return renderChordRow(ch);
+      }).join("");
     });
   }
+
+  if (selectedChordName && !availableNames.has(selectedChordName)) {
+    activeChordPitchClasses = null;
+    selectedChordName = null;
+    updateInstrumentHighlights();
+  }
+  updateChordHighlightUI();
 }
 
 function clearRootFilter() {
@@ -501,6 +669,25 @@ function handleRootTap(note) {
   renderScaleStrip(currentScale.spelled);
   setTileMetrics();
   renderChordLists();
+}
+
+function clearChordHighlight() {
+  activeChordPitchClasses = null;
+  selectedChordName = null;
+  updateChordHighlightUI();
+}
+
+function setChordHighlight(name, notes) {
+  if (!name || !notes) return;
+  if (selectedChordName === name) {
+    clearChordHighlight();
+    return;
+  }
+  const pcs = chordNotesToPcs(notes);
+  if (!pcs.length) return;
+  activeChordPitchClasses = new Set(pcs);
+  selectedChordName = name;
+  updateChordHighlightUI();
 }
 
 function populateChordSelectors() {
@@ -626,8 +813,12 @@ function drawFromState(options = {}) {
   updatePills();
   selectedRootNote = null;
   filteredChords = null;
+  activeScalePitchClasses = new Set(display.pitchClasses);
+  activeChordPitchClasses = null;
+  selectedChordName = null;
   renderChordLists();
   populateChordSelectors();
+  updateInstrumentHighlights();
 
   document.getElementById("results1").textContent = "";
   document.getElementById("results2").textContent = "";
@@ -1034,6 +1225,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (allChordsBtn) {
     allChordsBtn.addEventListener("click", () => clearRootFilter());
   }
+  const clearChordBtn = document.getElementById("clearChordHighlight");
+  if (clearChordBtn) {
+    clearChordBtn.addEventListener("click", () => clearChordHighlight());
+  }
 
   const scaleTiles = document.getElementById("scaleTiles");
   if (scaleTiles) {
@@ -1048,6 +1243,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   setupScaleStripDrag();
   syncAccordion();
+
+  const chordAccordion = document.getElementById("chordAccordion");
+  if (chordAccordion) {
+    chordAccordion.addEventListener("click", (e) => {
+      const row = e.target.closest(".chord-row");
+      if (!row) return;
+      const name = row.dataset.chordName;
+      const notes = row.dataset.notes;
+      setChordHighlight(name, notes);
+    });
+  }
 
   document.getElementById("random").addEventListener("click", () => {
     currentKeyIndex = Math.floor(Math.random() * KEY_OPTIONS.length);
@@ -1115,5 +1321,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  renderKeyboardVisualizer();
+  renderFretboardVisualizer();
   drawFromState();
 });

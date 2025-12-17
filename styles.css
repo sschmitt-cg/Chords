@@ -304,6 +304,10 @@ button:active {
   overflow: hidden;
 }
 
+.is-hidden {
+  display: none !important;
+}
+
 .scale-banner {
   background: linear-gradient(120deg, #5568ff, #7c6dff);
   color: #fff;
@@ -410,6 +414,120 @@ button:active {
 .selections-card {
   display: grid;
   gap: 12px;
+}
+
+.instruments-card .card-heading {
+  margin-bottom: 8px;
+}
+
+.instrument-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.instrument {
+  background: #f8f9ff;
+  border: 1px solid #e3e6f7;
+  border-radius: 14px;
+  padding: 12px;
+  overflow-x: auto;
+}
+
+.keyboard {
+  display: grid;
+  gap: 6px;
+  min-width: 520px;
+}
+
+.keyboard-row {
+  display: grid;
+  grid-template-columns: repeat(14, minmax(18px, 1fr));
+  gap: 4px;
+  position: relative;
+}
+
+.keyboard-row--black {
+  height: 40px;
+  margin-bottom: -20px;
+  z-index: 2;
+}
+
+.keyboard-row--white {
+  height: 70px;
+  z-index: 1;
+}
+
+.key {
+  border-radius: 8px;
+  border: 1px solid #d6dbf2;
+  background: #fdfdff;
+  position: relative;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.key.black {
+  background: #1a1f38;
+  border-color: #0f1326;
+  height: 100%;
+  width: 60%;
+  justify-self: center;
+  border-radius: 6px;
+}
+
+.key.lit {
+  background: var(--deg-color, #7c6dff);
+  border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 20%);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 60%);
+}
+
+.key.black.lit {
+  background: color-mix(in srgb, var(--deg-color, #7c6dff), #0b0f20 20%);
+  border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 40%);
+}
+
+.key.dim {
+  opacity: 0.35;
+}
+
+.fretboard {
+  display: grid;
+  gap: 6px;
+  min-width: 640px;
+}
+
+.fret-row {
+  display: grid;
+  grid-template-columns: repeat(13, minmax(26px, 1fr));
+  gap: 6px;
+}
+
+.fret {
+  background: #fdfdff;
+  border: 1px solid #e0e4f7;
+  border-radius: 8px;
+  min-height: 28px;
+  display: grid;
+  place-items: center;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
+}
+
+.fret-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
+}
+
+.fret.lit .fret-dot {
+  background: var(--deg-color, #7c6dff);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 55%);
+  transform: scale(1.05);
+}
+
+.fret.dim {
+  opacity: 0.35;
 }
 
 .button-row {
@@ -616,6 +734,7 @@ button:active {
   color: #111731;
   font-weight: 800;
   cursor: pointer;
+  position: relative;
 }
 
 .note-label.tonic {
@@ -638,6 +757,18 @@ button:active {
   color: #5c6385;
   font-size: 11px;
   font-weight: 600;
+}
+
+.note-label::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--deg-color, #7c6dff);
+  opacity: 0.75;
 }
 
 .strip-hint {
@@ -695,11 +826,17 @@ button:active {
   padding: 10px;
   display: grid;
   gap: 4px;
+  cursor: pointer;
 }
 
 .chord-row.warning {
   border-style: dashed;
   border-color: #f0b64f;
+}
+
+.chord-row.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(85, 104, 255, 0.18);
 }
 
 .chord-name {
