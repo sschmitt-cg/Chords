@@ -401,16 +401,6 @@ button:active {
   text-align: left;
 }
 
-.info-modal .wheel-modal-header .ghost.micro {
-  min-width: auto;
-  width: clamp(24px, 3vw, 28px);
-  height: clamp(24px, 3vw, 28px);
-  padding: 0;
-  border-radius: 999px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
 .card-heading p {
   margin: 0;
   color: var(--muted);
@@ -818,7 +808,8 @@ button:active {
   flex: 1 1 auto;
 }
 
-#closeWheelModal {
+#closeWheelModal,
+#closeInfoModal {
   width: 40px;
   height: 40px;
   min-width: 40px;
