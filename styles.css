@@ -416,13 +416,25 @@ button:active {
   gap: 12px;
 }
 
+.instruments-card {
+  position: sticky;
+  top: 12px;
+  align-self: start;
+}
+
 .instruments-card .card-heading {
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+}
+
+.instruments-heading {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .instrument-stack {
   display: grid;
-  gap: 12px;
+  gap: 8px;
+  --instrument-height: clamp(120px, 22vw, 150px);
 }
 
 .main-grid {
@@ -433,7 +445,7 @@ button:active {
   background: #f8f9ff;
   border: 1px solid #e3e6f7;
   border-radius: 14px;
-  padding: 12px;
+  padding: 8px;
   overflow: hidden;
 }
 
@@ -460,14 +472,14 @@ button:active {
   display: grid;
   grid-template-columns: repeat(var(--white-count), 1fr);
   gap: 4px;
-  height: 84px;
+  height: var(--instrument-height);
   align-items: stretch;
 }
 
 .key {
   border-radius: 8px;
-  border: 1px solid #d6dbf2;
-  background: #edf0f7;
+  border: 1px solid #cfd3dc;
+  background: #e2e4e8;
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 }
@@ -475,23 +487,23 @@ button:active {
 .key.black {
   position: absolute;
   top: 0;
-  height: 52px;
+  height: calc(var(--instrument-height) * 0.62);
   width: calc(100% / var(--white-count) * 0.6);
-  background: #2c3146;
-  border-color: #1a1f33;
+  background: #3a3d45;
+  border-color: #2a2d36;
   border-radius: 6px;
   transform: translateX(-50%);
   z-index: 2;
 }
 
 .key.lit {
-  background: color-mix(in srgb, var(--deg-color, #7c6dff) 28%, #edf0f7);
+  background: color-mix(in srgb, var(--deg-color, #7c6dff) 42%, #e2e4e8);
   border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 20%);
   box-shadow: 0 0 10px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 60%);
 }
 
 .key.black.lit {
-  background: color-mix(in srgb, var(--deg-color, #7c6dff) 45%, #2c3146);
+  background: color-mix(in srgb, var(--deg-color, #7c6dff) 55%, #3a3d45);
   border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 40%);
 }
 
@@ -506,8 +518,8 @@ button:active {
 .fretboard-shell {
   position: relative;
   width: 100%;
-  height: 180px;
-  background: #eef1fb;
+  height: var(--instrument-height);
+  background: #e7e9ef;
   border-radius: 12px;
   border: 1px solid #d8def3;
 }
@@ -538,17 +550,17 @@ button:active {
 }
 
 .fret-line.nut {
-  width: 4px;
-  background: rgba(22, 26, 48, 0.6);
+  width: 6px;
+  background: rgba(22, 26, 48, 0.7);
 }
 
 .fret-marker {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 999px;
-  background: rgba(80, 90, 125, 0.35);
-  left: calc(var(--fret-index) * 100% / (var(--fret-count) - 1));
+  background: rgba(80, 90, 125, 0.3);
+  left: calc(var(--marker-index) * 100% / (var(--fret-count) - 1));
   top: var(--marker-y);
   transform: translate(-50%, -50%);
 }
@@ -812,11 +824,12 @@ button:active {
   position: absolute;
   left: 8px;
   right: 8px;
-  bottom: 8px;
-  height: 4px;
+  bottom: 6px;
+  height: 6px;
   border-radius: 999px;
   background: var(--deg-color, #7c6dff);
-  opacity: 0.75;
+  opacity: 0.9;
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 55%);
 }
 
 .strip-hint {
@@ -895,6 +908,28 @@ button:active {
 .chord-notes {
   color: #525a80;
   font-size: 13px;
+}
+
+.chord-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.chord-note::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--deg-color, #7c6dff);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 55%);
+}
+
+.chord-sep {
+  color: #8a92b4;
+  margin: 0 6px;
+  font-weight: 600;
 }
 
 @media (max-width: 640px) {
