@@ -48,6 +48,13 @@ const KEY_OPTIONS = [
 const LETTER_TO_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const LETTERS = ["C","D","E","F","G","A","B"];
 
+// PR checklist:
+// - tap note tile => chords filtered + instruments show only that note
+// - tap All Chords => resets list + full scale highlights
+// - tap chord => chord tones; tap same chord again => revert (root-only if selected, else full scale)
+// - drag tiles => key/mode + instruments update live
+// - Randomize doesn’t stay blue
+
 // -------------------- STATE ------------------------
 
 let currentKeyIndex = 0;   // tonic pitch class index in KEY_OPTIONS
@@ -68,6 +75,9 @@ let dragCooldown = false;
 let tileMetrics = { gap: 6, width: 52, segmentWidth: 400, rowHeight: 88 };
 const MAX_DRAG_STEPS = 12;
 const enharmonicPreferenceByPc = {};
+let previewScaleOverride = null;
+let highlightRafPending = false;
+let pendingHighlightScale = null;
 const ENHARMONIC_OPTIONS = {
   1: { sharp: "C#", flat: "Db" },
   3: { sharp: "D#", flat: "Eb" },
@@ -275,12 +285,24 @@ function chordNotesToPcs(notes) {
     .filter(pc => pc !== null);
 }
 
-function getDegreeColorMap() {
+function getDegreeColorMap(pitchClasses = currentScale.pitchClasses) {
   const map = new Map();
-  currentScale.pitchClasses.forEach((pc, idx) => {
+  pitchClasses.forEach((pc, idx) => {
     map.set(pc, DEGREE_COLORS[idx]);
   });
   return map;
+}
+
+function getHighlightSet(scalePitchClasses = currentScale.pitchClasses) {
+  const scaleSet = new Set(scalePitchClasses);
+  if (activeChordPitchClasses && activeChordPitchClasses.size) {
+    return { set: activeChordPitchClasses, isolation: true };
+  }
+  const rootPc = selectedRootNote ? noteNameToPc(selectedRootNote) : null;
+  if (rootPc !== null) {
+    return { set: new Set([rootPc]), isolation: true };
+  }
+  return { set: scaleSet, isolation: false };
 }
 
 // -------------------- CHORD ANALYSIS ------------------------
@@ -596,12 +618,11 @@ function renderFretboardVisualizer() {
   container.appendChild(shell);
 }
 
-function updateInstrumentHighlights() {
-  const highlightSet = activeChordPitchClasses && activeChordPitchClasses.size
-    ? activeChordPitchClasses
-    : activeScalePitchClasses;
-  const dimOthers = Boolean(activeChordPitchClasses && activeChordPitchClasses.size);
-  const colorMap = getDegreeColorMap();
+function updateInstrumentHighlights(options = {}) {
+  const overrideScale = options.scaleOverride || previewScaleOverride || null;
+  const scalePcs = overrideScale?.pitchClasses || currentScale.pitchClasses;
+  const { set: highlightSet, isolation } = getHighlightSet(scalePcs);
+  const colorMap = getDegreeColorMap(scalePcs);
   const elements = document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note");
   elements.forEach(el => {
     const pc = Number(el.dataset.pc);
@@ -612,17 +633,26 @@ function updateInstrumentHighlights() {
       el.classList.remove("dim");
     } else {
       el.classList.remove("lit");
-      if (dimOthers) el.classList.add("dim");
+      if (isolation) el.classList.add("dim");
       else el.classList.remove("dim");
     }
   });
+}
 
-  const clearBtn = document.getElementById("clearChordHighlight");
-  if (clearBtn) clearBtn.classList.toggle("is-active", dimOthers);
+function scheduleHighlightUpdate(scaleOverride = null) {
+  pendingHighlightScale = scaleOverride;
+  if (highlightRafPending) return;
+  highlightRafPending = true;
+  requestAnimationFrame(() => {
+    highlightRafPending = false;
+    const useScale = pendingHighlightScale || previewScaleOverride || null;
+    pendingHighlightScale = null;
+    updateInstrumentHighlights({ scaleOverride: useScale });
+  });
 }
 
 function updateChordHighlightUI() {
-  updateInstrumentHighlights();
+  scheduleHighlightUpdate();
   document.querySelectorAll(".chord-row").forEach(row => {
     row.classList.toggle("selected", row.dataset.chordName === selectedChordName);
   });
@@ -727,17 +757,23 @@ function renderChordLists() {
 function clearRootFilter() {
   selectedRootNote = null;
   filteredChords = null;
+  selectedChordName = null;
+  activeChordPitchClasses = null;
   renderScaleStrip(currentScale.spelled);
   setTileMetrics();
   renderChordLists();
+  scheduleHighlightUpdate();
 }
 
 function handleRootTap(note) {
   selectedRootNote = note;
   filteredChords = filterChordsByRoot(currentChords, selectedRootNote);
+  selectedChordName = null;
+  activeChordPitchClasses = null;
   renderScaleStrip(currentScale.spelled);
   setTileMetrics();
   renderChordLists();
+  scheduleHighlightUpdate();
 }
 
 function clearChordHighlight() {
@@ -887,7 +923,7 @@ function drawFromState(options = {}) {
   selectedChordName = null;
   renderChordLists();
   populateChordSelectors();
-  updateInstrumentHighlights();
+  scheduleHighlightUpdate();
 
   document.getElementById("results1").textContent = "";
   document.getElementById("results2").textContent = "";
@@ -1058,21 +1094,29 @@ function setupScaleStripDrag() {
   };
 
   const applyPreview = (dir, steps) => {
+    let previewKeyPc = currentKeyPc;
+    let previewModeIdx = currentModeIndex;
     if (dir === "x") {
       const { keyPc, modeIdx } = previewRotateState(steps);
       pillPreview.mode = modeIdx;
       pillPreview.keyPc = keyPc;
+      previewKeyPc = keyPc;
+      previewModeIdx = modeIdx;
       pillPreview.forceNoRespell = false;
       pillPreview.spelledOverride = null;
       pillPreview.tonicLabelOverride = null;
     } else if (dir === "y") {
-      const previewKeyPc = wrap(currentScale.pitchClasses[0] + steps, 12);
+      previewKeyPc = wrap(currentScale.pitchClasses[0] + steps, 12);
       pillPreview.keyPc = previewKeyPc;
       pillPreview.forceNoRespell = false;
       pillPreview.spelledOverride = null;
       pillPreview.tonicLabelOverride = null;
     }
+    const pref = enharmonicPreferenceByPc[previewKeyPc] || null;
+    const previewScale = computeDisplayScale(previewKeyPc, previewModeIdx, pref);
+    previewScaleOverride = previewScale;
     updatePills();
+    scheduleHighlightUpdate(previewScale);
   };
 
   const finishAnimation = (action) => {
@@ -1091,6 +1135,7 @@ function setupScaleStripDrag() {
       action();
       resetTransforms();
       pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
+      previewScaleOverride = null;
       updatePills();
       dragCooldown = true;
       setTimeout(() => { dragCooldown = false; }, 150);
@@ -1193,9 +1238,11 @@ function setupScaleStripDrag() {
           renderScaleStrip(currentScale.spelled);
           resetTransforms();
           pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
+          previewScaleOverride = null;
           updatePills();
           dragCooldown = true;
           setTimeout(() => { dragCooldown = false; }, 150);
+          scheduleHighlightUpdate();
         };
         notesLayer.addEventListener("transitionend", resetAfter, { once: true });
       }
@@ -1213,9 +1260,11 @@ function setupScaleStripDrag() {
           renderScaleStrip(currentScale.spelled);
           resetTransforms();
           pillPreview = { keyPc: null, mode: null, forceNoRespell: false, spelledOverride: null, tonicLabelOverride: null };
+          previewScaleOverride = null;
           updatePills();
           dragCooldown = true;
           setTimeout(() => { dragCooldown = false; }, 150);
+          scheduleHighlightUpdate();
         };
         notesLayer.addEventListener("transitionend", resetAfter, { once: true });
       }
@@ -1293,10 +1342,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const allChordsBtn = document.getElementById("allChordsBtn");
   if (allChordsBtn) {
     allChordsBtn.addEventListener("click", () => clearRootFilter());
-  }
-  const clearChordBtn = document.getElementById("clearChordHighlight");
-  if (clearChordBtn) {
-    clearChordBtn.addEventListener("click", () => clearChordHighlight());
   }
 
   const scaleTiles = document.getElementById("scaleTiles");
