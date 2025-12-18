@@ -419,6 +419,7 @@ button:active {
 .instruments-card {
   position: static;
   align-self: start;
+  position: relative;
 }
 
 .instruments-card .card-heading {
@@ -429,7 +430,9 @@ button:active {
   display: flex;
   justify-content: flex-end;
   position: relative;
-  min-height: 32px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
 }
 
 .instrument-action {
@@ -439,6 +442,8 @@ button:active {
   position: absolute;
   top: 6px;
   right: 6px;
+  padding: 4px 8px;
+  height: 28px;
 }
 
 .instrument-action.is-active {
@@ -495,7 +500,7 @@ button:active {
 .key {
   border-radius: 8px;
   border: none;
-  background: #d9dce2;
+  background: #d1d4d9;
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
   box-shadow: inset 0 0 0 1px #c9ccd4;
@@ -507,8 +512,8 @@ button:active {
   top: 0;
   height: calc(var(--instrument-height) * 0.62);
   width: calc(100% / var(--white-count) * 0.6);
-  background: #4a4f58;
-  border: 1px solid #353941;
+  background: #464a52;
+  border: 1px solid #32363e;
   border-radius: 6px;
   transform: translateX(-50%);
   z-index: 3;
@@ -1001,15 +1006,16 @@ button:active {
 
 @media (max-width: 480px) {
   .controls-panel {
-    gap: 8px;
+    gap: 6px;
+    padding: 12px;
   }
 
   .scale-strip {
-    padding: 6px;
+    padding: 4px;
   }
 
   .tile-viewport {
-    height: 70px;
+    height: 68px;
   }
 
   .scale-banner {
@@ -1017,12 +1023,52 @@ button:active {
   }
 
   .main-grid {
-    gap: 8px;
+    gap: 6px;
     grid-template-columns: 1fr;
   }
 
   .scale-tiles {
     gap: 3px;
+  }
+
+  .pill-row {
+    min-height: 0;
+  }
+
+  .pill {
+    min-height: 48px;
+    padding: 6px 10px;
+  }
+
+  .pill-label {
+    font-size: 11px;
+  }
+
+  .pill-value {
+    font-size: 14px;
+  }
+
+  .inline-actions {
+    margin-top: 2px;
+    margin-bottom: 2px;
+  }
+
+  .instrument-stack {
+    gap: 6px;
+    --instrument-height: 78px;
+  }
+
+  .instrument {
+    padding: 6px 8px;
+    border-radius: 12px;
+  }
+
+  .card, .panel {
+    padding: 12px;
+  }
+
+  .heading-row h2 {
+    font-size: 17px;
   }
 }
 
