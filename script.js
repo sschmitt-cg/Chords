@@ -466,12 +466,13 @@ function renderVerticalRows() {
 
 function renderChordRow(chord) {
   const isSelected = selectedChordName === chord.name;
+  const noteMarkup = formatChordNotes(chord.notes);
   return `
     <div class="chord-row${chord.valid ? "" : " warning"}${isSelected ? " selected" : ""}"
       data-chord-name="${escapeAttr(chord.name)}"
       data-notes="${escapeAttr(chord.notes)}">
       <div class="chord-name">${chord.name}</div>
-      <div class="chord-notes">${chord.notes}</div>
+      <div class="chord-notes">${noteMarkup}</div>
     </div>
   `;
 }
@@ -556,18 +557,19 @@ function renderFretboardVisualizer() {
   markerLayer.className = "fretboard-markers";
   const markerFrets = [3, 5, 7, 9, 12];
   markerFrets.forEach((fret) => {
+    const markerIndex = fret === 12 ? 11.5 : fret - 0.5;
     if (fret === 12) {
       ["35%", "65%"].forEach(y => {
         const marker = document.createElement("div");
         marker.className = "fret-marker";
-        marker.style.setProperty("--fret-index", fret);
+        marker.style.setProperty("--marker-index", markerIndex);
         marker.style.setProperty("--marker-y", y);
         markerLayer.appendChild(marker);
       });
     } else {
       const marker = document.createElement("div");
       marker.className = "fret-marker";
-      marker.style.setProperty("--fret-index", fret);
+      marker.style.setProperty("--marker-index", markerIndex);
       marker.style.setProperty("--marker-y", "50%");
       markerLayer.appendChild(marker);
     }
@@ -624,6 +626,19 @@ function updateChordHighlightUI() {
   document.querySelectorAll(".chord-row").forEach(row => {
     row.classList.toggle("selected", row.dataset.chordName === selectedChordName);
   });
+}
+
+function formatChordNotes(notes) {
+  if (!notes) return "";
+  const colorMap = getDegreeColorMap();
+  const parts = notes.split("-").map(note => note.trim());
+  return parts.map((note, idx) => {
+    const pc = noteNameToPc(note);
+    const color = pc === null ? "#7c6dff" : (colorMap.get(pc) || "#7c6dff");
+    const noteSpan = `<span class="chord-note" style="--deg-color:${color}">${note}</span>`;
+    if (idx === parts.length - 1) return noteSpan;
+    return `${noteSpan}<span class="chord-sep">-</span>`;
+  }).join("");
 }
 
 function renderChordLists() {
