@@ -48,13 +48,6 @@ const KEY_OPTIONS = [
 const LETTER_TO_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
 const LETTERS = ["C","D","E","F","G","A","B"];
 
-// PR checklist:
-// - tap note tile => chords filtered + instruments show only that note
-// - tap All Chords => resets list + full scale highlights
-// - tap chord => chord tones; tap same chord again => revert (root-only if selected, else full scale)
-// - drag tiles => key/mode + instruments update live
-// - Randomize doesn’t stay blue
-
 // -------------------- STATE ------------------------
 
 let currentKeyIndex = 0;   // tonic pitch class index in KEY_OPTIONS

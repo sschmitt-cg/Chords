@@ -463,12 +463,14 @@ button:active {
   top: 0;
   height: 52px;
   pointer-events: none;
+  z-index: 20;
 }
 
 .keyboard-shell {
   position: relative;
   width: 100%;
   --white-count: 14;
+  z-index: 1;
 }
 
 .keyboard-white {
@@ -499,7 +501,7 @@ button:active {
   border: 1px solid #32363e;
   border-radius: 6px;
   transform: translateX(-50%);
-  z-index: 3;
+  z-index: 10;
   box-shadow: 0 2px 6px rgba(10, 12, 22, 0.15);
 }
 
@@ -511,7 +513,7 @@ button:active {
   background: var(--deg-color, transparent);
   opacity: 0;
   transition: opacity 0.18s ease;
-  z-index: 1;
+  z-index: 0;
 }
 
 .key.lit {
@@ -531,6 +533,12 @@ button:active {
 
 .key.dim {
   opacity: 0.35;
+}
+
+.key.black.dim {
+  opacity: 1;
+  background: color-mix(in srgb, #464a52, #000 10%);
+  border-color: color-mix(in srgb, #32363e, #000 10%);
 }
 
 .fretboard {
