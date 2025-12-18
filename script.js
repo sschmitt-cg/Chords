@@ -618,7 +618,7 @@ function updateInstrumentHighlights() {
   });
 
   const clearBtn = document.getElementById("clearChordHighlight");
-  if (clearBtn) clearBtn.style.display = dimOthers ? "" : "none";
+  if (clearBtn) clearBtn.classList.toggle("is-active", dimOthers);
 }
 
 function updateChordHighlightUI() {
