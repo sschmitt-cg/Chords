@@ -269,13 +269,24 @@ button {
   letter-spacing: 0.1px;
 }
 
-button:hover {
-  background: var(--accent-strong);
-  box-shadow: 0 12px 24px rgba(49, 69, 255, 0.25);
+button:focus {
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 button:active {
   transform: translateY(1px);
+}
+
+@media (hover: hover) {
+  button:hover {
+    background: var(--accent-strong);
+    box-shadow: 0 12px 24px rgba(49, 69, 255, 0.25);
+  }
 }
 
 .ghost {
@@ -374,13 +385,36 @@ button:active {
 
 .info-modal .wheel-modal-content {
   max-width: 520px;
-  gap: 12px;
+  max-height: min(80vh, 560px);
+  gap: 0;
 }
 
 .info-body {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   color: #1e2340;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+}
+
+.info-section ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #1e2340;
+}
+
+.info-section li {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.info-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+  padding-bottom: 6px;
 }
 
 .info-howto ul {
@@ -396,6 +430,10 @@ button:active {
 
 .info-modal .wheel-modal-header {
   align-items: flex-start;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;
 }
 
 .info-modal .wheel-modal-header h3 {
@@ -420,35 +458,6 @@ button:active {
   position: static;
   align-self: start;
   position: relative;
-}
-
-.instruments-card .card-heading {
-  margin-bottom: 6px;
-}
-
-.instruments-heading {
-  display: flex;
-  justify-content: flex-end;
-  position: relative;
-  min-height: 0;
-  padding: 0;
-  margin: 0;
-}
-
-.instrument-action {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  padding: 4px 8px;
-  height: 28px;
-}
-
-.instrument-action.is-active {
-  opacity: 1;
-  pointer-events: auto;
 }
 
 .instrument-stack {
@@ -481,12 +490,14 @@ button:active {
   top: 0;
   height: 52px;
   pointer-events: none;
+  z-index: 20;
 }
 
 .keyboard-shell {
   position: relative;
   width: 100%;
   --white-count: 14;
+  z-index: 1;
 }
 
 .keyboard-white {
@@ -503,8 +514,9 @@ button:active {
   background: #d1d4d9;
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
-  box-shadow: inset 0 0 0 1px #c9ccd4;
+  box-shadow: inset 0 0 0 1px #b8bcc8;
   z-index: 1;
+  overflow: hidden;
 }
 
 .key.black {
@@ -516,14 +528,29 @@ button:active {
   border: 1px solid #32363e;
   border-radius: 6px;
   transform: translateX(-50%);
-  z-index: 3;
+  z-index: 10;
   box-shadow: 0 2px 6px rgba(10, 12, 22, 0.15);
+}
+
+.key.white::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  border-radius: inherit;
+  background: var(--deg-color, transparent);
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  z-index: 0;
 }
 
 .key.lit {
   background: color-mix(in srgb, var(--deg-color, #7c6dff) 42%, #e2e4e8);
   border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 20%);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 60%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--deg-color, #7c6dff), #000 15%);
+}
+
+.key.white.lit::before {
+  opacity: 0.65;
 }
 
 .key.black.lit {
@@ -533,6 +560,12 @@ button:active {
 
 .key.dim {
   opacity: 0.35;
+}
+
+.key.black.dim {
+  opacity: 1;
+  background: color-mix(in srgb, #464a52, #000 10%);
+  border-color: color-mix(in srgb, #32363e, #000 10%);
 }
 
 .fretboard {
@@ -593,8 +626,8 @@ button:active {
 
 .fret-note {
   position: absolute;
-  width: 14px;
-  height: 14px;
+  width: 12px;
+  height: 12px;
   border-radius: 999px;
   background: transparent;
   box-shadow: none;
@@ -745,7 +778,7 @@ button:active {
 }
 
 .scale-tile {
-  border: 1px solid #d8ddf6;
+  border: 1px solid #c7ccdc;
   border-radius: 10px;
   padding: 8px 6px;
   text-align: center;
@@ -815,7 +848,7 @@ button:active {
   display: grid;
   place-items: center;
   background: linear-gradient(140deg, #f7f8ff, #eef1ff);
-  border: 1px solid #d8ddf6;
+  border: 1px solid #c7ccdc;
   border-radius: 10px;
   box-shadow: 0 6px 12px rgba(16, 20, 52, 0.08);
   color: #111731;

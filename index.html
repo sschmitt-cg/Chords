@@ -43,11 +43,6 @@
         <section id="outputArea" class="panel output-panel">
             <div id="mainContainer" class="main-grid">
                 <div id="instrumentContainer" class="card instruments-card">
-                    <div class="card-heading instruments-heading">
-                        <div class="heading-actions">
-                            <button id="clearChordHighlight" class="ghost micro instrument-action">All notes</button>
-                        </div>
-                    </div>
                     <div class="instrument-stack">
                         <div id="keyboardVisualizer" class="instrument keyboard" aria-label="Keyboard visualizer"></div>
                         <div id="fretboardVisualizer" class="instrument fretboard" aria-label="Guitar fretboard"></div>
@@ -134,20 +129,59 @@
     <div id="infoModal" class="wheel-modal hidden" role="dialog" aria-modal="true">
         <div class="wheel-modal-backdrop"></div>
         <div class="wheel-modal-content info-modal">
-            <div class="wheel-modal-header">
+            <div class="wheel-modal-header info-modal-header">
                 <h3 id="infoTitle">Music Theory Helper</h3>
                 <button id="closeInfoModal" class="ghost micro" aria-label="Close info">✕</button>
             </div>
-            <div class="wheel-modal-list info-body">
+            <div class="info-body" role="document">
                 <p class="subhead">Explore keys, modes, and harmonies without leaving the browser.</p>
                 <hr>
-                <div class="info-howto">
-                    <p class="eyebrow subtle">How to use</p>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Key selection</p>
                     <ul>
-                        <li>Swipe notes left/right to rotate through modes.</li>
-                        <li>Swipe notes up/down to change key.</li>
-                        <li>Tap a note to see chords rooted on that note.</li>
-                        <li>Use the Key and Mode selectors for direct selection.</li>
+                        <li>Tap the Key pill to choose a key.</li>
+                        <li>For enharmonic keys (e.g., C#/Db), tap the key label to switch spelling.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Mode selection</p>
+                    <ul>
+                        <li>Tap the Mode pill to pick a mode.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Swipe / drag on tiles</p>
+                    <ul>
+                        <li>Swipe left/right to rotate through modes.</li>
+                        <li>Swipe up/down to change key by semitone.</li>
+                        <li>Longer drags can shift multiple steps.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Note tiles</p>
+                    <ul>
+                        <li>Tap a note tile to filter chords rooted on that note and highlight only that note on keyboard/fretboard.</li>
+                        <li>Use All Chords to return to the full-scale view.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Chords list</p>
+                    <ul>
+                        <li>Tap a chord to highlight its tones on the keyboard + fretboard.</li>
+                        <li>Tap the same chord again to unselect and return to the prior view.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Keyboard &amp; fretboard</p>
+                    <ul>
+                        <li>Colors match the scale-degree tiles.</li>
+                        <li>Visualizers update as you change key/mode or select notes/chords.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Randomize</p>
+                    <ul>
+                        <li>Randomizes key and mode, updating tiles, visualizers, and chords.</li>
                     </ul>
                 </div>
             </div>
