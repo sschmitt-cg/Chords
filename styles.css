@@ -385,13 +385,36 @@ button:active {
 
 .info-modal .wheel-modal-content {
   max-width: 520px;
-  gap: 12px;
+  max-height: min(80vh, 560px);
+  gap: 0;
 }
 
 .info-body {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   color: #1e2340;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px;
+}
+
+.info-section ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  color: #1e2340;
+}
+
+.info-section li {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.info-modal-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+  padding-bottom: 6px;
 }
 
 .info-howto ul {
@@ -407,6 +430,10 @@ button:active {
 
 .info-modal .wheel-modal-header {
   align-items: flex-start;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;
 }
 
 .info-modal .wheel-modal-header h3 {
