@@ -87,7 +87,7 @@ const NOTE_DUR  = 0.32;
 const CHORD_TONE_GAP = 0.18;
 const CHORD_TONE_DUR = 0.30;
 const STRUM_GAP = 0.02;
-const STRUM_DUR = 0.85;
+const STRUM_DUR = 0.9;
 const MUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8l4 4m0 0l-4 4m4-4H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const UNMUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M17 9c1.333 1 2 2.333 2 4s-.667 3-2 4M15 11.5c.667.5 1 1.333 1 2.5s-.333 2-1 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ENHARMONIC_OPTIONS = {
@@ -163,83 +163,11 @@ function stopPlayback() {
 
 const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
-function createKarplusStrongVoice({ midi, start, dur }) {
-  if (!audioCtx || !masterGain) return null;
-  if (!Number.isFinite(midi)) return null;
-  const freq = midiToFreq(midi);
-  if (!Number.isFinite(freq) || freq <= 0) return null;
-  const delayTime = Math.max(1 / 5000, Math.min(1 / 40, 1 / freq));
-  const noiseLen = Math.max(0.01, Math.min(0.03, 0.5 / freq));
-
-  const buffer = audioCtx.createBuffer(1, Math.ceil(noiseLen * audioCtx.sampleRate), audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
-
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-
-  const delay = audioCtx.createDelay(1);
-  delay.delayTime.setValueAtTime(delayTime, start);
-
-  const lowpass = audioCtx.createBiquadFilter();
-  lowpass.type = "lowpass";
-  const lpFreq = Math.max(1800, Math.min(3200, freq * 8));
-  lowpass.frequency.setValueAtTime(lpFreq, start);
-
-  const feedbackGain = audioCtx.createGain();
-  const fbBase = 0.92;
-  const fb = Math.max(0.78, Math.min(0.92, fbBase - Math.max(0, (freq - 100) / 3000) * 0.14));
-  feedbackGain.gain.setValueAtTime(fb, start);
-
-  const exciteGain = audioCtx.createGain();
-  exciteGain.gain.setValueAtTime(0.25, start);
-
-  const outGain = audioCtx.createGain();
-  outGain.gain.setValueAtTime(0.0001, start);
-  outGain.gain.linearRampToValueAtTime(0.6, start + 0.005);
-  outGain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
-
-  noise.connect(exciteGain).connect(delay);
-  delay.connect(lowpass).connect(feedbackGain).connect(delay);
-  delay.connect(outGain).connect(masterGain);
-
-  noise.start(start);
-  noise.stop(start + noiseLen + 0.01);
-
-  const cleanup = () => {
-    try { outGain.gain.cancelScheduledValues(audioCtx.currentTime); outGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.01); } catch (_) {}
-    [noise, delay, lowpass, feedbackGain, exciteGain, outGain].forEach(node => {
-      try { node.disconnect?.(); } catch (_) {}
-    });
-  };
-
-  const stop = () => {
-    try { outGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.01); } catch (_) {}
-    try { noise.stop(); } catch (_) {}
-    cleanup();
-  };
-
-  setTimeout(cleanup, Math.max(0, (start + dur + 0.2 - audioCtx.currentTime) * 1000));
-  return { stop };
-}
-
-function playSynthNote({ midi, when, dur = 0.18, instrument = "piano" }) {
+function playSynthNote({ midi, when, dur = 0.18 }) {
   if (!audioCtx || !masterGain) return;
   if (!Number.isFinite(midi)) return;
   const start = Math.max(when, audioCtx.currentTime);
   const end = start + dur;
-  if (instrument === "guitar") {
-    const voice = createKarplusStrongVoice({ midi, start, dur: STRUM_DUR });
-    if (voice) {
-      activeVoices.push(voice);
-      setTimeout(() => {
-        voice.stop();
-        activeVoices = activeVoices.filter(v => v !== voice);
-      }, Math.max(0, (end - audioCtx.currentTime + 0.3) * 1000));
-    }
-    return;
-  }
-
   const gain = audioCtx.createGain();
   gain.gain.setValueAtTime(0.0001, start);
 
@@ -345,7 +273,7 @@ function playSequence(notes, instrument, startTime, gap, token) {
     if (token !== playbackToken) return;
     const when = startTime + gap * idx;
     const dur = note.dur || 0.2;
-    playSynthNote({ midi: note.midi, when, instrument, dur });
+    playSynthNote({ midi: note.midi, when, dur });
     scheduleFlash(note.pc, note.targets || [], when, token);
     current = when;
   });
@@ -358,7 +286,7 @@ function playStrum(notes, instrument, startTime, gap, token) {
   notes.forEach((note, idx) => {
     if (token !== playbackToken) return;
     const when = startTime + gap * idx;
-    playSynthNote({ midi: note.midi, when, instrument, dur: note.dur || STRUM_DUR });
+    playSynthNote({ midi: note.midi, when, dur: note.dur || STRUM_DUR });
     scheduleFlash(note.pc, note.targets || [], when, token);
     current = when;
   });
@@ -429,7 +357,7 @@ function maybePlayCurrentSelection(reason = "") {
     const keys = getKeysForPc(pc).map(el => ({ midi: Number(el.dataset.midi), pc, targets: [el], dur: NOTE_DUR }));
     if (keys.length) start = playSequence(keys, "piano", start, NOTE_GAP, token);
     const frets = getFretsForPc(pc).map(el => ({ midi: Number(el.dataset.midi), pc, targets: [el], dur: NOTE_DUR }));
-    if (frets.length) playSequence(frets, "guitar", start + 0.08, NOTE_GAP, token);
+    if (frets.length) playSequence(frets, "piano", start + 0.08, NOTE_GAP, token);
     return;
   }
 
@@ -443,7 +371,7 @@ function maybePlayCurrentSelection(reason = "") {
     const voicing = buildFretVoicing(chordSet);
     if (voicing.length) {
       const voicingNotes = voicing.map(item => ({ midi: item.midi, pc: item.pc, targets: [item.el], dur: STRUM_DUR }));
-      playStrum(voicingNotes, "guitar", start + 0.08, STRUM_GAP, token);
+      playStrum(voicingNotes, "piano", start + 0.08, STRUM_GAP, token);
     }
   }
 }
