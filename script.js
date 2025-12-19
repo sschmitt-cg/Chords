@@ -320,6 +320,16 @@ function buildFretVoicing(chordSet) {
   return order.map(str => perString.get(str)).filter(Boolean).sort((a, b) => a.midi - b.midi);
 }
 
+function parseChordRootPc() {
+  if (!selectedChordName) return null;
+  const m = selectedChordName.match(/^([A-G][b#x♯♭]{0,2})/);
+  if (m) {
+    const pc = noteNameToPc(m[1]);
+    if (pc !== null) return pc;
+  }
+  return null;
+}
+
 function scheduleFlash(pc, targets = [], when, token) {
   if (!audioCtx) return;
   const delayMs = Math.max(0, (when - audioCtx.currentTime) * 1000);
@@ -354,17 +364,51 @@ function maybePlayCurrentSelection(reason = "") {
     const pc = selectionPitchClass();
     if (pc === null) return;
     let start = baseStart;
-    const keys = getKeysForPc(pc).map(el => ({ midi: Number(el.dataset.midi), pc, targets: [el], dur: NOTE_DUR }));
-    if (keys.length) start = playSequence(keys, "piano", start, NOTE_GAP, token);
-    const frets = getFretsForPc(pc).map(el => ({ midi: Number(el.dataset.midi), pc, targets: [el], dur: NOTE_DUR }));
-    if (frets.length) playSequence(frets, "piano", start + 0.08, NOTE_GAP, token);
+    const fretsForPc = getFretsForPc(pc);
+    const keys = getKeysForPc(pc).map(el => ({
+      midi: Number(el.dataset.midi),
+      pc,
+      targets: [el, ...fretsForPc],
+      dur: NOTE_DUR
+    }));
+    if (keys.length) playSequence(keys, "piano", start, NOTE_GAP, token);
     return;
   }
 
   if (type === "chord") {
     const chordSet = activeChordPitchClasses || new Set();
-    const all = collectChordElements(chordSet);
-    const seqNotes = all.map(item => ({ midi: item.midi, pc: item.pc, targets: [item.el], dur: CHORD_TONE_DUR }));
+    const rootPc = parseChordRootPc();
+    const chordKeys = Array.from(document.querySelectorAll("#keyboardVisualizer .key"))
+      .filter(el => chordSet.has(Number(el.dataset.pc)))
+      .map(el => ({ el, midi: Number(el.dataset.midi), pc: Number(el.dataset.pc) }))
+      .filter(item => Number.isFinite(item.midi))
+      .sort((a, b) => a.midi - b.midi);
+
+    const seenMidi = new Set();
+    const dedupedKeys = [];
+    chordKeys.forEach(k => {
+      if (seenMidi.has(k.midi)) return;
+      seenMidi.add(k.midi);
+      dedupedKeys.push(k);
+    });
+
+    let orderedKeys = dedupedKeys;
+    if (rootPc !== null) {
+      const roots = dedupedKeys.filter(k => k.pc === rootPc);
+      const lowestRoot = roots.length ? roots[0] : null;
+      if (lowestRoot) {
+        orderedKeys = [
+          lowestRoot,
+          ...dedupedKeys.filter(k => k !== lowestRoot && k.midi > lowestRoot.midi)
+        ];
+      }
+    }
+
+    const seqNotes = orderedKeys.map(item => {
+      const fretTargets = getFretsForPc(item.pc);
+      return { midi: item.midi, pc: item.pc, targets: [item.el, ...fretTargets], dur: CHORD_TONE_DUR };
+    });
+
     let start = baseStart;
     if (seqNotes.length) start = playSequence(seqNotes, "piano", start, CHORD_TONE_GAP, token);
 
