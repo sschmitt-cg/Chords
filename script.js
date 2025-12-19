@@ -401,6 +401,15 @@ function maybePlayCurrentSelection(reason = "") {
           lowestRoot,
           ...dedupedKeys.filter(k => k !== lowestRoot && k.midi > lowestRoot.midi)
         ];
+        const maxInterval = Math.max(...Array.from(chordSet).map(pc => (pc - rootPc + 12) % 12));
+        const trimmed = [];
+        let reachedTop = false;
+        orderedKeys.forEach(k => {
+          if (reachedTop) return;
+          trimmed.push(k);
+          if ((k.pc - rootPc + 12) % 12 === maxInterval) reachedTop = true;
+        });
+        orderedKeys = trimmed;
       }
     }
 
