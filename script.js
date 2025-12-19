@@ -119,6 +119,8 @@ const CHORD_CATEGORIES = [
 
 // -------------------- AUDIO ------------------------
 
+const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
 function ensureAudio() {
   if (audioCtx) {
     if (audioCtx.state === "suspended") audioCtx.resume();
@@ -131,24 +133,35 @@ function ensureAudio() {
       limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
       limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
     }
-    if (!mediaDest && audioCtx) {
-      mediaDest = audioCtx.createMediaStreamDestination();
-    }
-    if (masterGain && limiter && mediaDest) {
-      try { masterGain.disconnect(); } catch (_) {}
-      masterGain.connect(limiter).connect(mediaDest);
-    }
-    if (audioOutEl && mediaDest && audioOutEl.srcObject !== mediaDest.stream) {
-      audioOutEl.srcObject = mediaDest.stream;
-      audioOutEl.volume = 1;
-      audioOutEl.muted = false;
-      audioOutEl.playsInline = true;
+    if (isIOS()) {
+      if (!mediaDest && audioCtx) {
+        mediaDest = audioCtx.createMediaStreamDestination();
+      }
+      if (masterGain && limiter && mediaDest) {
+        try { masterGain.disconnect(); } catch (_) {}
+        masterGain.connect(limiter).connect(mediaDest);
+      }
+      if (audioOutEl && mediaDest && audioOutEl.srcObject !== mediaDest.stream) {
+        audioOutEl.srcObject = mediaDest.stream;
+        audioOutEl.volume = 1;
+        audioOutEl.muted = false;
+        audioOutEl.playsInline = true;
+      }
+    } else {
+      if (masterGain && limiter) {
+        try { masterGain.disconnect(); } catch (_) {}
+        masterGain.connect(limiter).connect(audioCtx.destination);
+      }
     }
     return;
   }
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return;
-  audioCtx = new Ctx();
+  try {
+    audioCtx = new Ctx({ latencyHint: "interactive" });
+  } catch (_) {
+    audioCtx = new Ctx();
+  }
   audioOutEl = document.getElementById("audioOut");
   masterGain = audioCtx.createGain();
   masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
@@ -158,17 +171,17 @@ function ensureAudio() {
   limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
   limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
   limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
-  mediaDest = audioCtx.createMediaStreamDestination();
-  if (mediaDest) {
-    masterGain.connect(limiter).connect(mediaDest);
+  if (isIOS()) {
+    mediaDest = audioCtx.createMediaStreamDestination();
+    if (mediaDest) masterGain.connect(limiter).connect(mediaDest);
+    if (audioOutEl && mediaDest) {
+      audioOutEl.srcObject = mediaDest.stream;
+      audioOutEl.volume = 1;
+      audioOutEl.muted = false;
+      audioOutEl.playsInline = true;
+    }
   } else {
     masterGain.connect(limiter).connect(audioCtx.destination);
-  }
-  if (audioOutEl && mediaDest) {
-    audioOutEl.srcObject = mediaDest.stream;
-    audioOutEl.volume = 1;
-    audioOutEl.muted = false;
-    audioOutEl.playsInline = true;
   }
 }
 
@@ -1776,7 +1789,7 @@ document.addEventListener("DOMContentLoaded", () => {
         ensureAudio();
         if (!audioCtx) return;
         if (audioCtx?.state === "suspended") await audioCtx.resume();
-        if (audioOutEl) {
+        if (isIOS() && audioOutEl) {
           try { await audioOutEl.play(); } catch (e) { console.warn("audioOut play failed", e); }
         }
         audioMuted = false;
@@ -1785,7 +1798,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         audioMuted = true;
         stopPlayback();
-        if (audioOutEl) {
+        if (isIOS() && audioOutEl) {
           try { audioOutEl.pause(); } catch (_) {}
         }
         updateSoundToggleUI();
