@@ -72,6 +72,24 @@ const enharmonicPreferenceByPc = {};
 let previewScaleOverride = null;
 let highlightRafPending = false;
 let pendingHighlightScale = null;
+let audioMuted = true;
+let audioCtx = null;
+let masterGain = null;
+let limiter = null;
+let playbackToken = 0;
+let activeVoices = [];
+const AUDIO_MASTER_GAIN = 0.2;
+const FLASH_DURATION = 140;
+const SCALE_GAP = 0.22;
+const SCALE_DUR = 0.32;
+const NOTE_GAP  = 0.22;
+const NOTE_DUR  = 0.32;
+const CHORD_TONE_GAP = 0.18;
+const CHORD_TONE_DUR = 0.30;
+const STRUM_GAP = 0.02;
+const STRUM_DUR = 0.9;
+const MUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8l4 4m0 0l-4 4m4-4H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const UNMUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M17 9c1.333 1 2 2.333 2 4s-.667 3-2 4M15 11.5c.667.5 1 1.333 1 2.5s-.333 2-1 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ENHARMONIC_OPTIONS = {
   1: { sharp: "C#", flat: "Db" },
   3: { sharp: "D#", flat: "Eb" },
@@ -96,6 +114,329 @@ const CHORD_CATEGORIES = [
   { key: "suspended", label: "Suspended" },
   { key: "all", label: "All chords" }
 ];
+
+// -------------------- AUDIO ------------------------
+
+function ensureAudio() {
+  if (audioCtx) {
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    if (!limiter && audioCtx) {
+      limiter = audioCtx.createDynamicsCompressor();
+      limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
+      limiter.knee.setValueAtTime(18, audioCtx.currentTime);
+      limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
+      limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
+      limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
+      if (masterGain) masterGain.connect(limiter).connect(audioCtx.destination);
+    }
+    return;
+  }
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  audioCtx = new Ctx();
+  masterGain = audioCtx.createGain();
+  masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
+  limiter = audioCtx.createDynamicsCompressor();
+  limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
+  limiter.knee.setValueAtTime(18, audioCtx.currentTime);
+  limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
+  limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
+  limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
+  masterGain.connect(limiter).connect(audioCtx.destination);
+}
+
+function stopPlayback() {
+  playbackToken += 1;
+  if (masterGain && audioCtx) {
+    const now = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+    masterGain.gain.exponentialRampToValueAtTime(AUDIO_MASTER_GAIN, now + 0.08);
+  }
+  activeVoices.forEach(v => {
+    try { v.stop(); } catch (_) {}
+  });
+  activeVoices = [];
+  return playbackToken;
+}
+
+const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
+
+function playSynthNote({ midi, when, dur = 0.18 }) {
+  if (!audioCtx || !masterGain) return;
+  if (!Number.isFinite(midi)) return;
+  const start = Math.max(when, audioCtx.currentTime);
+  const end = start + dur;
+  const gain = audioCtx.createGain();
+  gain.gain.setValueAtTime(0.0001, start);
+
+  const osc = audioCtx.createOscillator();
+  osc.frequency.setValueAtTime(midiToFreq(midi), start);
+
+  const harmonic = audioCtx.createOscillator();
+  harmonic.type = "sine";
+  harmonic.frequency.setValueAtTime(midiToFreq(midi) * 2, start);
+  const harmonicGain = audioCtx.createGain();
+  harmonicGain.gain.setValueAtTime(0.2, start);
+  harmonic.connect(harmonicGain).connect(gain);
+  osc.connect(gain);
+
+  gain.connect(masterGain);
+
+  const attack = 0.01;
+  const decay = 0.18;
+  const sustainLevel = 0.35;
+  gain.gain.linearRampToValueAtTime(0.9, start + attack);
+  gain.gain.linearRampToValueAtTime(sustainLevel, start + attack + decay * 0.4);
+  gain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+  osc.start(start);
+  harmonic.start(start);
+  osc.stop(end + 0.05);
+  harmonic.stop(end + 0.05);
+
+  const voice = {
+    stop: () => {
+      try { gain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.01); } catch (_) {}
+      [osc, harmonic, harmonicGain, gain].forEach(node => {
+        try { node.stop?.(); } catch (_) {}
+        try { node.disconnect?.(); } catch (_) {}
+      });
+    }
+  };
+  activeVoices.push(voice);
+  setTimeout(() => {
+    voice.stop();
+    activeVoices = activeVoices.filter(v => v !== voice);
+  }, Math.max(0, (end - audioCtx.currentTime + 0.2) * 1000));
+}
+
+function flashEl(el) {
+  if (!el) return;
+  el.classList.add("is-playing");
+  setTimeout(() => el.classList.remove("is-playing"), FLASH_DURATION);
+}
+
+function spelledNoteForPc(pc) {
+  const idx = currentScale.pitchClasses.findIndex(p => p === pc);
+  if (idx === -1) return null;
+  return currentScale.spelled[idx];
+}
+
+function flashPitchClass(pc) {
+  const note = pcToSpelledFallback(pc);
+  if (!note) return;
+  const tiles = document.querySelectorAll(`.note-label[data-note="${note}"]`);
+  tiles.forEach(flashEl);
+}
+
+function flashTargets(pc, elements = []) {
+  flashPitchClass(pc);
+  elements.forEach(flashEl);
+}
+
+function selectionPitchClass() {
+  if (selectedChordName && activeChordPitchClasses && activeChordPitchClasses.size) return null;
+  if (selectedRootNote) return noteNameToPc(selectedRootNote);
+  return null;
+}
+
+function pcToSpelledFallback(pc) {
+  const spelled = spelledNoteForPc(pc);
+  if (spelled) return spelled;
+  const preferFlat = enharmonicPreferenceByPc[currentKeyPc] === "flat";
+  const sharpMap = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const flatMap  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  return preferFlat ? flatMap[wrap(pc, 12)] : sharpMap[wrap(pc, 12)];
+}
+
+function buildAscendingScaleMidis(pitchClasses) {
+  if (!pitchClasses?.length) return [];
+  const tonicPc = pitchClasses[0];
+  let lastMidi = 60 + tonicPc;
+  const midis = [lastMidi];
+  for (let i = 1; i < pitchClasses.length; i += 1) {
+    let midi = 60 + pitchClasses[i];
+    while (midi < lastMidi) midi += 12;
+    midis.push(midi);
+    lastMidi = midi;
+  }
+  midis.push(midis[0] + 12);
+  return midis;
+}
+
+function playSequence(notes, instrument, startTime, gap, token) {
+  if (!audioCtx || !masterGain) return startTime;
+  let current = startTime;
+  notes.forEach((note, idx) => {
+    if (token !== playbackToken) return;
+    const when = startTime + gap * idx;
+    const dur = note.dur || 0.2;
+    playSynthNote({ midi: note.midi, when, dur });
+    scheduleFlash(note.pc, note.targets || [], when, token);
+    current = when;
+  });
+  return current + gap;
+}
+
+function playStrum(notes, instrument, startTime, gap, token) {
+  if (!audioCtx || !masterGain) return startTime;
+  let current = startTime;
+  notes.forEach((note, idx) => {
+    if (token !== playbackToken) return;
+    const when = startTime + gap * idx;
+    playSynthNote({ midi: note.midi, when, dur: note.dur || STRUM_DUR });
+    scheduleFlash(note.pc, note.targets || [], when, token);
+    current = when;
+  });
+  return current + gap;
+}
+
+function collectChordElements(chordSet) {
+  const elements = Array.from(document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note"))
+    .filter(el => chordSet.has(Number(el.dataset.pc)));
+  return elements
+    .map(el => ({ el, midi: Number(el.dataset.midi || 0), pc: Number(el.dataset.pc || 0) }))
+    .filter(item => !Number.isNaN(item.midi))
+    .sort((a, b) => a.midi - b.midi);
+}
+
+function buildFretVoicing(chordSet) {
+  const perString = new Map();
+  const notes = Array.from(document.querySelectorAll("#fretboardVisualizer .fret-note"));
+  notes.forEach(n => {
+    const pc = Number(n.dataset.pc);
+    if (!chordSet.has(pc)) return;
+    const str = Number(n.dataset.string);
+    const midi = Number(n.dataset.midi);
+    if (Number.isNaN(str) || Number.isNaN(midi)) return;
+    const existing = perString.get(str);
+    if (!existing || midi < existing.midi) {
+      perString.set(str, { el: n, midi, pc });
+    }
+  });
+  const order = [5, 4, 3, 2, 1, 0];
+  return order.map(str => perString.get(str)).filter(Boolean).sort((a, b) => a.midi - b.midi);
+}
+
+function parseChordRootPc() {
+  if (!selectedChordName) return null;
+  const m = selectedChordName.match(/^([A-G][b#x♯♭]{0,2})/);
+  if (m) {
+    const pc = noteNameToPc(m[1]);
+    if (pc !== null) return pc;
+  }
+  return null;
+}
+
+function scheduleFlash(pc, targets = [], when, token) {
+  if (!audioCtx) return;
+  const delayMs = Math.max(0, (when - audioCtx.currentTime) * 1000);
+  setTimeout(() => {
+    if (token !== playbackToken) return;
+    flashTargets(pc, targets);
+  }, delayMs);
+}
+
+function maybePlayCurrentSelection(reason = "") {
+  if (audioMuted || stripDragging) return;
+  ensureAudio();
+  if (!audioCtx || !masterGain) return;
+  const token = stopPlayback();
+  const type = getSelectionType();
+  const baseStart = audioCtx.currentTime + 0.05;
+
+  if (type === "scale") {
+    const pcs = currentScale.pitchClasses;
+    const midis = buildAscendingScaleMidis(pcs);
+    const notes = midis.map((midi, idx) => ({
+      midi,
+      pc: pcs[idx % pcs.length],
+      dur: SCALE_DUR,
+      targets: getKeysByMidi(midi)
+    }));
+    playSequence(notes, "piano", baseStart, SCALE_GAP, token);
+    return;
+  }
+
+  if (type === "note") {
+    const pc = selectionPitchClass();
+    if (pc === null) return;
+    let start = baseStart;
+    const fretsForPc = getFretsForPc(pc);
+    const keys = getKeysForPc(pc).map(el => ({
+      midi: Number(el.dataset.midi),
+      pc,
+      targets: [el, ...fretsForPc],
+      dur: NOTE_DUR
+    }));
+    if (keys.length) playSequence(keys, "piano", start, NOTE_GAP, token);
+    return;
+  }
+
+  if (type === "chord") {
+    const chordSet = activeChordPitchClasses || new Set();
+    const rootPc = parseChordRootPc();
+    const chordKeys = Array.from(document.querySelectorAll("#keyboardVisualizer .key"))
+      .filter(el => chordSet.has(Number(el.dataset.pc)))
+      .map(el => ({ el, midi: Number(el.dataset.midi), pc: Number(el.dataset.pc) }))
+      .filter(item => Number.isFinite(item.midi))
+      .sort((a, b) => a.midi - b.midi);
+
+    const seenMidi = new Set();
+    const dedupedKeys = [];
+    chordKeys.forEach(k => {
+      if (seenMidi.has(k.midi)) return;
+      seenMidi.add(k.midi);
+      dedupedKeys.push(k);
+    });
+
+    let orderedKeys = dedupedKeys;
+    if (rootPc !== null) {
+      const roots = dedupedKeys.filter(k => k.pc === rootPc);
+      const lowestRoot = roots.length ? roots[0] : null;
+      if (lowestRoot) {
+        orderedKeys = [
+          lowestRoot,
+          ...dedupedKeys.filter(k => k !== lowestRoot && k.midi > lowestRoot.midi)
+        ];
+        const maxInterval = Math.max(...Array.from(chordSet).map(pc => (pc - rootPc + 12) % 12));
+        const trimmed = [];
+        let reachedTop = false;
+        orderedKeys.forEach(k => {
+          if (reachedTop) return;
+          trimmed.push(k);
+          if ((k.pc - rootPc + 12) % 12 === maxInterval) reachedTop = true;
+        });
+        orderedKeys = trimmed;
+      }
+    }
+
+    const seqNotes = orderedKeys.map(item => {
+      const fretTargets = getFretsForPc(item.pc);
+      return { midi: item.midi, pc: item.pc, targets: [item.el, ...fretTargets], dur: CHORD_TONE_DUR };
+    });
+
+    let start = baseStart;
+    if (seqNotes.length) start = playSequence(seqNotes, "piano", start, CHORD_TONE_GAP, token);
+
+    const voicing = buildFretVoicing(chordSet);
+    if (voicing.length) {
+      const voicingNotes = voicing.map(item => ({ midi: item.midi, pc: item.pc, targets: [item.el], dur: STRUM_DUR }));
+      playStrum(voicingNotes, "piano", start + 0.08, STRUM_GAP, token);
+    }
+  }
+}
+
+function updateSoundToggleUI() {
+  const btn = document.getElementById("soundToggle");
+  if (!btn) return;
+  btn.classList.toggle("is-unmuted", !audioMuted);
+  btn.classList.toggle("is-muted", audioMuted);
+  btn.setAttribute("aria-label", audioMuted ? "Unmute" : "Mute");
+  btn.innerHTML = audioMuted ? MUTED_ICON : UNMUTED_ICON;
+}
 
 // -------------------- HELPERS ------------------------
 
@@ -307,6 +648,25 @@ function getHighlightSet(scalePitchClasses = currentScale.pitchClasses) {
   return { set: scaleSet, isolation: false };
 }
 
+function getSelectionType() {
+  if (selectedChordName && activeChordPitchClasses) return "chord";
+  if (selectedRootNote) return "note";
+  return "scale";
+}
+
+function getKeysForPc(pc) {
+  const keys = Array.from(document.querySelectorAll(`#keyboardVisualizer .key[data-pc="${pc}"]`));
+  return keys.sort((a, b) => Number(a.dataset.midi || 0) - Number(b.dataset.midi || 0));
+}
+
+function getFretsForPc(pc) {
+  const frets = Array.from(document.querySelectorAll(`#fretboardVisualizer .fret-note[data-pc="${pc}"]`));
+  return frets.sort((a, b) => Number(a.dataset.midi || 0) - Number(b.dataset.midi || 0));
+}
+
+const getKeysByMidi = (midi) => Array.from(document.querySelectorAll(`#keyboardVisualizer .key[data-midi="${midi}"]`));
+const getFretsByMidi = (midi) => Array.from(document.querySelectorAll(`#fretboardVisualizer .fret-note[data-midi="${midi}"]`));
+
 // -------------------- CHORD ANALYSIS ------------------------
 
 function intervalQuality(int3, int5) {
@@ -516,11 +876,14 @@ function renderKeyboardVisualizer() {
   blackRow.className = "keyboard-black";
 
   const whitePcs = [0, 2, 4, 5, 7, 9, 11, 0, 2, 4, 5, 7, 9, 11];
+  const whiteMidis = [60, 62, 64, 65, 67, 69, 71, 72, 74, 76, 77, 79, 81, 83];
   const whiteCount = whitePcs.length;
-  whitePcs.forEach(pc => {
+  whitePcs.forEach((pc, idx) => {
     const key = document.createElement("div");
     key.className = "key white";
     key.dataset.pc = pc;
+    key.dataset.midi = whiteMidis[idx];
+    key.dataset.order = idx;
     whiteRow.appendChild(key);
   });
 
@@ -536,10 +899,12 @@ function renderKeyboardVisualizer() {
     { pc: 8, whiteIndex: 11 },
     { pc: 10, whiteIndex: 12 }
   ];
-  blackKeys.forEach(({ pc, whiteIndex }) => {
+  blackKeys.forEach(({ pc, whiteIndex }, idx) => {
     const key = document.createElement("div");
     key.className = "key black";
     key.dataset.pc = pc;
+    key.dataset.midi = (whiteMidis[whiteIndex] || 60) + 1;
+    key.dataset.order = whiteIndex + 0.5 + idx * 0.001;
     const left = ((whiteIndex + 1) / whiteCount) * 100;
     key.style.left = `${left}%`;
     blackRow.appendChild(key);
@@ -603,11 +968,15 @@ function renderFretboardVisualizer() {
   noteLayer.className = "fretboard-notes";
   // High E to low E to match top-to-bottom visual order.
   const openStrings = [4, 11, 7, 2, 9, 4];
+  const openMidis = [64, 59, 55, 50, 45, 40];
   openStrings.forEach((openPc, stringIdx) => {
     for (let fret = 0; fret <= 12; fret += 1) {
       const note = document.createElement("div");
       note.className = "fret-note";
       note.dataset.pc = wrap(openPc + fret, 12);
+      note.dataset.midi = openMidis[stringIdx] + fret;
+      note.dataset.string = stringIdx;
+      note.dataset.fret = fret;
       note.style.setProperty("--string-index", stringIdx);
       note.style.setProperty("--fret-index", fret);
       noteLayer.appendChild(note);
@@ -753,6 +1122,7 @@ function clearRootFilter() {
   setTileMetrics();
   renderChordLists();
   scheduleHighlightUpdate();
+  maybePlayCurrentSelection("note-clear");
 }
 
 function handleRootTap(note) {
@@ -764,12 +1134,14 @@ function handleRootTap(note) {
   setTileMetrics();
   renderChordLists();
   scheduleHighlightUpdate();
+  maybePlayCurrentSelection("note-select");
 }
 
 function clearChordHighlight() {
   activeChordPitchClasses = null;
   selectedChordName = null;
   updateChordHighlightUI();
+  maybePlayCurrentSelection("chord-clear");
 }
 
 function setChordHighlight(name, notes) {
@@ -783,6 +1155,7 @@ function setChordHighlight(name, notes) {
   activeChordPitchClasses = new Set(pcs);
   selectedChordName = name;
   updateChordHighlightUI();
+  maybePlayCurrentSelection("chord-select");
 }
 
 function populateChordSelectors() {
@@ -901,6 +1274,7 @@ function drawFromState(options = {}) {
   renderChordLists();
   populateChordSelectors();
   scheduleHighlightUpdate();
+  maybePlayCurrentSelection("state-change");
 
   document.getElementById("results1").textContent = "";
   document.getElementById("results2").textContent = "";
@@ -1353,6 +1727,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const name = row.dataset.chordName;
       const notes = row.dataset.notes;
       setChordHighlight(name, notes);
+    });
+  }
+
+  const soundToggle = document.getElementById("soundToggle");
+  updateSoundToggleUI();
+  if (soundToggle) {
+    soundToggle.addEventListener("click", async () => {
+      if (audioMuted) {
+        ensureAudio();
+        if (!audioCtx) return;
+        if (audioCtx?.state === "suspended") await audioCtx.resume();
+        audioMuted = false;
+        updateSoundToggleUI();
+        maybePlayCurrentSelection("unmute");
+      } else {
+        audioMuted = true;
+        stopPlayback();
+        updateSoundToggleUI();
+      }
     });
   }
 
