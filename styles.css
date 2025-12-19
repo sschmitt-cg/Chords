@@ -311,8 +311,6 @@ button:active {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: calc(100dvh - 150px);
-  overflow: hidden;
 }
 
 .is-hidden {
@@ -337,11 +335,8 @@ button:active {
 .main-grid {
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   align-items: start;
-  max-height: calc(100dvh - 210px);
-  overflow-y: auto;
-  padding-right: 4px;
 }
 
 .card {
@@ -376,6 +371,35 @@ button:active {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.chords-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chords-header {
+  margin-bottom: 2px;
+}
+
+.chords-header h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.chords-header p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.chords-scroll {
+  flex: 1 1 auto;
+  overflow: auto;
+  max-height: calc(100dvh - 320px);
+  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .filter-status {
@@ -458,16 +482,13 @@ button:active {
   position: static;
   align-self: start;
   position: relative;
+  margin-bottom: 16px;
 }
 
 .instrument-stack {
   display: grid;
   gap: 8px;
   --instrument-height: clamp(110px, 20vw, 140px);
-}
-
-.main-grid {
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
 .instrument {
@@ -1102,6 +1123,24 @@ button:active {
 
   .heading-row h2 {
     font-size: 17px;
+  }
+}
+
+@media (max-width: 520px) {
+  .instruments-card {
+    padding: 14px;
+  }
+
+  .instrument-stack {
+    gap: 6px;
+  }
+
+  .instrument {
+    padding: 6px;
+  }
+
+  .chords-scroll {
+    max-height: 42dvh;
   }
 }
 

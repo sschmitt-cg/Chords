@@ -666,8 +666,7 @@ function formatChordNotes(notes) {
 
 function renderChordLists() {
   const allBtn = document.getElementById("allChordsBtn");
-  const headingDesc = document.querySelector("#availableChordsContainer .card-heading p");
-  const accordion = document.getElementById("chordAccordion");
+  const headingDesc = document.getElementById("chordHeadingDesc");
   const data = filteredChords || currentChords;
   const isFiltered = Boolean(selectedRootNote);
   const availableNames = new Set();
