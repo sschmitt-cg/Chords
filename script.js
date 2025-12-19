@@ -60,6 +60,7 @@ let selectedRootNote = null;
 let activeScalePitchClasses = new Set();
 let activeChordPitchClasses = null;
 let selectedChordName = null;
+let selectedChordNotes = null;
 let activeChordCategory = null;
 let stripDragging = false;
 let tapStart = null;
@@ -360,6 +361,39 @@ function buildFretVoicing(chordSet) {
   return order.map(str => perString.get(str)).filter(Boolean).sort((a, b) => a.midi - b.midi);
 }
 
+function buildKeyboardChordPlaybackListFromNotes(notesString) {
+  const pcsOrdered = chordNotesToPcs(notesString);
+  if (!pcsOrdered.length) return [];
+  const rootPc = pcsOrdered[0];
+  const result = [];
+  const usedMidis = new Set();
+
+  const rootKeys = getKeysForPc(rootPc);
+  const rootKey = rootKeys[0];
+  if (!rootKey || !Number.isFinite(Number(rootKey.dataset.midi))) return [];
+  const rootMidi = Number(rootKey.dataset.midi);
+  result.push({ midi: rootMidi, pc: rootPc, targets: [rootKey, ...getFretsForPc(rootPc)], dur: CHORD_TONE_DUR });
+  usedMidis.add(rootMidi);
+  let minMidi = rootMidi + 1;
+
+  for (let i = 1; i < pcsOrdered.length; i += 1) {
+    const pc = pcsOrdered[i];
+    const keys = getKeysForPc(pc);
+    if (!keys.length) continue;
+    const candidate = keys.find(k => Number(k.dataset.midi) >= minMidi) || keys[keys.length - 1];
+    const midi = Number(candidate.dataset.midi);
+    if (!Number.isFinite(midi) || usedMidis.has(midi)) {
+      minMidi = midi + 1;
+      continue;
+    }
+    result.push({ midi, pc, targets: [candidate, ...getFretsForPc(pc)], dur: CHORD_TONE_DUR });
+    usedMidis.add(midi);
+    minMidi = midi + 1;
+  }
+
+  return result.sort((a, b) => a.midi - b.midi);
+}
+
 function buildKeyboardChordPlaybackList(chordSet, rootPc) {
   const chordKeys = Array.from(document.querySelectorAll("#keyboardVisualizer .key"))
     .filter(el => chordSet.has(Number(el.dataset.pc)))
@@ -461,12 +495,13 @@ function maybePlayCurrentSelection(reason = "") {
 
   if (type === "chord") {
     const chordSet = activeChordPitchClasses || new Set();
-    const rootPc = parseChordRootPc();
-    const chordNotes = buildKeyboardChordPlaybackList(chordSet, rootPc);
+    const chordNotes = selectedChordNotes
+      ? buildKeyboardChordPlaybackListFromNotes(selectedChordNotes)
+      : [];
     const seqNotes = chordNotes.map(item => ({
       midi: item.midi,
       pc: item.pc,
-      targets: [item.keyEl, ...(item.fretEls || [])],
+      targets: item.targets || [],
       dur: CHORD_TONE_DUR
     }));
 
@@ -1168,6 +1203,7 @@ function clearRootFilter() {
   selectedRootNote = null;
   filteredChords = null;
   selectedChordName = null;
+  selectedChordNotes = null;
   activeChordPitchClasses = null;
   renderScaleStrip(currentScale.spelled);
   setTileMetrics();
@@ -1180,6 +1216,7 @@ function handleRootTap(note) {
   selectedRootNote = note;
   filteredChords = filterChordsByRoot(currentChords, selectedRootNote);
   selectedChordName = null;
+  selectedChordNotes = null;
   activeChordPitchClasses = null;
   renderScaleStrip(currentScale.spelled);
   setTileMetrics();
@@ -1191,6 +1228,7 @@ function handleRootTap(note) {
 function clearChordHighlight() {
   activeChordPitchClasses = null;
   selectedChordName = null;
+  selectedChordNotes = null;
   updateChordHighlightUI();
   maybePlayCurrentSelection("chord-clear");
 }
@@ -1205,6 +1243,7 @@ function setChordHighlight(name, notes) {
   if (!pcs.length) return;
   activeChordPitchClasses = new Set(pcs);
   selectedChordName = name;
+  selectedChordNotes = notes;
   updateChordHighlightUI();
   maybePlayCurrentSelection("chord-select");
 }
