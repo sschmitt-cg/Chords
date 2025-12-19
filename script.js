@@ -725,6 +725,13 @@ const getLowestVisibleKeyboardMidiForPc = (pc) => {
   return Number.isFinite(midi) ? midi : null;
 };
 
+function nextMidiAbove(prevMidi, pc) {
+  const start = prevMidi + 1;
+  const startPc = wrap(start, 12);
+  const delta = wrap(pc - startPc, 12);
+  return start + delta;
+}
+
 function getNearestVisibleKeyboardKeyForPc(pc, targetMidi) {
   const keys = getKeysForPc(pc);
   if (!keys.length) return null;
@@ -758,12 +765,13 @@ function buildChordPlaybackMidisFromNotes(notesString) {
 
   let prevMidi = rootMidi - 1;
   pcsOrdered.forEach((pc, idx) => {
-    const baseOct = Math.floor(rootMidi / 12) * 12;
-    let midi = baseOct + pc;
-    const interval = wrap(pc - rootPc, 12);
-    const isExtension = interval === 1 || interval === 2 || interval === 3 || interval === 5 || interval === 6 || interval === 8 || interval === 9;
-    if (isExtension && midi < rootMidi + 12) midi = rootMidi + 12 + interval;
-    while (midi <= prevMidi) midi += 12;
+    let midi = nextMidiAbove(prevMidi, pc);
+    const isExtension = pcsOrdered.length === 5 && idx === pcsOrdered.length - 1;
+    if (isExtension) {
+      const minExt = rootMidi + 12;
+      while (midi < minExt) midi += 12;
+      while (midi <= prevMidi) midi += 12;
+    }
     while (usedMidis.has(midi)) midi += 12;
     prevMidi = midi;
     usedMidis.add(midi);
