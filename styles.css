@@ -84,6 +84,41 @@ body {
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
 }
 
+.sound-toggle {
+  width: clamp(26px, 3.4vw, 28px);
+  height: clamp(26px, 3.4vw, 28px);
+  border-radius: 999px;
+  border: none;
+  background: rgba(255, 255, 255, 0.08);
+  color: #f4f6ff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.sound-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.sound-toggle:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.sound-toggle:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.sound-toggle.is-unmuted {
+  background: rgba(85, 104, 255, 0.18);
+  color: #fff;
+  box-shadow: 0 8px 18px rgba(85, 104, 255, 0.35);
+}
+
 .info-button:hover {
   background: rgba(255, 255, 255, 0.16);
 }
@@ -441,6 +476,13 @@ button:active {
 .chord-category-panel {
   display: grid;
   gap: 8px;
+}
+
+.note-label.is-playing,
+.key.is-playing,
+.fret-note.is-playing {
+  box-shadow: 0 0 0 2px rgba(85, 104, 255, 0.4), 0 6px 16px rgba(85, 104, 255, 0.35);
+  filter: brightness(1.05);
 }
 
 .chords-scroll {
