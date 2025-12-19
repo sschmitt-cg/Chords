@@ -40,7 +40,7 @@
             </div>
         </section>
 
-        <section id="outputArea" class="panel output-panel">
+        <section id="outputArea" class="output-panel">
             <div id="mainContainer" class="main-grid">
                 <div id="instrumentContainer" class="card instruments-card">
                     <div class="instrument-stack">
@@ -49,7 +49,7 @@
                     </div>
                 </div>
                 <div id="availableChordsContainer" class="card chords-card">
-                    <div class="card-heading">
+                    <div class="chords-header">
                         <div class="heading-row">
                           <div>
                             <h2>Available chords</h2>
@@ -61,30 +61,32 @@
                           </div>
                         </div>
                     </div>
-                    <div class="accordion" id="chordAccordion">
-                        <div class="accordion-item" data-target="triadsOutput">
-                            <button class="accordion-header" type="button">
-                                <span>Triads</span><span class="chevron">▾</span>
-                            </button>
-                            <div class="accordion-panel" id="triadsOutput"></div>
-                        </div>
-                        <div class="accordion-item" data-target="seventhsOutput">
-                            <button class="accordion-header" type="button">
-                                <span>7ths</span><span class="chevron">▾</span>
-                            </button>
-                            <div class="accordion-panel" id="seventhsOutput"></div>
-                        </div>
-                        <div class="accordion-item" data-target="ninthsOutput">
-                            <button class="accordion-header" type="button">
-                                <span>9ths</span><span class="chevron">▾</span>
-                            </button>
-                            <div class="accordion-panel" id="ninthsOutput"></div>
-                        </div>
-                        <div class="accordion-item" data-target="suspendedOutput">
-                            <button class="accordion-header" type="button">
-                                <span>Suspended</span><span class="chevron">▾</span>
-                            </button>
-                            <div class="accordion-panel" id="suspendedOutput"></div>
+                    <div class="chords-scroll" id="chordsScroll">
+                        <div class="accordion" id="chordAccordion">
+                            <div class="accordion-item" data-target="triadsOutput">
+                                <button class="accordion-header" type="button">
+                                    <span>Triads</span><span class="chevron">▾</span>
+                                </button>
+                                <div class="accordion-panel" id="triadsOutput"></div>
+                            </div>
+                            <div class="accordion-item" data-target="seventhsOutput">
+                                <button class="accordion-header" type="button">
+                                    <span>7ths</span><span class="chevron">▾</span>
+                                </button>
+                                <div class="accordion-panel" id="seventhsOutput"></div>
+                            </div>
+                            <div class="accordion-item" data-target="ninthsOutput">
+                                <button class="accordion-header" type="button">
+                                    <span>9ths</span><span class="chevron">▾</span>
+                                </button>
+                                <div class="accordion-panel" id="ninthsOutput"></div>
+                            </div>
+                            <div class="accordion-item" data-target="suspendedOutput">
+                                <button class="accordion-header" type="button">
+                                    <span>Suspended</span><span class="chevron">▾</span>
+                                </button>
+                                <div class="accordion-panel" id="suspendedOutput"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
