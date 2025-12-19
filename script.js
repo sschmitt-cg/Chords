@@ -391,7 +391,7 @@ function buildKeyboardChordPlaybackListFromNotes(notesString) {
     minMidi = midi + 1;
   }
 
-  return result.sort((a, b) => a.midi - b.midi);
+  return result;
 }
 
 function buildKeyboardChordPlaybackList(chordSet, rootPc) {
