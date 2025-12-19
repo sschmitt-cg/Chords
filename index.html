@@ -61,33 +61,9 @@
                           </div>
                         </div>
                     </div>
+                    <div class="chord-category-tabs" id="chordCategoryTabs" role="tablist"></div>
                     <div class="chords-scroll" id="chordsScroll">
-                        <div class="accordion" id="chordAccordion">
-                            <div class="accordion-item" data-target="triadsOutput">
-                                <button class="accordion-header" type="button">
-                                    <span>Triads</span><span class="chevron">▾</span>
-                                </button>
-                                <div class="accordion-panel" id="triadsOutput"></div>
-                            </div>
-                            <div class="accordion-item" data-target="seventhsOutput">
-                                <button class="accordion-header" type="button">
-                                    <span>7ths</span><span class="chevron">▾</span>
-                                </button>
-                                <div class="accordion-panel" id="seventhsOutput"></div>
-                            </div>
-                            <div class="accordion-item" data-target="ninthsOutput">
-                                <button class="accordion-header" type="button">
-                                    <span>9ths</span><span class="chevron">▾</span>
-                                </button>
-                                <div class="accordion-panel" id="ninthsOutput"></div>
-                            </div>
-                            <div class="accordion-item" data-target="suspendedOutput">
-                                <button class="accordion-header" type="button">
-                                    <span>Suspended</span><span class="chevron">▾</span>
-                                </button>
-                                <div class="accordion-panel" id="suspendedOutput"></div>
-                            </div>
-                        </div>
+                        <div class="chord-category-panel" id="chordCategoryPanel" role="tabpanel"></div>
                     </div>
                 </div>
             
@@ -132,7 +108,7 @@
         <div class="wheel-modal-backdrop"></div>
         <div class="wheel-modal-content info-modal">
             <div class="wheel-modal-header info-modal-header">
-                <h3 id="infoTitle">Music Theory Helper</h3>
+                <h3 id="infoTitle">Tonal Explorer</h3>
                 <button id="closeInfoModal" class="ghost micro" aria-label="Close info">✕</button>
             </div>
             <div class="info-body" role="document">
