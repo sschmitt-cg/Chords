@@ -361,39 +361,6 @@ function buildFretVoicing(chordSet) {
   return order.map(str => perString.get(str)).filter(Boolean).sort((a, b) => a.midi - b.midi);
 }
 
-function buildKeyboardChordPlaybackListFromNotes(notesString) {
-  const pcsOrdered = chordNotesToPcs(notesString);
-  if (!pcsOrdered.length) return [];
-  const rootPc = pcsOrdered[0];
-  const result = [];
-  const usedMidis = new Set();
-
-  const rootKeys = getKeysForPc(rootPc);
-  const rootKey = rootKeys[0];
-  if (!rootKey || !Number.isFinite(Number(rootKey.dataset.midi))) return [];
-  const rootMidi = Number(rootKey.dataset.midi);
-  result.push({ midi: rootMidi, pc: rootPc, targets: [rootKey, ...getFretsForPc(rootPc)], dur: CHORD_TONE_DUR });
-  usedMidis.add(rootMidi);
-  let minMidi = rootMidi + 1;
-
-  for (let i = 1; i < pcsOrdered.length; i += 1) {
-    const pc = pcsOrdered[i];
-    const keys = getKeysForPc(pc);
-    if (!keys.length) continue;
-    const candidate = keys.find(k => Number(k.dataset.midi) >= minMidi) || keys[keys.length - 1];
-    const midi = Number(candidate.dataset.midi);
-    if (!Number.isFinite(midi) || usedMidis.has(midi)) {
-      minMidi = midi + 1;
-      continue;
-    }
-    result.push({ midi, pc, targets: [candidate, ...getFretsForPc(pc)], dur: CHORD_TONE_DUR });
-    usedMidis.add(midi);
-    minMidi = midi + 1;
-  }
-
-  return result;
-}
-
 function buildKeyboardChordPlaybackList(chordSet, rootPc) {
   const chordKeys = Array.from(document.querySelectorAll("#keyboardVisualizer .key"))
     .filter(el => chordSet.has(Number(el.dataset.pc)))
@@ -494,9 +461,8 @@ function maybePlayCurrentSelection(reason = "") {
   }
 
   if (type === "chord") {
-    const chordSet = activeChordPitchClasses || new Set();
     const chordNotes = selectedChordNotes
-      ? buildKeyboardChordPlaybackListFromNotes(selectedChordNotes)
+      ? buildChordPlaybackMidisFromNotes(selectedChordNotes)
       : [];
     const seqNotes = chordNotes.map(item => ({
       midi: item.midi,
@@ -752,6 +718,64 @@ function getFretsForPc(pc) {
 
 const getKeysByMidi = (midi) => Array.from(document.querySelectorAll(`#keyboardVisualizer .key[data-midi="${midi}"]`));
 const getFretsByMidi = (midi) => Array.from(document.querySelectorAll(`#fretboardVisualizer .fret-note[data-midi="${midi}"]`));
+const getLowestVisibleKeyboardMidiForPc = (pc) => {
+  const keys = getKeysForPc(pc);
+  if (!keys.length) return null;
+  const midi = Number(keys[0].dataset.midi);
+  return Number.isFinite(midi) ? midi : null;
+};
+
+function getNearestVisibleKeyboardKeyForPc(pc, targetMidi) {
+  const keys = getKeysForPc(pc);
+  if (!keys.length) return null;
+  let best = keys[0];
+  let bestDiff = Math.abs(Number(best.dataset.midi) - targetMidi);
+  keys.forEach(k => {
+    const midi = Number(k.dataset.midi);
+    if (!Number.isFinite(midi)) return;
+    if (midi === targetMidi) {
+      best = k;
+      bestDiff = 0;
+      return;
+    }
+    const diff = Math.abs(midi - targetMidi);
+    if (diff < bestDiff) {
+      best = k;
+      bestDiff = diff;
+    }
+  });
+  return best;
+}
+
+function buildChordPlaybackMidisFromNotes(notesString) {
+  const pcsOrdered = chordNotesToPcs(notesString);
+  if (!pcsOrdered.length) return [];
+  const rootPc = pcsOrdered[0];
+  const rootVisibleMidi = getLowestVisibleKeyboardMidiForPc(rootPc);
+  const rootMidi = rootVisibleMidi !== null ? rootVisibleMidi : 60 + rootPc;
+  const result = [];
+  const usedMidis = new Set();
+
+  let prevMidi = rootMidi - 1;
+  pcsOrdered.forEach((pc, idx) => {
+    const baseOct = Math.floor(rootMidi / 12) * 12;
+    let midi = baseOct + pc;
+    const interval = wrap(pc - rootPc, 12);
+    const isExtension = interval === 1 || interval === 2 || interval === 3 || interval === 5 || interval === 6 || interval === 8 || interval === 9;
+    if (isExtension && midi < rootMidi + 12) midi = rootMidi + 12 + interval;
+    while (midi <= prevMidi) midi += 12;
+    while (usedMidis.has(midi)) midi += 12;
+    prevMidi = midi;
+    usedMidis.add(midi);
+    const keyEl = getNearestVisibleKeyboardKeyForPc(pc, midi);
+    const targets = [];
+    if (keyEl) targets.push(keyEl);
+    targets.push(...getFretsForPc(pc));
+    result.push({ midi, pc, targets, dur: CHORD_TONE_DUR });
+  });
+
+  return result;
+}
 
 // -------------------- CHORD ANALYSIS ------------------------
 
