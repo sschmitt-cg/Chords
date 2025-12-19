@@ -784,19 +784,48 @@ function seventhQuality(triadQual, int7) {
 }
 
 function ninthQuality(seventhQual, int9) {
-  const hasMajorNine = int9 === 2 || int9 === 14;
+  const isMajorNine = int9 === 2 || int9 === 14;
+  const isFlatNine = int9 === 1 || int9 === 13;
   if (!seventhQual.valid) return { label: `${seventhQual.label || "?7"}9`, valid: false };
 
+  if (isMajorNine) {
+    switch (seventhQual.label) {
+      case "maj7": return { label: "maj9", valid: true };
+      case "7": return { label: "9", valid: true };
+      case "m7": return { label: "m9", valid: true };
+      case "m(maj7)": return { label: "m(maj9)", valid: true };
+      case "m7b5": return { label: "m9b5", valid: true };
+      case "dim7": return { label: "dim9", valid: true };
+      case "7#5": return { label: "9#5", valid: true };
+      case "maj7#5": return { label: "maj9#5", valid: true };
+      default: return { label: `${seventhQual.label}9`, valid: true };
+    }
+  }
+
+  if (isFlatNine) {
+    switch (seventhQual.label) {
+      case "maj7": return { label: "maj7(b9)", valid: true };
+      case "7": return { label: "7(b9)", valid: true };
+      case "m7": return { label: "m7(b9)", valid: true };
+      case "m(maj7)": return { label: "m(maj7)(b9)", valid: true };
+      case "m7b5": return { label: "m7b5(b9)", valid: true };
+      case "dim7": return { label: "dim7(b9)", valid: true };
+      case "7#5": return { label: "7#5(b9)", valid: true };
+      case "maj7#5": return { label: "maj7#5(b9)", valid: true };
+      default: return { label: `${seventhQual.label}(b9)`, valid: true };
+    }
+  }
+
   switch (seventhQual.label) {
-    case "maj7": return { label: hasMajorNine ? "maj9" : "maj9?", valid: hasMajorNine };
-    case "7": return { label: hasMajorNine ? "9" : "9?", valid: hasMajorNine };
-    case "m7": return { label: hasMajorNine ? "m9" : "m9?", valid: hasMajorNine };
-    case "m(maj7)": return { label: hasMajorNine ? "m(maj9)" : "m(maj9?)", valid: hasMajorNine };
-    case "m7b5": return { label: hasMajorNine ? "m9b5" : "m9b5?", valid: hasMajorNine };
-    case "dim7": return { label: hasMajorNine ? "dim9" : "dim9?", valid: hasMajorNine };
-    case "7#5": return { label: hasMajorNine ? "9#5" : "9#5?", valid: hasMajorNine };
-    case "maj7#5": return { label: hasMajorNine ? "maj9#5" : "maj9#5?", valid: hasMajorNine };
-    default: return { label: `${seventhQual.label}9`, valid: hasMajorNine };
+    case "maj7": return { label: "maj9?", valid: false };
+    case "7": return { label: "9?", valid: false };
+    case "m7": return { label: "m9?", valid: false };
+    case "m(maj7)": return { label: "m(maj9?)", valid: false };
+    case "m7b5": return { label: "m9b5?", valid: false };
+    case "dim7": return { label: "dim9?", valid: false };
+    case "7#5": return { label: "9#5?", valid: false };
+    case "maj7#5": return { label: "maj9#5?", valid: false };
+    default: return { label: `${seventhQual.label}9?`, valid: false };
   }
 }
 
