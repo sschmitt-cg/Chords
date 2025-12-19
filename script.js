@@ -75,8 +75,9 @@ let pendingHighlightScale = null;
 let audioMuted = true;
 let audioCtx = null;
 let masterGain = null;
+let limiter = null;
 let playbackToken = 0;
-let activeSources = [];
+let activeVoices = [];
 const AUDIO_MASTER_GAIN = 0.2;
 const FLASH_DURATION = 140;
 const SCALE_GAP = 0.22;
@@ -119,6 +120,15 @@ const CHORD_CATEGORIES = [
 function ensureAudio() {
   if (audioCtx) {
     if (audioCtx.state === "suspended") audioCtx.resume();
+    if (!limiter && audioCtx) {
+      limiter = audioCtx.createDynamicsCompressor();
+      limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
+      limiter.knee.setValueAtTime(18, audioCtx.currentTime);
+      limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
+      limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
+      limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
+      if (masterGain) masterGain.connect(limiter).connect(audioCtx.destination);
+    }
     return;
   }
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -126,7 +136,13 @@ function ensureAudio() {
   audioCtx = new Ctx();
   masterGain = audioCtx.createGain();
   masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-  masterGain.connect(audioCtx.destination);
+  limiter = audioCtx.createDynamicsCompressor();
+  limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
+  limiter.knee.setValueAtTime(18, audioCtx.currentTime);
+  limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
+  limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
+  limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
+  masterGain.connect(limiter).connect(audioCtx.destination);
 }
 
 function stopPlayback() {
@@ -138,63 +154,89 @@ function stopPlayback() {
     masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
     masterGain.gain.exponentialRampToValueAtTime(AUDIO_MASTER_GAIN, now + 0.08);
   }
-  activeSources.forEach(src => {
-    try { src.stop(); } catch (_) {}
+  activeVoices.forEach(v => {
+    try { v.stop(); } catch (_) {}
   });
-  activeSources = [];
+  activeVoices = [];
   return playbackToken;
 }
 
 const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
+function createKarplusStrongVoice({ midi, start, dur }) {
+  if (!audioCtx || !masterGain) return null;
+  if (!Number.isFinite(midi)) return null;
+  const freq = midiToFreq(midi);
+  if (!Number.isFinite(freq) || freq <= 0) return null;
+  const delayTime = Math.max(1 / 5000, Math.min(1 / 40, 1 / freq));
+  const noiseLen = Math.max(0.01, Math.min(0.03, 0.5 / freq));
+
+  const buffer = audioCtx.createBuffer(1, Math.ceil(noiseLen * audioCtx.sampleRate), audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+
+  const delay = audioCtx.createDelay(1);
+  delay.delayTime.setValueAtTime(delayTime, start);
+
+  const lowpass = audioCtx.createBiquadFilter();
+  lowpass.type = "lowpass";
+  const lpFreq = Math.max(1800, Math.min(3200, freq * 8));
+  lowpass.frequency.setValueAtTime(lpFreq, start);
+
+  const feedbackGain = audioCtx.createGain();
+  const fbBase = 0.92;
+  const fb = Math.max(0.78, Math.min(0.92, fbBase - Math.max(0, (freq - 100) / 3000) * 0.14));
+  feedbackGain.gain.setValueAtTime(fb, start);
+
+  const exciteGain = audioCtx.createGain();
+  exciteGain.gain.setValueAtTime(0.25, start);
+
+  const outGain = audioCtx.createGain();
+  outGain.gain.setValueAtTime(0.0001, start);
+  outGain.gain.linearRampToValueAtTime(0.6, start + 0.005);
+  outGain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+
+  noise.connect(exciteGain).connect(delay);
+  delay.connect(lowpass).connect(feedbackGain).connect(delay);
+  delay.connect(outGain).connect(masterGain);
+
+  noise.start(start);
+  noise.stop(start + noiseLen + 0.01);
+
+  const cleanup = () => {
+    try { outGain.gain.cancelScheduledValues(audioCtx.currentTime); outGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.01); } catch (_) {}
+    [noise, delay, lowpass, feedbackGain, exciteGain, outGain].forEach(node => {
+      try { node.disconnect?.(); } catch (_) {}
+    });
+  };
+
+  const stop = () => {
+    try { outGain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.01); } catch (_) {}
+    try { noise.stop(); } catch (_) {}
+    cleanup();
+  };
+
+  setTimeout(cleanup, Math.max(0, (start + dur + 0.2 - audioCtx.currentTime) * 1000));
+  return { stop };
+}
+
 function playSynthNote({ midi, when, dur = 0.18, instrument = "piano" }) {
   if (!audioCtx || !masterGain) return;
+  if (!Number.isFinite(midi)) return;
   const start = Math.max(when, audioCtx.currentTime);
   const end = start + dur;
   if (instrument === "guitar") {
-    const freq = midiToFreq(midi);
-    const noiseLen = Math.max(0.02, Math.min(0.04, 0.5 / freq));
-    const buffer = audioCtx.createBuffer(1, Math.ceil(noiseLen * audioCtx.sampleRate), audioCtx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
-
-    const noise = audioCtx.createBufferSource();
-    noise.buffer = buffer;
-
-    const delay = audioCtx.createDelay(1);
-    delay.delayTime.setValueAtTime(1 / freq, start);
-
-    const lowpass = audioCtx.createBiquadFilter();
-    lowpass.type = "lowpass";
-    const lpFreq = Math.max(1400, Math.min(2600, 2600 - (freq - 110) * 0.5));
-    lowpass.frequency.setValueAtTime(lpFreq, start);
-
-    const feedbackGain = audioCtx.createGain();
-    const fb = freq > 600 ? 0.88 : 0.92;
-    feedbackGain.gain.setValueAtTime(fb, start);
-
-    const exciteGain = audioCtx.createGain();
-    exciteGain.gain.setValueAtTime(0.9, start);
-
-    const outGain = audioCtx.createGain();
-    outGain.gain.setValueAtTime(0.0001, start);
-    outGain.gain.linearRampToValueAtTime(0.8, start + 0.006);
-    outGain.gain.exponentialRampToValueAtTime(0.0001, end);
-
-    noise.connect(exciteGain).connect(delay);
-    delay.connect(lowpass).connect(feedbackGain).connect(delay);
-    delay.connect(outGain).connect(masterGain);
-
-    noise.start(start);
-    noise.stop(start + noiseLen + 0.01);
-
-    const stopNode = () => {
-      try { noise.stop(); } catch (_) {}
-    };
-    activeSources.push(noise);
-    setTimeout(() => {
-      activeSources = activeSources.filter(n => n !== noise);
-    }, (end - audioCtx.currentTime + 0.1) * 1000);
+    const voice = createKarplusStrongVoice({ midi, start, dur: STRUM_DUR });
+    if (voice) {
+      activeVoices.push(voice);
+      setTimeout(() => {
+        voice.stop();
+        activeVoices = activeVoices.filter(v => v !== voice);
+      }, Math.max(0, (end - audioCtx.currentTime + 0.3) * 1000));
+    }
     return;
   }
 
@@ -204,16 +246,12 @@ function playSynthNote({ midi, when, dur = 0.18, instrument = "piano" }) {
   const osc = audioCtx.createOscillator();
   osc.frequency.setValueAtTime(midiToFreq(midi), start);
 
-  const nodesToStop = [osc];
-
-  osc.type = "sine";
   const harmonic = audioCtx.createOscillator();
   harmonic.type = "sine";
   harmonic.frequency.setValueAtTime(midiToFreq(midi) * 2, start);
   const harmonicGain = audioCtx.createGain();
   harmonicGain.gain.setValueAtTime(0.2, start);
   harmonic.connect(harmonicGain).connect(gain);
-  nodesToStop.push(harmonic);
   osc.connect(gain);
 
   gain.connect(masterGain);
@@ -225,14 +263,25 @@ function playSynthNote({ midi, when, dur = 0.18, instrument = "piano" }) {
   gain.gain.linearRampToValueAtTime(sustainLevel, start + attack + decay * 0.4);
   gain.gain.exponentialRampToValueAtTime(0.0001, end);
 
-  nodesToStop.forEach(node => node.start(start));
-  nodesToStop.forEach(node => node.stop(end + 0.05));
-  nodesToStop.forEach(node => {
-    activeSources.push(node);
-    setTimeout(() => {
-      activeSources = activeSources.filter(n => n !== node);
-    }, (end - audioCtx.currentTime + 0.1) * 1000);
-  });
+  osc.start(start);
+  harmonic.start(start);
+  osc.stop(end + 0.05);
+  harmonic.stop(end + 0.05);
+
+  const voice = {
+    stop: () => {
+      try { gain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.01); } catch (_) {}
+      [osc, harmonic, harmonicGain, gain].forEach(node => {
+        try { node.stop?.(); } catch (_) {}
+        try { node.disconnect?.(); } catch (_) {}
+      });
+    }
+  };
+  activeVoices.push(voice);
+  setTimeout(() => {
+    voice.stop();
+    activeVoices = activeVoices.filter(v => v !== voice);
+  }, Math.max(0, (end - audioCtx.currentTime + 0.2) * 1000));
 }
 
 function flashEl(el) {
