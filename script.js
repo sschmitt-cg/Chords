@@ -60,7 +60,7 @@ let selectedRootNote = null;
 let activeScalePitchClasses = new Set();
 let activeChordPitchClasses = null;
 let selectedChordName = null;
-let activeChordCategory = "triads";
+let activeChordCategory = null;
 let stripDragging = false;
 let tapStart = null;
 const TAP_MOVE_THRESHOLD = 10;
@@ -688,7 +688,7 @@ function renderChordLists() {
     allBtn.disabled = !isFiltered;
   }
   if (headingDesc) headingDesc.textContent = isFiltered ? `Chords rooted on ${selectedRootNote}` : "";
-  if (statusEl) statusEl.textContent = isFiltered ? `Root: ${selectedRootNote}` : "";
+  if (statusEl) statusEl.textContent = "";
 
   const categoryCounts = {};
   CHORD_CATEGORIES.forEach(cat => {
@@ -696,9 +696,9 @@ function renderChordLists() {
     categoryCounts[cat.key] = data?.categories?.[cat.key]?.length || 0;
   });
 
-  if (activeChordCategory !== "all" && !categoryCounts[activeChordCategory]) {
+  if (activeChordCategory && activeChordCategory !== "all" && !categoryCounts[activeChordCategory]) {
     const fallback = CHORD_CATEGORIES.find(cat => cat.key !== "all" && categoryCounts[cat.key]);
-    activeChordCategory = fallback ? fallback.key : "triads";
+    activeChordCategory = fallback ? fallback.key : null;
   }
 
   tabsEl.innerHTML = CHORD_CATEGORIES.map(cat => {
@@ -708,7 +708,7 @@ function renderChordLists() {
       `class="chord-tab${isActive ? " is-active" : ""}${disabled ? " is-disabled" : ""}"`,
       `data-category="${cat.key}"`,
       'role="tab"',
-      `tabindex="${isActive ? "0" : "-1"}"`,
+      `tabindex="0"`,
       `aria-selected="${isActive ? "true" : "false"}"`,
       `aria-controls="chordCategoryPanel"`
     ];
@@ -717,6 +717,7 @@ function renderChordLists() {
   }).join("");
 
   const items = (() => {
+    if (!activeChordCategory) return [];
     if (activeChordCategory === "all") {
       return CHORD_CATEGORIES
         .filter(cat => cat.key !== "all")
@@ -725,13 +726,14 @@ function renderChordLists() {
     return data.categories[activeChordCategory] || [];
   })();
 
-  if (items.length) {
+  if (items.length && activeChordCategory) {
     panelEl.innerHTML = items.map(ch => {
       availableNames.add(ch.name);
       return renderChordRow(ch);
     }).join("");
   } else {
-    panelEl.innerHTML = `<p class="filter-status">No chords available.</p>`;
+    const hint = activeChordCategory ? "No chords available." : "Select a category.";
+    panelEl.innerHTML = `<p class="filter-status">${hint}</p>`;
   }
 
   if (selectedChordName && !availableNames.has(selectedChordName)) {
@@ -895,6 +897,7 @@ function drawFromState(options = {}) {
   activeScalePitchClasses = new Set(display.pitchClasses);
   activeChordPitchClasses = null;
   selectedChordName = null;
+  activeChordCategory = null;
   renderChordLists();
   populateChordSelectors();
   scheduleHighlightUpdate();

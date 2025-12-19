@@ -397,24 +397,28 @@ button:active {
 
 .chord-category-tabs {
   display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding: 6px 2px 10px;
-  margin: 0 -2px;
-  -webkit-overflow-scrolling: touch;
+  gap: 6px;
+  padding: 6px 0 8px;
+  width: 100%;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .chord-tab {
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
   border: 1px solid #dfe3fb;
   background: #f7f8ff;
   color: #1f2655;
   border-radius: 999px;
-  padding: 8px 12px;
+  padding: 8px 10px;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
 }
 
 .chord-tab.is-disabled {
@@ -1104,22 +1108,31 @@ button:active {
 
 @media (max-width: 520px) {
   .page-header {
-    margin-bottom: 12px;
-    padding: 4px 0 2px;
+    margin-bottom: 10px;
+    padding: 2px 0 0;
   }
 
   .title-row {
-    padding: 4px 0;
+    padding: 2px 0;
     gap: 6px;
-  }
-
-  .card, .panel {
-    padding: 14px;
   }
 
   .controls-panel {
     padding: 12px;
     gap: 10px;
+    margin-bottom: 8px;
+  }
+
+  .output-panel {
+    gap: 8px;
+  }
+
+  .main-grid {
+    gap: 8px;
+  }
+
+  .card, .panel {
+    padding: 14px;
   }
 
   .scale-strip {
@@ -1134,8 +1147,12 @@ button:active {
     margin-bottom: 2px;
   }
 
+  .chords-header p {
+    font-size: 13px;
+  }
+
   .chord-category-tabs {
-    padding: 4px 2px 8px;
+    padding: 4px 0 6px;
     gap: 6px;
   }
 
@@ -1163,9 +1180,18 @@ button:active {
 }
 
 @media (max-width: 480px) {
+  .page-header {
+    margin-bottom: 8px;
+  }
+
+  .title-row {
+    padding: 0;
+  }
+
   .controls-panel {
-    gap: 6px;
+    gap: 8px;
     padding: 12px;
+    margin-bottom: 8px;
   }
 
   .scale-strip {
@@ -1181,7 +1207,7 @@ button:active {
   }
 
   .main-grid {
-    gap: 6px;
+    gap: 8px;
     grid-template-columns: 1fr;
   }
 
