@@ -76,6 +76,8 @@ let audioMuted = true;
 let audioCtx = null;
 let masterGain = null;
 let limiter = null;
+let mediaDest = null;
+let audioOutEl = null;
 let playbackToken = 0;
 let activeVoices = [];
 const AUDIO_MASTER_GAIN = 0.2;
@@ -120,6 +122,7 @@ const CHORD_CATEGORIES = [
 function ensureAudio() {
   if (audioCtx) {
     if (audioCtx.state === "suspended") audioCtx.resume();
+    if (!audioOutEl) audioOutEl = document.getElementById("audioOut");
     if (!limiter && audioCtx) {
       limiter = audioCtx.createDynamicsCompressor();
       limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
@@ -127,13 +130,26 @@ function ensureAudio() {
       limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
       limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
       limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
-      if (masterGain) masterGain.connect(limiter).connect(audioCtx.destination);
+    }
+    if (!mediaDest && audioCtx) {
+      mediaDest = audioCtx.createMediaStreamDestination();
+    }
+    if (masterGain && limiter && mediaDest) {
+      try { masterGain.disconnect(); } catch (_) {}
+      masterGain.connect(limiter).connect(mediaDest);
+    }
+    if (audioOutEl && mediaDest && audioOutEl.srcObject !== mediaDest.stream) {
+      audioOutEl.srcObject = mediaDest.stream;
+      audioOutEl.volume = 1;
+      audioOutEl.muted = false;
+      audioOutEl.playsInline = true;
     }
     return;
   }
   const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!Ctx) return;
   audioCtx = new Ctx();
+  audioOutEl = document.getElementById("audioOut");
   masterGain = audioCtx.createGain();
   masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
   limiter = audioCtx.createDynamicsCompressor();
@@ -142,7 +158,18 @@ function ensureAudio() {
   limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
   limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
   limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
-  masterGain.connect(limiter).connect(audioCtx.destination);
+  mediaDest = audioCtx.createMediaStreamDestination();
+  if (mediaDest) {
+    masterGain.connect(limiter).connect(mediaDest);
+  } else {
+    masterGain.connect(limiter).connect(audioCtx.destination);
+  }
+  if (audioOutEl && mediaDest) {
+    audioOutEl.srcObject = mediaDest.stream;
+    audioOutEl.volume = 1;
+    audioOutEl.muted = false;
+    audioOutEl.playsInline = true;
+  }
 }
 
 function stopPlayback() {
@@ -1749,12 +1776,18 @@ document.addEventListener("DOMContentLoaded", () => {
         ensureAudio();
         if (!audioCtx) return;
         if (audioCtx?.state === "suspended") await audioCtx.resume();
+        if (audioOutEl) {
+          try { await audioOutEl.play(); } catch (e) { console.warn("audioOut play failed", e); }
+        }
         audioMuted = false;
         updateSoundToggleUI();
         maybePlayCurrentSelection("unmute");
       } else {
         audioMuted = true;
         stopPlayback();
+        if (audioOutEl) {
+          try { audioOutEl.pause(); } catch (_) {}
+        }
         updateSoundToggleUI();
       }
     });
