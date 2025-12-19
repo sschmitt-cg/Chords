@@ -79,6 +79,14 @@ let playbackToken = 0;
 let activeSources = [];
 const AUDIO_MASTER_GAIN = 0.2;
 const FLASH_DURATION = 140;
+const SCALE_GAP = 0.22;
+const SCALE_DUR = 0.32;
+const NOTE_GAP  = 0.22;
+const NOTE_DUR  = 0.32;
+const CHORD_TONE_GAP = 0.18;
+const CHORD_TONE_DUR = 0.30;
+const STRUM_GAP = 0.02;
+const STRUM_DUR = 0.85;
 const MUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8l4 4m0 0l-4 4m4-4H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const UNMUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M17 9c1.333 1 2 2.333 2 4s-.667 3-2 4M15 11.5c.667.5 1 1.333 1 2.5s-.333 2-1 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ENHARMONIC_OPTIONS = {
@@ -123,6 +131,13 @@ function ensureAudio() {
 
 function stopPlayback() {
   playbackToken += 1;
+  if (masterGain && audioCtx) {
+    const now = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+    masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+    masterGain.gain.exponentialRampToValueAtTime(AUDIO_MASTER_GAIN, now + 0.08);
+  }
   activeSources.forEach(src => {
     try { src.stop(); } catch (_) {}
   });
@@ -136,6 +151,53 @@ function playSynthNote({ midi, when, dur = 0.18, instrument = "piano" }) {
   if (!audioCtx || !masterGain) return;
   const start = Math.max(when, audioCtx.currentTime);
   const end = start + dur;
+  if (instrument === "guitar") {
+    const freq = midiToFreq(midi);
+    const noiseLen = Math.max(0.02, Math.min(0.04, 0.5 / freq));
+    const buffer = audioCtx.createBuffer(1, Math.ceil(noiseLen * audioCtx.sampleRate), audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i += 1) data[i] = Math.random() * 2 - 1;
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const delay = audioCtx.createDelay(1);
+    delay.delayTime.setValueAtTime(1 / freq, start);
+
+    const lowpass = audioCtx.createBiquadFilter();
+    lowpass.type = "lowpass";
+    const lpFreq = Math.max(1400, Math.min(2600, 2600 - (freq - 110) * 0.5));
+    lowpass.frequency.setValueAtTime(lpFreq, start);
+
+    const feedbackGain = audioCtx.createGain();
+    const fb = freq > 600 ? 0.88 : 0.92;
+    feedbackGain.gain.setValueAtTime(fb, start);
+
+    const exciteGain = audioCtx.createGain();
+    exciteGain.gain.setValueAtTime(0.9, start);
+
+    const outGain = audioCtx.createGain();
+    outGain.gain.setValueAtTime(0.0001, start);
+    outGain.gain.linearRampToValueAtTime(0.8, start + 0.006);
+    outGain.gain.exponentialRampToValueAtTime(0.0001, end);
+
+    noise.connect(exciteGain).connect(delay);
+    delay.connect(lowpass).connect(feedbackGain).connect(delay);
+    delay.connect(outGain).connect(masterGain);
+
+    noise.start(start);
+    noise.stop(start + noiseLen + 0.01);
+
+    const stopNode = () => {
+      try { noise.stop(); } catch (_) {}
+    };
+    activeSources.push(noise);
+    setTimeout(() => {
+      activeSources = activeSources.filter(n => n !== noise);
+    }, (end - audioCtx.currentTime + 0.1) * 1000);
+    return;
+  }
+
   const gain = audioCtx.createGain();
   gain.gain.setValueAtTime(0.0001, start);
 
@@ -144,29 +206,21 @@ function playSynthNote({ midi, when, dur = 0.18, instrument = "piano" }) {
 
   const nodesToStop = [osc];
 
-  if (instrument === "guitar") {
-    osc.type = "sawtooth";
-    const filter = audioCtx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(1800, start);
-    osc.connect(filter).connect(gain);
-  } else {
-    osc.type = "sine";
-    const harmonic = audioCtx.createOscillator();
-    harmonic.type = "sine";
-    harmonic.frequency.setValueAtTime(midiToFreq(midi) * 2, start);
-    const harmonicGain = audioCtx.createGain();
-    harmonicGain.gain.setValueAtTime(0.2, start);
-    harmonic.connect(harmonicGain).connect(gain);
-    nodesToStop.push(harmonic);
-    osc.connect(gain);
-  }
+  osc.type = "sine";
+  const harmonic = audioCtx.createOscillator();
+  harmonic.type = "sine";
+  harmonic.frequency.setValueAtTime(midiToFreq(midi) * 2, start);
+  const harmonicGain = audioCtx.createGain();
+  harmonicGain.gain.setValueAtTime(0.2, start);
+  harmonic.connect(harmonicGain).connect(gain);
+  nodesToStop.push(harmonic);
+  osc.connect(gain);
 
   gain.connect(masterGain);
 
   const attack = 0.01;
-  const decay = instrument === "guitar" ? 0.12 : 0.18;
-  const sustainLevel = instrument === "guitar" ? 0.22 : 0.35;
+  const decay = 0.18;
+  const sustainLevel = 0.35;
   gain.gain.linearRampToValueAtTime(0.9, start + attack);
   gain.gain.linearRampToValueAtTime(sustainLevel, start + attack + decay * 0.4);
   gain.gain.exponentialRampToValueAtTime(0.0001, end);
@@ -194,7 +248,7 @@ function spelledNoteForPc(pc) {
 }
 
 function flashPitchClass(pc) {
-  const note = spelledNoteForPc(pc);
+  const note = pcToSpelledFallback(pc);
   if (!note) return;
   const tiles = document.querySelectorAll(`.note-label[data-note="${note}"]`);
   tiles.forEach(flashEl);
@@ -209,6 +263,15 @@ function selectionPitchClass() {
   if (selectedChordName && activeChordPitchClasses && activeChordPitchClasses.size) return null;
   if (selectedRootNote) return noteNameToPc(selectedRootNote);
   return null;
+}
+
+function pcToSpelledFallback(pc) {
+  const spelled = spelledNoteForPc(pc);
+  if (spelled) return spelled;
+  const preferFlat = enharmonicPreferenceByPc[currentKeyPc] === "flat";
+  const sharpMap = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+  const flatMap  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+  return preferFlat ? flatMap[wrap(pc, 12)] : sharpMap[wrap(pc, 12)];
 }
 
 function buildAscendingScaleMidis(pitchClasses) {
@@ -232,8 +295,22 @@ function playSequence(notes, instrument, startTime, gap, token) {
   notes.forEach((note, idx) => {
     if (token !== playbackToken) return;
     const when = startTime + gap * idx;
-    playSynthNote({ midi: note.midi, when, instrument, dur: note.dur || 0.2 });
-    flashTargets(note.pc, note.targets || []);
+    const dur = note.dur || 0.2;
+    playSynthNote({ midi: note.midi, when, instrument, dur });
+    scheduleFlash(note.pc, note.targets || [], when, token);
+    current = when;
+  });
+  return current + gap;
+}
+
+function playStrum(notes, instrument, startTime, gap, token) {
+  if (!audioCtx || !masterGain) return startTime;
+  let current = startTime;
+  notes.forEach((note, idx) => {
+    if (token !== playbackToken) return;
+    const when = startTime + gap * idx;
+    playSynthNote({ midi: note.midi, when, instrument, dur: note.dur || STRUM_DUR });
+    scheduleFlash(note.pc, note.targets || [], when, token);
     current = when;
   });
   return current + gap;
@@ -266,6 +343,15 @@ function buildFretVoicing(chordSet) {
   return order.map(str => perString.get(str)).filter(Boolean).sort((a, b) => a.midi - b.midi);
 }
 
+function scheduleFlash(pc, targets = [], when, token) {
+  if (!audioCtx) return;
+  const delayMs = Math.max(0, (when - audioCtx.currentTime) * 1000);
+  setTimeout(() => {
+    if (token !== playbackToken) return;
+    flashTargets(pc, targets);
+  }, delayMs);
+}
+
 function maybePlayCurrentSelection(reason = "") {
   if (audioMuted || stripDragging) return;
   ensureAudio();
@@ -280,9 +366,10 @@ function maybePlayCurrentSelection(reason = "") {
     const notes = midis.map((midi, idx) => ({
       midi,
       pc: pcs[idx % pcs.length],
+      dur: SCALE_DUR,
       targets: getKeysByMidi(midi)
     }));
-    playSequence(notes, "piano", baseStart, 0.14, token);
+    playSequence(notes, "piano", baseStart, SCALE_GAP, token);
     return;
   }
 
@@ -290,24 +377,24 @@ function maybePlayCurrentSelection(reason = "") {
     const pc = selectionPitchClass();
     if (pc === null) return;
     let start = baseStart;
-    const keys = getKeysForPc(pc).map(el => ({ midi: Number(el.dataset.midi), pc, targets: [el] }));
-    if (keys.length) start = playSequence(keys, "piano", start, 0.14, token);
-    const frets = getFretsForPc(pc).map(el => ({ midi: Number(el.dataset.midi), pc, targets: [el] }));
-    if (frets.length) playSequence(frets, "guitar", start + 0.08, 0.12, token);
+    const keys = getKeysForPc(pc).map(el => ({ midi: Number(el.dataset.midi), pc, targets: [el], dur: NOTE_DUR }));
+    if (keys.length) start = playSequence(keys, "piano", start, NOTE_GAP, token);
+    const frets = getFretsForPc(pc).map(el => ({ midi: Number(el.dataset.midi), pc, targets: [el], dur: NOTE_DUR }));
+    if (frets.length) playSequence(frets, "guitar", start + 0.08, NOTE_GAP, token);
     return;
   }
 
   if (type === "chord") {
     const chordSet = activeChordPitchClasses || new Set();
     const all = collectChordElements(chordSet);
-    const seqNotes = all.map(item => ({ midi: item.midi, pc: item.pc, targets: [item.el] }));
+    const seqNotes = all.map(item => ({ midi: item.midi, pc: item.pc, targets: [item.el], dur: CHORD_TONE_DUR }));
     let start = baseStart;
-    if (seqNotes.length) start = playSequence(seqNotes, "piano", start, 0.1, token);
+    if (seqNotes.length) start = playSequence(seqNotes, "piano", start, CHORD_TONE_GAP, token);
 
     const voicing = buildFretVoicing(chordSet);
     if (voicing.length) {
-      const voicingNotes = voicing.map(item => ({ midi: item.midi, pc: item.pc, targets: [item.el] }));
-      playSequence(voicingNotes, "guitar", start + 0.08, 0.1, token);
+      const voicingNotes = voicing.map(item => ({ midi: item.midi, pc: item.pc, targets: [item.el], dur: STRUM_DUR }));
+      playStrum(voicingNotes, "guitar", start + 0.08, STRUM_GAP, token);
     }
   }
 }

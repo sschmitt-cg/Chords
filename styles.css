@@ -478,11 +478,13 @@ button:active {
   gap: 8px;
 }
 
-.note-label.is-playing,
-.key.is-playing,
-.fret-note.is-playing {
-  box-shadow: 0 0 0 2px rgba(85, 104, 255, 0.4), 0 6px 16px rgba(85, 104, 255, 0.35);
-  filter: brightness(1.05);
+.note-label.is-playing > div,
+#keyboardVisualizer .key.is-playing,
+#fretboardVisualizer .fret-note.is-playing {
+  box-shadow: 0 0 0 2px rgba(85, 104, 255, 0.35), 0 8px 18px rgba(85, 104, 255, 0.35);
+  filter: brightness(1.08);
+  transform: translateY(-1px) scale(1.01);
+  transition: box-shadow 0.08s ease, filter 0.08s ease, transform 0.08s ease;
 }
 
 .chords-scroll {
