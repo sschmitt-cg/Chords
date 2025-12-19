@@ -320,6 +320,50 @@ function buildFretVoicing(chordSet) {
   return order.map(str => perString.get(str)).filter(Boolean).sort((a, b) => a.midi - b.midi);
 }
 
+function buildKeyboardChordPlaybackList(chordSet, rootPc) {
+  const chordKeys = Array.from(document.querySelectorAll("#keyboardVisualizer .key"))
+    .filter(el => chordSet.has(Number(el.dataset.pc)))
+    .map(el => ({ el, midi: Number(el.dataset.midi), pc: Number(el.dataset.pc) }))
+    .filter(item => Number.isFinite(item.midi))
+    .sort((a, b) => a.midi - b.midi);
+
+  const seenMidi = new Set();
+  const dedupedKeys = [];
+  chordKeys.forEach(k => {
+    if (seenMidi.has(k.midi)) return;
+    seenMidi.add(k.midi);
+    dedupedKeys.push(k);
+  });
+
+  let orderedKeys = dedupedKeys;
+  if (rootPc !== null) {
+    const roots = dedupedKeys.filter(k => k.pc === rootPc);
+    const lowestRoot = roots.length ? roots[0] : null;
+    if (lowestRoot) {
+      orderedKeys = [
+        lowestRoot,
+        ...dedupedKeys.filter(k => k !== lowestRoot && k.midi > lowestRoot.midi)
+      ];
+      const maxInterval = Math.max(...Array.from(chordSet).map(pc => (pc - rootPc + 12) % 12));
+      const trimmed = [];
+      let reachedTop = false;
+      orderedKeys.forEach(k => {
+        if (reachedTop) return;
+        trimmed.push(k);
+        if ((k.pc - rootPc + 12) % 12 === maxInterval) reachedTop = true;
+      });
+      orderedKeys = trimmed;
+    }
+  }
+
+  return orderedKeys.map(item => ({
+    midi: item.midi,
+    pc: item.pc,
+    keyEl: item.el,
+    fretEls: getFretsForPc(item.pc)
+  }));
+}
+
 function parseChordRootPc() {
   if (!selectedChordName) return null;
   const m = selectedChordName.match(/^([A-G][b#x♯♭]{0,2})/);
@@ -378,53 +422,20 @@ function maybePlayCurrentSelection(reason = "") {
   if (type === "chord") {
     const chordSet = activeChordPitchClasses || new Set();
     const rootPc = parseChordRootPc();
-    const chordKeys = Array.from(document.querySelectorAll("#keyboardVisualizer .key"))
-      .filter(el => chordSet.has(Number(el.dataset.pc)))
-      .map(el => ({ el, midi: Number(el.dataset.midi), pc: Number(el.dataset.pc) }))
-      .filter(item => Number.isFinite(item.midi))
-      .sort((a, b) => a.midi - b.midi);
-
-    const seenMidi = new Set();
-    const dedupedKeys = [];
-    chordKeys.forEach(k => {
-      if (seenMidi.has(k.midi)) return;
-      seenMidi.add(k.midi);
-      dedupedKeys.push(k);
-    });
-
-    let orderedKeys = dedupedKeys;
-    if (rootPc !== null) {
-      const roots = dedupedKeys.filter(k => k.pc === rootPc);
-      const lowestRoot = roots.length ? roots[0] : null;
-      if (lowestRoot) {
-        orderedKeys = [
-          lowestRoot,
-          ...dedupedKeys.filter(k => k !== lowestRoot && k.midi > lowestRoot.midi)
-        ];
-        const maxInterval = Math.max(...Array.from(chordSet).map(pc => (pc - rootPc + 12) % 12));
-        const trimmed = [];
-        let reachedTop = false;
-        orderedKeys.forEach(k => {
-          if (reachedTop) return;
-          trimmed.push(k);
-          if ((k.pc - rootPc + 12) % 12 === maxInterval) reachedTop = true;
-        });
-        orderedKeys = trimmed;
-      }
-    }
-
-    const seqNotes = orderedKeys.map(item => {
-      const fretTargets = getFretsForPc(item.pc);
-      return { midi: item.midi, pc: item.pc, targets: [item.el, ...fretTargets], dur: CHORD_TONE_DUR };
-    });
+    const chordNotes = buildKeyboardChordPlaybackList(chordSet, rootPc);
+    const seqNotes = chordNotes.map(item => ({
+      midi: item.midi,
+      pc: item.pc,
+      targets: [item.keyEl, ...(item.fretEls || [])],
+      dur: CHORD_TONE_DUR
+    }));
 
     let start = baseStart;
     if (seqNotes.length) start = playSequence(seqNotes, "piano", start, CHORD_TONE_GAP, token);
 
-    const voicing = buildFretVoicing(chordSet);
-    if (voicing.length) {
-      const voicingNotes = voicing.map(item => ({ midi: item.midi, pc: item.pc, targets: [item.el], dur: STRUM_DUR }));
-      playStrum(voicingNotes, "piano", start + 0.08, STRUM_GAP, token);
+    if (seqNotes.length) {
+      const strumNotes = seqNotes.map(item => ({ ...item, dur: STRUM_DUR }));
+      playStrum(strumNotes, "piano", start + 0.08, STRUM_GAP, token);
     }
   }
 }
