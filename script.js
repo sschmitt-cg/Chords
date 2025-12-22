@@ -66,7 +66,6 @@ let selectedHarmonyChordIndex = null;
 let selectedExplorerNotePc = null;
 let harmonyRows = [];
 let extensionState = { 7: true, 9: false, 11: false, 13: false };
-let activeWorkspace = "selector";
 let stripDragging = false;
 let tapStart = null;
 const TAP_MOVE_THRESHOLD = 10;
@@ -864,33 +863,35 @@ function buildHarmonyRows() {
   });
 }
 
-function renderExtensionToggles() {
-  const container = document.getElementById("extensionToggles");
-  if (!container) return;
-  container.querySelectorAll(".ext-toggle").forEach(btn => {
-    const level = Number(btn.dataset.level);
-    const pressed = Boolean(extensionState[level]);
-    btn.setAttribute("aria-pressed", pressed ? "true" : "false");
-    btn.classList.toggle("is-active", pressed);
-  });
-}
-
 function renderHarmonyGrid() {
   const headerEl = document.getElementById("harmonyGridHeader");
   const bodyEl = document.getElementById("harmonyGridBody");
   if (!headerEl || !bodyEl) return;
   buildHarmonyRows();
-  const enabledExt = getEnabledExtensions();
-  const columns = ["Root", "3", "5", ...enabledExt.map(String)];
+  const columns = ["Root", "3", "5", "7", "9", "11", "13"];
+  const toneCount = columns.length - 1;
+  headerEl.style.setProperty("--tone-count", toneCount);
+  bodyEl.style.setProperty("--tone-count", toneCount);
   headerEl.innerHTML = columns.map((col, idx) => {
-    const stickyClass = idx === 0 ? "sticky-col root-head" : "";
-    return `<div class="h-cell ${stickyClass}">${col}</div>`;
+    const stickyClass = idx === 0 ? "sticky-col root-head" : "tone-head";
+    const level = Number(col);
+    const active = Number.isFinite(level) ? extensionState[level] : true;
+    const pressedAttr = Number.isFinite(level) ? `aria-pressed="${active ? "true" : "false"}"` : "";
+    const dataAttr = Number.isFinite(level) ? `data-level="${level}"` : "";
+    return `<div class="h-cell ${stickyClass} ${active ? "is-active" : ""}" ${dataAttr} ${pressedAttr} role="columnheader" tabindex="0">${col}</div>`;
   }).join("");
+
   bodyEl.innerHTML = harmonyRows.map(row => {
     const isSelected = row.index === selectedHarmonyChordIndex;
-    const cells = row.notes.map((note, idx) => {
-      const isNoteSelected = selectedExplorerNotePc !== null && selectedExplorerNotePc === note.pc;
+    const noteMap = new Map();
+    row.notes.forEach(n => noteMap.set(n.label, n));
+    const cells = columns.map((col, idx) => {
+      const note = noteMap.get(col) || null;
       const stickyClass = idx === 0 ? "sticky-col root-cell" : "";
+      if (!note) {
+        return `<div class="harmony-cell ${stickyClass}" data-row-index="${row.index}" role="gridcell"></div>`;
+      }
+      const isNoteSelected = selectedExplorerNotePc !== null && selectedExplorerNotePc === note.pc;
       const pcStyle = `style="--pc-color:${pcColor(note.pc)}"`;
       const noteLabel = idx === 0
         ? `<div class="pc-band" ${pcStyle}>${note.note}</div><div class="degree">${row.degree}</div>`
@@ -942,24 +943,6 @@ function updateHarmonyKeyModeLabel() {
   const text = `${keyLabelStr} ${modeName}`;
   if (labelEl) labelEl.textContent = text;
   if (stripEl) stripEl.textContent = text;
-}
-
-function setWorkspace(mode) {
-  activeWorkspace = mode;
-  document.body.classList.toggle("workspace-harmony", mode === "harmony");
-  document.body.classList.toggle("workspace-selector", mode !== "harmony");
-  const btnSel = document.getElementById("workspaceSelectorBtn");
-  const btnHar = document.getElementById("workspaceHarmonyBtn");
-  if (btnSel && btnHar) {
-    btnSel.classList.toggle("is-active", mode !== "harmony");
-    btnHar.classList.toggle("is-active", mode === "harmony");
-    btnSel.setAttribute("aria-pressed", mode !== "harmony" ? "true" : "false");
-    btnHar.setAttribute("aria-pressed", mode === "harmony" ? "true" : "false");
-  }
-  const strip = document.getElementById("harmonyStrip");
-  if (strip) {
-    strip.setAttribute("aria-hidden", mode !== "harmony" ? "true" : "false");
-  }
 }
 
 // -------------------- CHORD ANALYSIS ------------------------
@@ -1621,7 +1604,6 @@ function drawFromState(options = {}) {
   selectedExplorerNotePc = null;
   activeChordCategory = null;
   updateHarmonyKeyModeLabel();
-  renderExtensionToggles();
   renderHarmonyGrid();
   renderChordLists();
   populateChordSelectors();
@@ -2082,21 +2064,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const extToggles = document.getElementById("extensionToggles");
-  if (extToggles) {
-    extToggles.addEventListener("click", (e) => {
-      const btn = e.target.closest(".ext-toggle");
-      if (!btn) return;
-      const level = Number(btn.dataset.level);
-      if (!level) return;
-      const pressed = btn.getAttribute("aria-pressed") === "true";
-      enforceExtensionLadder(level, !pressed);
-      renderExtensionToggles();
-      renderHarmonyGrid();
-      if (selectedHarmonyChordIndex !== null) selectHarmonyChord(selectedHarmonyChordIndex);
-    });
-  }
-
   const harmonyBody = document.getElementById("harmonyGridBody");
   if (harmonyBody) {
     harmonyBody.addEventListener("click", (e) => {
@@ -2113,26 +2080,36 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const harmonyHeader = document.getElementById("harmonyGridHeader");
+  const toggleLevel = (level) => {
+    if (!level) return;
+    const next = !extensionState[level];
+    enforceExtensionLadder(level, next);
+    renderHarmonyGrid();
+    if (selectedHarmonyChordIndex !== null) selectHarmonyChord(selectedHarmonyChordIndex);
+    else scheduleHighlightUpdate();
+  };
+  if (harmonyHeader) {
+    harmonyHeader.addEventListener("click", (e) => {
+      const head = e.target.closest(".tone-head[data-level]");
+      if (!head) return;
+      const level = Number(head.dataset.level);
+      toggleLevel(level);
+    });
+    harmonyHeader.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const head = e.target.closest(".tone-head[data-level]");
+      if (!head) return;
+      e.preventDefault();
+      const level = Number(head.dataset.level);
+      toggleLevel(level);
+    });
+  }
+
   const clearHarmonyBtn = document.getElementById("clearHarmonySelection");
   if (clearHarmonyBtn) {
     clearHarmonyBtn.addEventListener("click", () => {
       clearHarmonySelection();
-    });
-  }
-
-  const workspaceSelectorBtn = document.getElementById("workspaceSelectorBtn");
-  const workspaceHarmonyBtn = document.getElementById("workspaceHarmonyBtn");
-  if (workspaceSelectorBtn) workspaceSelectorBtn.addEventListener("click", () => setWorkspace("selector"));
-  if (workspaceHarmonyBtn) workspaceHarmonyBtn.addEventListener("click", () => setWorkspace("harmony"));
-  const harmonyStrip = document.getElementById("harmonyStrip");
-  if (harmonyStrip) {
-    const openSelector = () => setWorkspace("selector");
-    harmonyStrip.addEventListener("click", openSelector);
-    harmonyStrip.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        openSelector();
-      }
     });
   }
 
@@ -2231,8 +2208,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderKeyboardVisualizer();
   renderFretboardVisualizer();
-  setWorkspace("selector");
-  renderExtensionToggles();
   updateHarmonyKeyModeLabel();
   renderHarmonyGrid();
   drawFromState();
