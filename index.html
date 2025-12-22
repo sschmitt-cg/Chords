@@ -45,52 +45,29 @@
 
         <section id="outputArea" class="output-panel">
             <div id="mainContainer" class="main-grid">
+                <div id="harmonyStrip" class="harmony-strip" role="button" tabindex="0" aria-label="Open key and mode selector">
+                    <span id="harmonyStripLabel"></span>
+                    <span class="harmony-strip-hint">Tap to change key/mode</span>
+                </div>
                 <div id="instrumentContainer" class="card instruments-card">
                     <div class="instrument-stack">
                         <div id="keyboardVisualizer" class="instrument keyboard" aria-label="Keyboard visualizer"></div>
                         <div id="fretboardVisualizer" class="instrument fretboard" aria-label="Guitar fretboard"></div>
                     </div>
                 </div>
-                <div id="availableChordsContainer" class="card chords-card">
-                    <div class="chords-header">
-                        <div class="heading-row">
-                          <div>
-                            <h2>Available chords</h2>
-                            <p id="chordHeadingDesc"></p>
-                          </div>
-                          <div class="heading-actions">
-                            <span id="rootFilterStatus" class="filter-status"></span>
-                            <button id="allChordsBtn" class="ghost micro" style="display:none;">All Chords</button>
-                          </div>
+                <div id="harmonyContainer" class="card harmony-card">
+                    <div class="harmony-header">
+                        <div class="harmony-top-row">
+                            <div class="harmony-keymode" id="harmonyKeyMode"></div>
+                            <div class="harmony-actions">
+                                <button id="clearHarmonySelection" class="ghost micro">Clear</button>
+                            </div>
                         </div>
                     </div>
-                    <div class="chord-category-tabs" id="chordCategoryTabs" role="tablist"></div>
-                    <div class="chords-scroll" id="chordsScroll">
-                        <div class="chord-category-panel" id="chordCategoryPanel" role="tabpanel"></div>
-                    </div>
-                </div>
-            
-                <div id="chordContainer" class="card selections-card is-hidden">
-                    <div id="buttonContainer" class="button-row">
-                        <button id="match">Match</button>
-                        <button id="clear">Clear</button>
-                        <button id="generate">Generate</button>
-                    </div>
-                    <div id="chordSelections">
-                        <div class="chordSelection">
-                            <label for="chord1">Chord 1</label>
-                            <select id="chord1"></select>
-                            <div id="results1" class="results"></div>
-                        </div>
-                        <div class="chordSelection">
-                            <label for="chord2">Chord 2</label>
-                            <select id="chord2"></select>
-                            <div id="results2" class="results"></div>
-                        </div>
-                        <div class="chordSelection">
-                            <label for="chord3">Chord 3</label>
-                            <select id="chord3"></select>
-                            <div id="results3" class="results"></div>
+                    <div class="harmony-grid-shell">
+                        <div class="harmony-grid" id="harmonyGrid" role="grid" aria-label="Harmony Explorer grid">
+                            <div class="harmony-grid-header" id="harmonyGridHeader"></div>
+                            <div class="harmony-grid-body" id="harmonyGridBody"></div>
                         </div>
                     </div>
                 </div>
