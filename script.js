@@ -66,6 +66,8 @@ let selectedHarmonyChordIndex = null;
 let selectedExplorerNotePc = null;
 let harmonyRows = [];
 let extensionState = { 7: true, 9: false, 11: false, 13: false };
+let isMobile = false;
+let mobileActivePanel = "keymode";
 let stripDragging = false;
 let tapStart = null;
 const TAP_MOVE_THRESHOLD = 10;
@@ -946,6 +948,21 @@ function selectExplorerNote(pc) {
   activeChordPitchClasses = null;
   renderHarmonyGrid();
   scheduleHighlightUpdate();
+}
+
+function applyMobilePanelState() {
+  if (!isMobile) {
+    document.body.classList.remove("mobile-panel-keymode", "mobile-panel-harmony");
+    return;
+  }
+  document.body.classList.remove("mobile-panel-keymode", "mobile-panel-harmony");
+  document.body.classList.add(mobileActivePanel === "harmony" ? "mobile-panel-harmony" : "mobile-panel-keymode");
+}
+
+function setMobilePanel(panel) {
+  if (!isMobile) return;
+  mobileActivePanel = panel === "harmony" ? "harmony" : "keymode";
+  applyMobilePanelState();
 }
 
 function updateHarmonyKeyModeLabel() {
@@ -2123,6 +2140,21 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  const harmonyCardHeader = document.querySelector(".harmony-header");
+  if (harmonyCardHeader) {
+    harmonyCardHeader.addEventListener("click", () => setMobilePanel("harmony"));
+  }
+  const harmonyStrip = document.getElementById("harmonyStrip");
+  if (harmonyStrip) {
+    harmonyStrip.addEventListener("click", () => setMobilePanel("keymode"));
+    harmonyStrip.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        setMobilePanel("keymode");
+      }
+    });
+  }
+
   const clearHarmonyBtn = document.getElementById("clearHarmonySelection");
   if (clearHarmonyBtn) {
     clearHarmonyBtn.addEventListener("click", () => {
@@ -2225,6 +2257,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   renderKeyboardVisualizer();
   renderFretboardVisualizer();
+  const mobileQuery = window.matchMedia("(max-width: 768px)");
+  const handleViewportChange = (mq) => {
+    isMobile = mq.matches;
+    if (!isMobile) mobileActivePanel = "keymode";
+    applyMobilePanelState();
+  };
+  handleViewportChange(mobileQuery);
+  if (mobileQuery.addEventListener) mobileQuery.addEventListener("change", handleViewportChange);
+  else mobileQuery.addListener(handleViewportChange);
   updateHarmonyKeyModeLabel();
   renderHarmonyGrid();
   drawFromState();
