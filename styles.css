@@ -598,7 +598,7 @@ button:active {
   border: 1px solid #e3e7fb;
   border-radius: 14px;
   overflow: hidden;
-  background: #ffffff;
+  background: #f9f9ff;
 }
 
 .harmony-grid {
@@ -722,10 +722,8 @@ button:active {
   justify-content: center;
   padding: 4px 6px;
   border-radius: 8px;
-  background: var(--pc-color, #7c6dff);
-  border: 1px solid color-mix(in srgb, var(--pc-color, #7c6dff), #000 22%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
-  color: rgba(10, 14, 28, 0.9);
+  background: color-mix(in srgb, var(--pc-color, #7c6dff) 32%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pc-color, #7c6dff) 50%, transparent);
   font-weight: 700;
 }
 
@@ -735,7 +733,7 @@ button:active {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  background: transparent;
+  background: rgba(85, 104, 255, 0.06);
 }
 
 .root-cell .degree {
@@ -769,7 +767,7 @@ button:active {
 }
 
 .harmony-grid .harmony-row.is-selected {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(85, 104, 255, 0.06);
 }
 
 .filter-status {
