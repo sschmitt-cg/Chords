@@ -664,6 +664,19 @@ button:active {
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 25%), 0 0 12px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 60%);
 }
 
+.pc-0 { --pc-color: var(--pc-0); --deg-color: var(--pc-0); }
+.pc-1 { --pc-color: var(--pc-1); --deg-color: var(--pc-1); }
+.pc-2 { --pc-color: var(--pc-2); --deg-color: var(--pc-2); }
+.pc-3 { --pc-color: var(--pc-3); --deg-color: var(--pc-3); }
+.pc-4 { --pc-color: var(--pc-4); --deg-color: var(--pc-4); }
+.pc-5 { --pc-color: var(--pc-5); --deg-color: var(--pc-5); }
+.pc-6 { --pc-color: var(--pc-6); --deg-color: var(--pc-6); }
+.pc-7 { --pc-color: var(--pc-7); --deg-color: var(--pc-7); }
+.pc-8 { --pc-color: var(--pc-8); --deg-color: var(--pc-8); }
+.pc-9 { --pc-color: var(--pc-9); --deg-color: var(--pc-9); }
+.pc-10 { --pc-color: var(--pc-10); --deg-color: var(--pc-10); }
+.pc-11 { --pc-color: var(--pc-11); --deg-color: var(--pc-11); }
+
 .tone-selected {
   box-shadow: 0 0 0 2px rgba(49, 69, 255, 0.45), 0 0 10px rgba(49, 69, 255, 0.35);
 }
