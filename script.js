@@ -1332,7 +1332,6 @@ function updateInstrumentHighlights(options = {}) {
   const overrideScale = options.scaleOverride || previewScaleOverride || null;
   const scalePcs = overrideScale?.pitchClasses || currentScale.pitchClasses;
   const { set: highlightSet, isolation } = getHighlightSet(scalePcs);
-  const colorMap = getDegreeColorMap(scalePcs);
   const elements = document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note");
   elements.forEach(el => {
     el.classList.remove("tone-root", "tone-top", "tone-tone", "tone-selected");
@@ -1346,14 +1345,14 @@ function updateInstrumentHighlights(options = {}) {
 
   elements.forEach(el => {
     const pc = Number(el.dataset.pc);
-    const color = colorMap.get(pc) || "#7c6dff";
+    const color = pcColor(pc);
+    el.style.setProperty("--pc-color", color);
     el.style.setProperty("--deg-color", color);
-    el.style.setProperty("--pc-color", pcColor(pc));
     if (highlightSet && highlightSet.has(pc)) {
       el.classList.add("lit");
       el.classList.remove("dim");
       if (chordPcs && chordPcs.has(pc)) {
-        if (chordTopPc !== null && pc === chordTopPc) el.classList.add("tone-top");
+        if (chordTopPc !== null && pc === chordTopPc && !(chordRootPc !== null && pc === chordRootPc)) el.classList.add("tone-top");
         else if (chordRootPc !== null && pc === chordRootPc) el.classList.add("tone-root");
         else el.classList.add("tone-tone");
       } else if (selectedExplorerNotePc !== null && pc === selectedExplorerNotePc) {
@@ -1377,8 +1376,12 @@ function updateInstrumentHighlights(options = {}) {
     if (pcs.length) {
       const firstPc = pcs[0];
       const lastPc = pcs[pcs.length - 1];
-      const targets = document.querySelectorAll(`#keyboardVisualizer .key[data-pc="${firstPc}"], #fretboardVisualizer .fret-note[data-pc="${firstPc}"], #keyboardVisualizer .key[data-pc="${lastPc}"], #fretboardVisualizer .fret-note[data-pc="${lastPc}"]`);
-      targets.forEach(el => el.classList.add("emphasis"));
+      const targetsRoot = document.querySelectorAll(`#keyboardVisualizer .key[data-pc="${firstPc}"], #fretboardVisualizer .fret-note[data-pc="${firstPc}"]`);
+      targetsRoot.forEach(el => el.classList.add("tone-root"));
+      if (lastPc !== firstPc) {
+        const targetsTop = document.querySelectorAll(`#keyboardVisualizer .key[data-pc="${lastPc}"], #fretboardVisualizer .fret-note[data-pc="${lastPc}"]`);
+        targetsTop.forEach(el => el.classList.add("tone-top"));
+      }
     }
   }
 }
@@ -1404,12 +1407,11 @@ function updateChordHighlightUI() {
 
 function formatChordNotes(notes) {
   if (!notes) return "";
-  const colorMap = getDegreeColorMap();
   const parts = notes.split("-").map(note => note.trim());
   return parts.map((note, idx) => {
     const pc = noteNameToPc(note);
-    const color = pc === null ? "#7c6dff" : (colorMap.get(pc) || "#7c6dff");
-    const noteSpan = `<span class="chord-note" style="--deg-color:${color}">${note}</span>`;
+    const color = pc === null ? "#7c6dff" : pcColor(pc);
+    const noteSpan = `<span class="chord-note" style="--pc-color:${color}; --deg-color:${color}">${note}</span>`;
     if (idx === parts.length - 1) return noteSpan;
     return `${noteSpan}<span class="chord-sep">-</span>`;
   }).join("");
