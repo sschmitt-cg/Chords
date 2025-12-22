@@ -115,11 +115,6 @@ const DEGREE_COLORS = [
   "#7c6dff",
   "#b392f0"
 ];
-const PC_COLORS = [
-  "#ff6f6f", "#ff8d6f", "#ffad6f", "#ffd46f",
-  "#c6e16f", "#8ee58a", "#6fe1c6", "#6fd2f0",
-  "#6f9dff", "#8b6dff", "#c26dff", "#ff6de2"
-];
 
 const CHORD_CATEGORIES = [
   { key: "triads", label: "Triads" },
@@ -699,7 +694,7 @@ function getDegreeColorMap(pitchClasses = currentScale.pitchClasses) {
   return map;
 }
 
-const pcColor = (pc) => PC_COLORS[wrap(pc, 12)] || "#7c6dff";
+const pcColor = (pc) => `var(--pc-${wrap(pc, 12)})`;
 
 function getHighlightSet(scalePitchClasses = currentScale.pitchClasses) {
   const scaleSet = new Set(scalePitchClasses);
@@ -885,6 +880,10 @@ function renderHarmonyGrid() {
 
   bodyEl.innerHTML = harmonyRows.map(row => {
     const isSelected = row.index === selectedHarmonyChordIndex;
+    const topPc = isSelected && selectedChordNotes ? (() => {
+      const pcs = chordNotesToPcs(selectedChordNotes);
+      return pcs.length ? pcs[pcs.length - 1] : null;
+    })() : null;
     const noteMap = new Map();
     row.notes.forEach(n => noteMap.set(n.label, n));
     const cells = columns.map((col, idx) => {
@@ -895,10 +894,13 @@ function renderHarmonyGrid() {
       }
       const isNoteSelected = selectedExplorerNotePc !== null && selectedExplorerNotePc === note.pc;
       const pcStyle = `style="--pc-color:${pcColor(note.pc)}"`;
+      const toneClass = idx === 0
+        ? "tone-root"
+        : (topPc !== null && note.pc === topPc ? "tone-top" : "tone-tone");
       const noteLabel = idx === 0
         ? `<div class="pc-band" ${pcStyle}>${note.note}</div><div class="degree">${row.degree}</div>`
         : `<div class="pc-band" ${pcStyle}>${note.note}</div>`;
-      return `<div class="harmony-cell ${stickyClass} ${isNoteSelected ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${note.pc}" role="gridcell">${noteLabel}</div>`;
+      return `<div class="harmony-cell ${toneClass} ${stickyClass} ${isNoteSelected ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${note.pc}" role="gridcell">${noteLabel}</div>`;
     }).join("");
     return `<div class="harmony-row${isSelected ? " is-selected" : ""}" data-row-index="${row.index}" role="row">${cells}</div>`;
   }).join("");
@@ -1333,12 +1335,30 @@ function updateInstrumentHighlights(options = {}) {
   const colorMap = getDegreeColorMap(scalePcs);
   const elements = document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note");
   elements.forEach(el => {
+    el.classList.remove("tone-root", "tone-top", "tone-tone", "tone-selected");
+  });
+  const chordPcs = activeChordPitchClasses && activeChordPitchClasses.size ? activeChordPitchClasses : null;
+  const chordRootPc = chordPcs && selectedChordNotes ? chordNotesToPcs(selectedChordNotes)[0] ?? null : null;
+  const chordTopPc = chordPcs && selectedChordNotes ? (() => {
+    const pcs = chordNotesToPcs(selectedChordNotes);
+    return pcs.length ? pcs[pcs.length - 1] : null;
+  })() : null;
+
+  elements.forEach(el => {
     const pc = Number(el.dataset.pc);
     const color = colorMap.get(pc) || "#7c6dff";
     el.style.setProperty("--deg-color", color);
+    el.style.setProperty("--pc-color", pcColor(pc));
     if (highlightSet && highlightSet.has(pc)) {
       el.classList.add("lit");
       el.classList.remove("dim");
+      if (chordPcs && chordPcs.has(pc)) {
+        if (chordTopPc !== null && pc === chordTopPc) el.classList.add("tone-top");
+        else if (chordRootPc !== null && pc === chordRootPc) el.classList.add("tone-root");
+        else el.classList.add("tone-tone");
+      } else if (selectedExplorerNotePc !== null && pc === selectedExplorerNotePc) {
+        el.classList.add("tone-selected");
+      }
     } else {
       el.classList.remove("lit");
       if (isolation) el.classList.add("dim");
