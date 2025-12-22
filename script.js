@@ -935,6 +935,19 @@ function clearHarmonySelection() {
   scheduleHighlightUpdate();
 }
 
+function selectExplorerNote(pc) {
+  if (!Number.isFinite(pc)) return;
+  if (!harmonyRows.length) buildHarmonyRows();
+  const row = harmonyRows.find(r => r.notes?.[0]?.pc === pc);
+  selectedExplorerNotePc = pc;
+  selectedHarmonyChordIndex = row ? row.index : null;
+  selectedChordName = null;
+  selectedChordNotes = null;
+  activeChordPitchClasses = null;
+  renderHarmonyGrid();
+  scheduleHighlightUpdate();
+}
+
 function updateHarmonyKeyModeLabel() {
   const labelEl = document.getElementById("harmonyKeyMode");
   const stripEl = document.getElementById("harmonyStripLabel");
@@ -1441,9 +1454,12 @@ function clearRootFilter() {
   filteredChords = null;
   selectedChordName = null;
   selectedChordNotes = null;
+  selectedExplorerNotePc = null;
+  selectedHarmonyChordIndex = null;
   activeChordPitchClasses = null;
   renderScaleStrip(currentScale.spelled);
   setTileMetrics();
+  renderHarmonyGrid();
   renderChordLists();
   scheduleHighlightUpdate();
   maybePlayCurrentSelection("note-clear");
@@ -1455,6 +1471,7 @@ function handleRootTap(note) {
   selectedChordName = null;
   selectedChordNotes = null;
   activeChordPitchClasses = null;
+  selectExplorerNote(noteNameToPc(note));
   renderScaleStrip(currentScale.spelled);
   setTileMetrics();
   renderChordLists();
