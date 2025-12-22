@@ -168,7 +168,7 @@ body {
 }
 
 .harmony-strip {
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: space-between;
   gap: 6px;
@@ -1367,6 +1367,10 @@ button:active {
 @media (max-width: 720px) {
   .main-grid {
     grid-template-columns: 1fr;
+  }
+
+  .harmony-strip {
+    display: flex;
   }
 }
 
