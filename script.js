@@ -893,14 +893,14 @@ function renderHarmonyGrid() {
         return `<div class="harmony-cell ${stickyClass}" data-row-index="${row.index}" role="gridcell"></div>`;
       }
       const isNoteSelected = selectedExplorerNotePc !== null && selectedExplorerNotePc === note.pc;
-      const pcStyle = `style="--pc-color:${pcColor(note.pc)}"`;
-      const toneClass = idx === 0
+      const pcStyle = `style="--pc-color:${pcColor(note.pc)}; --deg-color:${pcColor(note.pc)}"`;
+      const bandToneClass = idx === 0
         ? "tone-root"
         : (topPc !== null && note.pc === topPc ? "tone-top" : "tone-tone");
       const noteLabel = idx === 0
-        ? `<div class="pc-band pc-${note.pc}" ${pcStyle}>${note.note}</div><div class="degree">${row.degree}</div>`
-        : `<div class="pc-band pc-${note.pc}" ${pcStyle}>${note.note}</div>`;
-      return `<div class="harmony-cell ${toneClass} ${stickyClass} ${isNoteSelected ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${note.pc}" role="gridcell">${noteLabel}</div>`;
+        ? `<div class="pc-band pc-${note.pc} ${bandToneClass}" ${pcStyle}>${note.note}</div><div class="degree">${row.degree}</div>`
+        : `<div class="pc-band pc-${note.pc} ${bandToneClass}" ${pcStyle}>${note.note}</div>`;
+      return `<div class="harmony-cell ${stickyClass} ${isNoteSelected ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${note.pc}" role="gridcell">${noteLabel}</div>`;
     }).join("");
     return `<div class="harmony-row${isSelected ? " is-selected" : ""}" data-row-index="${row.index}" role="row">${cells}</div>`;
   }).join("");

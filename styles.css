@@ -644,21 +644,18 @@ button:active {
 }
 
 /* Tone emphasis */
-.tone-root .pc-band,
-.tone-root {
+.pc-band.tone-root {
   background: var(--pc-color, #7c6dff) !important;
   color: #0c1020;
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 40%);
 }
 
-.tone-tone .pc-band,
-.tone-tone {
+.pc-band.tone-tone {
   background: color-mix(in srgb, var(--pc-color, #7c6dff) 35%, #ffffff 65%) !important;
   color: #0c1020;
 }
 
-.tone-top .pc-band,
-.tone-top {
+.pc-band.tone-top {
   background: color-mix(in srgb, var(--pc-color, #7c6dff) 45%, #ffffff 55%) !important;
   color: #0c1020;
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 25%), 0 0 12px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 60%);
