@@ -224,6 +224,9 @@ function stopPlayback() {
 const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
 function playSynthNote({ midi, when, dur = 0.18 }) {
+  if (audioMuted) return;
+  ensureAudio();
+  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   if (!audioCtx || !masterGain) return;
   if (!Number.isFinite(midi)) return;
   const start = Math.max(when, audioCtx.currentTime);
@@ -953,7 +956,7 @@ function playTestPing() {
 function playChordTonesThenStrum(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
   ensureAudio();
-  try { if (audioCtx?.state === "suspended") audioCtx.resume(); } catch (_) {}
+  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   const row = harmonyRows[rowIndex];
   if (!row) return;
   const effectiveMax = resolveMaxDegree(maxDegree);
@@ -972,7 +975,7 @@ function playChordTonesThenStrum(rowIndex, maxDegree) {
 function playStrumOnly(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
   ensureAudio();
-  try { if (audioCtx?.state === "suspended") audioCtx.resume(); } catch (_) {}
+  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   const row = harmonyRows[rowIndex];
   if (!row) return;
   const effectiveMax = resolveMaxDegree(maxDegree);
@@ -2341,17 +2344,23 @@ document.addEventListener("DOMContentLoaded", () => {
   if (soundToggle) {
     soundToggle.addEventListener("click", async () => {
       if (audioMuted) {
-        ensureAudio();
-        if (!audioCtx) return;
-        if (audioCtx?.state === "suspended") await audioCtx.resume();
-        if (masterGain) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-        if (audioOutEl) {
-          try { await audioOutEl.play(); } catch (e) { console.warn("audioOut play failed", e); }
+        try {
+          ensureAudio();
+          if (!audioCtx) throw new Error("AudioContext not available");
+          if (audioCtx?.state === "suspended") await audioCtx.resume();
+          if (masterGain) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
+          if (audioOutEl) {
+            try { await audioOutEl.play(); } catch (e) { console.warn("audioOut play failed", e); }
+          }
+          audioMuted = false;
+          updateSoundToggleUI();
+          playTestPing();
+          maybePlayCurrentSelection("unmute");
+        } catch (err) {
+          console.error("Audio enable failed", err);
+          audioMuted = true;
+          updateSoundToggleUI();
         }
-        audioMuted = false;
-        updateSoundToggleUI();
-        playTestPing();
-        maybePlayCurrentSelection("unmute");
       } else {
         audioMuted = true;
         stopPlayback();
