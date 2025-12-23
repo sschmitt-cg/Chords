@@ -1015,7 +1015,8 @@ function renderHarmonyGrid() {
         const isVisible = targetDegree <= rowMax;
         const visibilityClass = isVisible ? "is-visible" : "is-ghost";
         const isNoteSelected = selectedExplorerNotePc !== null && selectedExplorerNotePc === note.pc;
-        const bandToneClass = selectedExplorerNotePc === null
+        const isActiveRow = selectedHarmonyChordIndex === row.index;
+        const bandToneClass = isActiveRow
           ? (topPc !== null && note.pc === topPc ? "tone-top" : (note.pc === root.pc ? "tone-root" : "tone-tone"))
           : "";
         const cellClasses = `harmony-cell tone-cell ${visibilityClass} pc-${note.pc} ${isNoteSelected ? "is-note-selected" : ""}`;
@@ -1252,7 +1253,7 @@ function renderScaleStrip(scale) {
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const notes = scale.map((note, idx) =>
-    `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${DEGREE_COLORS[idx]}"><div>${note}</div></div>`
+    `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${pcColor(currentScale.pitchClasses[idx])}"><div>${note}</div></div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
@@ -1278,7 +1279,7 @@ function renderHorizontalWithWrap(scale) {
   const notes = extended.map((note, idx) => {
     const isTonic = idx === scale.length;
     const isSelected = selectedRootNote === note && idx >= scale.length && idx < scale.length * 2;
-    const color = DEGREE_COLORS[idx % scale.length];
+    const color = pcColor(currentScale.pitchClasses[idx % scale.length]);
     return `<div class="note-label${isTonic ? " tonic" : ""}${isSelected ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${color}"><div>${note}</div></div>`;
   }).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
@@ -1305,7 +1306,7 @@ function renderVerticalRows() {
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${rowHeight}px;flex:0 0 auto">${row.notes.map((note, idx) =>
-      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${DEGREE_COLORS[idx]}"><div>${note}</div></div>`
+      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${pcColor(currentScale.pitchClasses[idx])}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer" style="height:${rowHeight * rows.length}px">${rowsHtml}</div>`;
