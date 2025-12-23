@@ -426,7 +426,7 @@ button:active {
   display: grid;
   gap: 12px;
   grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
-  align-items: start;
+  align-items: stretch;
 }
 
 .card {
@@ -562,8 +562,10 @@ button:active {
 
 .harmony-card {
   display: grid;
+  grid-template-rows: auto 1fr;
   gap: 8px;
   align-self: stretch;
+  height: 100%;
 }
 
 .harmony-header {

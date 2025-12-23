@@ -710,22 +710,10 @@ function getDegreeColorMap(pitchClasses = currentScale.pitchClasses) {
 const pcColor = (pc) => `var(--pc-${wrap(pc, 12)})`;
 
 function getHighlightSet(scalePitchClasses = currentScale.pitchClasses) {
-  const scaleSet = new Set(scalePitchClasses);
-  if (activeChordPitchClasses && activeChordPitchClasses.size && selectedExplorerNotePc !== null) {
-    const combo = new Set(activeChordPitchClasses);
-    combo.add(selectedExplorerNotePc);
-    return { set: combo, isolation: true };
-  }
   if (selectedExplorerNotePc !== null) {
     return { set: new Set([selectedExplorerNotePc]), isolation: true };
   }
-  if (activeChordPitchClasses && activeChordPitchClasses.size) {
-    return { set: activeChordPitchClasses, isolation: true };
-  }
-  const rootPc = selectedRootNote ? noteNameToPc(selectedRootNote) : null;
-  if (rootPc !== null) {
-    return { set: new Set([rootPc]), isolation: true };
-  }
+  const scaleSet = new Set(scalePitchClasses);
   return { set: scaleSet, isolation: false };
 }
 
@@ -964,6 +952,8 @@ function playTestPing() {
 
 function playChordTonesThenStrum(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
+  ensureAudio();
+  try { if (audioCtx?.state === "suspended") audioCtx.resume(); } catch (_) {}
   const row = harmonyRows[rowIndex];
   if (!row) return;
   const effectiveMax = resolveMaxDegree(maxDegree);
@@ -981,6 +971,8 @@ function playChordTonesThenStrum(rowIndex, maxDegree) {
 
 function playStrumOnly(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
+  ensureAudio();
+  try { if (audioCtx?.state === "suspended") audioCtx.resume(); } catch (_) {}
   const row = harmonyRows[rowIndex];
   if (!row) return;
   const effectiveMax = resolveMaxDegree(maxDegree);
@@ -1505,7 +1497,6 @@ function updateInstrumentHighlights(options = {}) {
     el.style.setProperty("--deg-color", color);
     if (highlightSet && highlightSet.has(pc)) {
       el.classList.add("lit");
-      el.classList.remove("dim");
       if (chordPcs && chordPcs.has(pc)) {
         if (chordTopPc !== null && pc === chordTopPc && !(chordRootPc !== null && pc === chordRootPc)) el.classList.add("tone-top");
         else if (chordRootPc !== null && pc === chordRootPc) el.classList.add("tone-root");
@@ -1513,6 +1504,7 @@ function updateInstrumentHighlights(options = {}) {
       } else if (selectedExplorerNotePc !== null && pc === selectedExplorerNotePc) {
         el.classList.add("tone-selected");
       }
+      el.classList.remove("dim");
     } else {
       el.classList.remove("lit");
       if (isolation) el.classList.add("dim");
