@@ -330,6 +330,7 @@ function buildAscendingScaleMidis(pitchClasses) {
 }
 
 function playSequence(notes, instrument, startTime, gap, token) {
+  if (audioMuted) return startTime;
   ensureAudio();
   try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   if (!audioCtx || !masterGain) return startTime;
@@ -346,6 +347,7 @@ function playSequence(notes, instrument, startTime, gap, token) {
 }
 
 function playStrum(notes, instrument, startTime, gap, token) {
+  if (audioMuted) return startTime;
   ensureAudio();
   try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   if (!audioCtx || !masterGain) return startTime;
@@ -2332,6 +2334,9 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         audioMuted = true;
         stopPlayback();
+        if (masterGain && audioCtx) {
+          try { masterGain.gain.setValueAtTime(0.0, audioCtx.currentTime); } catch (_) {}
+        }
         if (isIOS() && audioOutEl) {
           try { audioOutEl.pause(); } catch (_) {}
         }
