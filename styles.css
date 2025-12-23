@@ -563,6 +563,7 @@ button:active {
 .harmony-card {
   display: grid;
   gap: 8px;
+  align-self: stretch;
 }
 
 .harmony-header {
@@ -572,6 +573,7 @@ button:active {
   top: 0;
   background: #fff;
   z-index: 2;
+  align-self: start;
 }
 
 .harmony-top-row {
@@ -604,8 +606,8 @@ button:active {
 .harmony-grid {
   overflow-x: auto;
   --rn-col: 62px;
-  --chord-col: 128px;
-  --tone-col: 54px;
+  --chord-col: 120px;
+  --tone-col: 52px;
   position: relative;
 }
 
@@ -636,7 +638,7 @@ button:active {
 
 .tone-head.is-active {
   color: #3145ff;
-  box-shadow: inset 0 -2px 0 #5568ff;
+  box-shadow: none;
 }
 
 .tone-head:focus-visible {
@@ -713,7 +715,7 @@ button:active {
 }
 
 .h-cell, .harmony-cell {
-  padding: 3px;
+  padding: 2px 3px;
   text-align: center;
   position: relative;
 }
@@ -768,6 +770,7 @@ button:active {
   gap: 6px;
   justify-content: flex-start;
   background: color-mix(in srgb, var(--pc-color, #7c6dff) 36%, #ffffff 64%);
+  padding: 2px 4px;
 }
 
 .root-cell .degree {
@@ -778,15 +781,15 @@ button:active {
 
 .chord-chip {
   display: inline-block;
-  min-width: 116px;
-  max-width: 140px;
-  padding: 4px 8px;
-  border-radius: 8px;
+  min-width: 100px;
+  max-width: 120px;
+  padding: 2px 4px;
+  border-radius: 6px;
   background: transparent;
   border: none;
   box-shadow: none;
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   color: #151b36;
   white-space: nowrap;
   overflow: hidden;
@@ -1046,7 +1049,7 @@ button:active {
 }
 
 .key.dim {
-  opacity: 0.35;
+  opacity: 0.2;
 }
 
 .key.black.dim {
@@ -1134,7 +1137,7 @@ button:active {
 }
 
 .fret-note.dim {
-  opacity: 0.2;
+  opacity: 0.18;
 }
 
 .button-row {
