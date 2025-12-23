@@ -139,71 +139,45 @@ const CHORD_CATEGORIES = [
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 
 function ensureAudio() {
-  if (audioCtx) {
-    if (audioCtx.state === "suspended") audioCtx.resume();
-    if (!audioOutEl) audioOutEl = document.getElementById("audioOut");
-    if (!limiter && audioCtx) {
-      limiter = audioCtx.createDynamicsCompressor();
-      limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
-      limiter.knee.setValueAtTime(18, audioCtx.currentTime);
-      limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
-      limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
-      limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
-    }
-    if (isIOS()) {
-      if (!mediaDest && audioCtx) {
-        mediaDest = audioCtx.createMediaStreamDestination();
-      }
-      if (masterGain && limiter && mediaDest) {
-        try { masterGain.disconnect(); } catch (_) {}
-        masterGain.connect(limiter).connect(mediaDest);
-      }
-      if (audioOutEl && mediaDest && audioOutEl.srcObject !== mediaDest.stream) {
-        audioOutEl.srcObject = mediaDest.stream;
-        audioOutEl.volume = 1;
-        audioOutEl.muted = false;
-        audioOutEl.playsInline = true;
-      }
-    } else {
-      if (masterGain && limiter) {
-        try { masterGain.disconnect(); } catch (_) {}
-        masterGain.connect(limiter).connect(audioCtx.destination);
-      }
-    }
-    if (masterGain) {
-      masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-    }
-    return;
-  }
   const Ctx = window.AudioContext || window.webkitAudioContext;
-  if (!Ctx) return;
-  try {
-    audioCtx = new Ctx({ latencyHint: "interactive" });
-  } catch (_) {
-    audioCtx = new Ctx();
-  }
-  audioOutEl = document.getElementById("audioOut");
-  masterGain = audioCtx.createGain();
-  masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-  limiter = audioCtx.createDynamicsCompressor();
-  limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
-  limiter.knee.setValueAtTime(18, audioCtx.currentTime);
-  limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
-  limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
-  limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
-  if (isIOS()) {
-    mediaDest = audioCtx.createMediaStreamDestination();
-    if (mediaDest) masterGain.connect(limiter).connect(mediaDest);
-    if (audioOutEl && mediaDest) {
-      audioOutEl.srcObject = mediaDest.stream;
-      audioOutEl.volume = 1;
-      audioOutEl.muted = false;
-      audioOutEl.playsInline = true;
+  if (!audioCtx) {
+    if (!Ctx) return false;
+    try {
+      audioCtx = new Ctx({ latencyHint: "interactive" });
+    } catch (_) {
+      audioCtx = new Ctx();
     }
-  } else {
+    masterGain = audioCtx.createGain();
+    limiter = audioCtx.createDynamicsCompressor();
+    limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
+    limiter.knee.setValueAtTime(18, audioCtx.currentTime);
+    limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
+    limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
+    limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
+
     masterGain.connect(limiter).connect(audioCtx.destination);
   }
+
+  // Keep gain in sync with mute state.
+  if (masterGain) {
+    const target = audioMuted ? 0 : AUDIO_MASTER_GAIN;
+    masterGain.gain.setValueAtTime(target, audioCtx.currentTime);
+  }
+  return true;
 }
+
+async function ensureAudioRunning() {
+  if (!ensureAudio()) return false;
+  if (!audioCtx) return false;
+  try {
+    if (audioCtx.state !== "running") await audioCtx.resume();
+  } catch (e) {
+    console.warn("audioCtx.resume() failed", e);
+    return false;
+  }
+  return true;
+}
+
 
 function stopPlayback() {
   playbackToken += 1;
@@ -720,7 +694,7 @@ const pcColor = (pc) => `var(--pc-${wrap(pc, 12)})`;
 
 function getHighlightSet(scalePitchClasses = currentScale.pitchClasses) {
   if (selectedExplorerNotePc !== null) {
-    return { set: new Set([selectedExplorerNotePc]), isolation: true };
+    return { set: new Set([selectedExplorerNotePc]), isolation: false };
   }
   const scaleSet = new Set(scalePitchClasses);
   return { set: scaleSet, isolation: false };
@@ -955,7 +929,7 @@ function playTestPing() {
   if (!audioCtx || !masterGain) return;
   const token = stopPlayback();
   const when = audioCtx.currentTime + 0.02;
-  playSynthNote({ midi: 69, when, dur: 0.1, instrument: "piano" });
+  playSynthNote({ midi: 69, when, dur: 0.05, instrument: "piano" });
   playbackToken = token;
 }
 
@@ -1488,10 +1462,9 @@ function updateInstrumentHighlights(options = {}) {
   const overrideScale = options.scaleOverride || previewScaleOverride || null;
   const scalePcs = overrideScale?.pitchClasses || currentScale.pitchClasses;
   const { set: highlightSet, isolation } = getHighlightSet(scalePcs);
-  const scaleSet = new Set(scalePcs);
   const elements = document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note");
   elements.forEach(el => {
-    el.classList.remove("tone-root", "tone-top", "tone-tone", "tone-selected", "emphasis");
+    el.classList.remove("tone-root", "tone-top", "tone-tone", "tone-selected");
   });
   const chordPcs = activeChordPitchClasses && activeChordPitchClasses.size ? activeChordPitchClasses : null;
   const chordRootPc = chordPcs && selectedChordNotes ? chordNotesToPcs(selectedChordNotes)[0] ?? null : null;
@@ -1505,11 +1478,9 @@ function updateInstrumentHighlights(options = {}) {
     const color = pcColor(pc);
     el.style.setProperty("--pc-color", color);
     el.style.setProperty("--deg-color", color);
-    const lit = isolation ? (highlightSet && highlightSet.has(pc)) : scaleSet.has(pc);
-    if (lit) {
+    if (highlightSet && highlightSet.has(pc)) {
       el.classList.add("lit");
-      if (!isolation && chordPcs && chordPcs.has(pc)) {
-        el.classList.add("emphasis");
+      if (chordPcs && chordPcs.has(pc)) {
         if (chordTopPc !== null && pc === chordTopPc && !(chordRootPc !== null && pc === chordRootPc)) el.classList.add("tone-top");
         else if (chordRootPc !== null && pc === chordRootPc) el.classList.add("tone-root");
         else el.classList.add("tone-tone");
@@ -2317,32 +2288,24 @@ document.addEventListener("DOMContentLoaded", () => {
   if (soundToggle) {
     soundToggle.addEventListener("click", async () => {
       if (audioMuted) {
-        try {
-          ensureAudio();
-          if (!audioCtx) throw new Error("AudioContext not available");
-          if (audioCtx?.state === "suspended") await audioCtx.resume();
-          if (masterGain) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-          if (audioOutEl) {
-            try { await audioOutEl.play(); } catch (e) { console.warn("audioOut play failed", e); }
-          }
-          audioMuted = false;
-          updateSoundToggleUI();
-          playTestPing();
-          maybePlayCurrentSelection("unmute");
-        } catch (err) {
-          console.error("Audio enable failed", err);
+        // Unmute: must be a user gesture to unlock audio.
+        const ok = await ensureAudioRunning();
+        if (!ok) {
           audioMuted = true;
           updateSoundToggleUI();
+          return;
         }
+        audioMuted = false;
+        // Sync gain now that we're unmuted.
+        if (masterGain) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
+        updateSoundToggleUI();
+        playTestPing();
+        maybePlayCurrentSelection("unmute");
       } else {
+        // Mute
         audioMuted = true;
         stopPlayback();
-        if (masterGain && audioCtx) {
-          try { masterGain.gain.setValueAtTime(0.0, audioCtx.currentTime); } catch (_) {}
-        }
-        if (isIOS() && audioOutEl) {
-          try { audioOutEl.pause(); } catch (_) {}
-        }
+        if (masterGain && audioCtx) masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
         updateSoundToggleUI();
       }
     });
