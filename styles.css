@@ -712,25 +712,22 @@ button:active {
 }
 
 .h-cell, .harmony-cell {
-  padding: 6px;
+  padding: 4px;
   text-align: center;
   position: relative;
 }
 
 .harmony-cell {
   cursor: pointer;
-  transition: background 0.12s ease, transform 0.1s ease;
-}
-
-.harmony-cell:hover {
-  background: rgba(85, 104, 255, 0.07);
+  transition: background 0.12s ease, transform 0.1s ease, box-shadow 0.12s ease;
+  overflow: hidden;
 }
 
 .harmony-cell .pc-band {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px 6px;
+  padding: 3px 5px;
   border-radius: 8px;
   background: var(--pc-color, #7c6dff);
   border: 1px solid color-mix(in srgb, var(--pc-color, #7c6dff), #000 22%);
@@ -743,9 +740,24 @@ button:active {
   text-align: left;
   font-weight: 800;
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 6px;
   background: transparent;
+}
+
+.root-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.override-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #3145ff;
+  box-shadow: 0 0 0 1px rgba(49, 69, 255, 0.25);
+  display: inline-block;
 }
 
 .root-cell .degree {
@@ -759,8 +771,30 @@ button:active {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--pc-color, #5568ff) 65%, transparent);
 }
 
-.harmony-cell.is-note-selected {
-  background: rgba(255, 255, 255, 0.6);
+.harmony-cell[data-pc]::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--pc-color, #7c6dff), transparent 84%);
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+.harmony-cell.is-visible[data-pc]::before {
+  opacity: 0.16;
+}
+
+.harmony-cell.is-ghost[data-pc]::before {
+  opacity: 0.08;
+}
+
+.harmony-cell.is-ghost .pc-band {
+  opacity: 0.18;
+  filter: saturate(0.85);
 }
 
 .harmony-grid-header .root-head {
