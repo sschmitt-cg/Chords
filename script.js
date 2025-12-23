@@ -68,6 +68,8 @@ let harmonyRows = [];
 let extensionState = { 7: true, 9: false, 11: false, 13: false };
 let isMobile = false;
 let mobileActivePanel = "keymode";
+let globalHarmonyMax = 7;
+const rowHarmonyMaxOverrides = new Map();
 let stripDragging = false;
 let tapStart = null;
 const TAP_MOVE_THRESHOLD = 10;
@@ -829,35 +831,112 @@ function buildHarmonyRows() {
   harmonyRows = currentScale.pitchClasses.map((pc, idx) => {
     const rowNotes = [];
     const rootNote = currentScale.spelled[idx];
-    rowNotes.push({ label: "Root", pc, note: rootNote });
+    rowNotes.push({ label: "Root", degree: 1, pc, note: rootNote });
     const thirdIdx = (idx + 2) % 7;
-    rowNotes.push({ label: "3", pc: currentScale.pitchClasses[thirdIdx], note: currentScale.spelled[thirdIdx] });
+    rowNotes.push({ label: "3", degree: 3, pc: currentScale.pitchClasses[thirdIdx], note: currentScale.spelled[thirdIdx] });
     const fifthIdx = (idx + 4) % 7;
-    rowNotes.push({ label: "5", pc: currentScale.pitchClasses[fifthIdx], note: currentScale.spelled[fifthIdx] });
-    if (extensionState[7]) {
-      const seventhIdx = (idx + 6) % 7;
-      rowNotes.push({ label: "7", pc: currentScale.pitchClasses[seventhIdx], note: currentScale.spelled[seventhIdx] });
-    }
-    if (extensionState[9]) {
-      const ninthIdx = (idx + 1) % 7;
-      rowNotes.push({ label: "9", pc: currentScale.pitchClasses[ninthIdx], note: currentScale.spelled[ninthIdx] });
-    }
-    if (extensionState[11]) {
-      const eleventhIdx = (idx + 3) % 7;
-      rowNotes.push({ label: "11", pc: currentScale.pitchClasses[eleventhIdx], note: currentScale.spelled[eleventhIdx] });
-    }
-    if (extensionState[13]) {
-      const thirteenthIdx = (idx + 5) % 7;
-      rowNotes.push({ label: "13", pc: currentScale.pitchClasses[thirteenthIdx], note: currentScale.spelled[thirteenthIdx] });
-    }
+    rowNotes.push({ label: "5", degree: 5, pc: currentScale.pitchClasses[fifthIdx], note: currentScale.spelled[fifthIdx] });
+    const seventhIdx = (idx + 6) % 7;
+    rowNotes.push({ label: "7", degree: 7, pc: currentScale.pitchClasses[seventhIdx], note: currentScale.spelled[seventhIdx] });
+    const ninthIdx = (idx + 1) % 7;
+    rowNotes.push({ label: "9", degree: 9, pc: currentScale.pitchClasses[ninthIdx], note: currentScale.spelled[ninthIdx] });
+    const eleventhIdx = (idx + 3) % 7;
+    rowNotes.push({ label: "11", degree: 11, pc: currentScale.pitchClasses[eleventhIdx], note: currentScale.spelled[eleventhIdx] });
+    const thirteenthIdx = (idx + 5) % 7;
+    rowNotes.push({ label: "13", degree: 13, pc: currentScale.pitchClasses[thirteenthIdx], note: currentScale.spelled[thirteenthIdx] });
     return {
       index: idx,
       degree: romans[idx],
       rootNote,
-      notes: rowNotes,
-      notesString: rowNotes.map(n => n.note).join(" - ")
+      notes: rowNotes
     };
   });
+}
+
+const degreeOrder = [1, 3, 5, 7, 9, 11, 13];
+
+function chordNotesStringForRow(row, maxDegree = 7) {
+  const notes = row?.notes || [];
+  return notes
+    .filter(n => n.degree <= maxDegree)
+    .map(n => n.note)
+    .join(" - ");
+}
+
+function chordNameForRow(row, maxDegree = 7) {
+  if (!row?.notes?.length) return "";
+  const root = row.notes.find(n => n.degree === 1);
+  const third = row.notes.find(n => n.degree === 3);
+  const fifth = row.notes.find(n => n.degree === 5);
+  if (!root || !third || !fifth) return root?.note || "";
+  const thirdInt = wrap(third.pc - root.pc, 12);
+  const fifthInt = wrap(fifth.pc - root.pc, 12);
+  const triad = intervalQuality(thirdInt, fifthInt);
+  const seventhNote = row.notes.find(n => n.degree === 7);
+  const ninthNote = row.notes.find(n => n.degree === 9);
+  const eleventhNote = row.notes.find(n => n.degree === 11);
+  const thirteenthNote = row.notes.find(n => n.degree === 13);
+  let label = `${root.note}${triad.suffix}`;
+
+  let seventhQual = null;
+  if (maxDegree >= 7 && seventhNote) {
+    const int7 = wrap(seventhNote.pc - root.pc, 12);
+    seventhQual = seventhQuality(triad, int7);
+    label = `${root.note}${seventhQual.label}`;
+  }
+
+  if (maxDegree >= 9 && ninthNote) {
+    const int9 = wrap(ninthNote.pc - root.pc, 12);
+    const ninthQual = ninthQuality(seventhQual || { label: triad.suffix, valid: true }, int9);
+    label = `${root.note}${ninthQual.label}`;
+  }
+
+  if (maxDegree >= 11 && eleventhNote) {
+    const int11 = wrap(eleventhNote.pc - root.pc, 12);
+    const ext = int11 === 5 ? "11" : int11 === 6 ? "(#11)" : "(b11)";
+    label += ext;
+  }
+
+  if (maxDegree >= 13 && thirteenthNote) {
+    const int13 = wrap(thirteenthNote.pc - root.pc, 12);
+    let ext = "13";
+    if (int13 === 8) ext = "(b13)";
+    else if (int13 === 10) ext = "(#13)";
+    label += ext;
+  }
+  return label;
+}
+
+const getRowMax = (rowIndex) => rowHarmonyMaxOverrides.get(rowIndex) ?? globalHarmonyMax;
+
+function playChordTonesThenStrum(rowIndex, maxDegree) {
+  if (audioMuted || stripDragging) return;
+  const row = harmonyRows[rowIndex];
+  if (!row) return;
+  const notesStr = chordNotesStringForRow(row, maxDegree);
+  if (!notesStr) return;
+  const notes = buildChordPlaybackMidisFromNotes(notesStr);
+  if (!notes.length) return;
+  const token = stopPlayback();
+  const start = audioCtx?.currentTime ? audioCtx.currentTime + 0.05 : 0;
+  const seqNotes = notes.map(n => ({ ...n, dur: CHORD_TONE_DUR }));
+  const lastTime = playSequence(seqNotes, "piano", start, CHORD_TONE_GAP, token);
+  const strumNotes = notes.map(n => ({ ...n, dur: STRUM_DUR }));
+  playStrum(strumNotes, "piano", lastTime + 0.08, STRUM_GAP, token);
+}
+
+function playStrumOnly(rowIndex, maxDegree) {
+  if (audioMuted || stripDragging) return;
+  const row = harmonyRows[rowIndex];
+  if (!row) return;
+  const notesStr = chordNotesStringForRow(row, maxDegree);
+  if (!notesStr) return;
+  const notes = buildChordPlaybackMidisFromNotes(notesStr);
+  if (!notes.length) return;
+  const token = stopPlayback();
+  const start = audioCtx?.currentTime ? audioCtx.currentTime + 0.05 : 0;
+  const strumNotes = notes.map(n => ({ ...n, dur: STRUM_DUR }));
+  playStrum(strumNotes, "piano", start, STRUM_GAP, token);
 }
 
 function renderHarmonyGrid() {
@@ -865,42 +944,58 @@ function renderHarmonyGrid() {
   const bodyEl = document.getElementById("harmonyGridBody");
   if (!headerEl || !bodyEl) return;
   buildHarmonyRows();
-  const columns = ["Root", "3", "5", "7", "9", "11", "13"];
+  const columns = [
+    { label: "Chord", degree: 0 },
+    { label: "Root", degree: 3 },
+    { label: "3", degree: 3 },
+    { label: "5", degree: 5 },
+    { label: "7", degree: 7 },
+    { label: "9", degree: 9 },
+    { label: "11", degree: 11 },
+    { label: "13", degree: 13 }
+  ];
   const toneCount = columns.length - 1;
   headerEl.style.setProperty("--tone-count", toneCount);
   bodyEl.style.setProperty("--tone-count", toneCount);
   headerEl.innerHTML = columns.map((col, idx) => {
-    const stickyClass = idx === 0 ? "sticky-col root-head" : "tone-head";
-    const level = Number(col);
-    const active = Number.isFinite(level) ? extensionState[level] : true;
-    const pressedAttr = Number.isFinite(level) ? `aria-pressed="${active ? "true" : "false"}"` : "";
-    const dataAttr = Number.isFinite(level) ? `data-level="${level}"` : "";
-    return `<div class="h-cell ${stickyClass} ${active ? "is-active" : ""}" ${dataAttr} ${pressedAttr} role="columnheader" tabindex="0">${col}</div>`;
+    if (idx === 0) {
+      return `<div class="h-cell sticky-col root-head" role="columnheader">Chord</div>`;
+    }
+    const active = globalHarmonyMax === col.degree;
+    return `<div class="h-cell tone-head ${active ? "is-active" : ""}" data-degree="${col.degree}" role="columnheader" tabindex="0" aria-pressed="${active ? "true" : "false"}">${col.label}</div>`;
   }).join("");
 
   bodyEl.innerHTML = harmonyRows.map(row => {
     const isSelected = row.index === selectedHarmonyChordIndex;
-    const topPc = isSelected && selectedChordNotes ? (() => {
-      const pcs = chordNotesToPcs(selectedChordNotes);
-      return pcs.length ? pcs[pcs.length - 1] : null;
-    })() : null;
-    const noteMap = new Map();
-    row.notes.forEach(n => noteMap.set(n.label, n));
+    const rowMax = rowHarmonyMaxOverrides.get(row.index) ?? globalHarmonyMax;
+    const topPc = (() => {
+      const filtered = row.notes.filter(n => n.degree <= rowMax);
+      return filtered.length ? filtered[filtered.length - 1].pc : null;
+    })();
     const cells = columns.map((col, idx) => {
-      const note = noteMap.get(col) || null;
-      const stickyClass = idx === 0 ? "sticky-col root-cell" : "";
+      if (idx === 0) {
+        const chordLabel = chordNameForRow(row, rowMax);
+        const root = row.notes[0];
+        const pcStyle = root ? `style="--pc-color:${pcColor(root.pc)}; --deg-color:${pcColor(root.pc)}"` : "";
+        const overrideMark = rowHarmonyMaxOverrides.has(row.index) ? `<span class="override-dot"></span>` : "";
+        return `<div class="harmony-cell sticky-col root-cell" data-row-index="${row.index}" role="gridcell">
+          <div class="root-label">${overrideMark}<span class="degree">${row.degree}</span><span class="pc-band pc-${root?.pc ?? 0} tone-root" ${pcStyle} data-pc="${root?.pc ?? ""}">${chordLabel}</span></div>
+        </div>`;
+      }
+      const targetDegree = col.degree === 3 && idx === 1 ? 3 : col.degree;
+      const note = row.notes.find(n => n.label === col.label) || null;
       if (!note) {
-        return `<div class="harmony-cell ${stickyClass}" data-row-index="${row.index}" role="gridcell"></div>`;
+        return `<div class="harmony-cell" data-row-index="${row.index}" data-degree="${targetDegree}" role="gridcell"></div>`;
       }
       const isNoteSelected = selectedExplorerNotePc !== null && selectedExplorerNotePc === note.pc;
       const pcStyle = `style="--pc-color:${pcColor(note.pc)}; --deg-color:${pcColor(note.pc)}"`;
-      const bandToneClass = idx === 0
+      const isVisible = targetDegree <= rowMax;
+      const bandToneClass = targetDegree === 3 && col.label === "Root"
         ? "tone-root"
         : (topPc !== null && note.pc === topPc ? "tone-top" : "tone-tone");
-      const noteLabel = idx === 0
-        ? `<div class="pc-band pc-${note.pc} ${bandToneClass}" ${pcStyle}>${note.note}</div><div class="degree">${row.degree}</div>`
-        : `<div class="pc-band pc-${note.pc} ${bandToneClass}" ${pcStyle}>${note.note}</div>`;
-      return `<div class="harmony-cell ${stickyClass} ${isNoteSelected ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${note.pc}" role="gridcell">${noteLabel}</div>`;
+      const visibilityClass = isVisible ? "is-visible" : "is-ghost";
+      const noteLabel = `<div class="pc-band ${bandToneClass} pc-${note.pc}" ${pcStyle} data-pc="${note.pc}" data-row-index="${row.index}">${note.note}</div>`;
+      return `<div class="harmony-cell ${visibilityClass} ${isNoteSelected ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${note.pc}" data-degree="${targetDegree}" role="gridcell">${noteLabel}</div>`;
     }).join("");
     return `<div class="harmony-row${isSelected ? " is-selected" : ""}" data-row-index="${row.index}" role="row">${cells}</div>`;
   }).join("");
@@ -910,9 +1005,10 @@ function selectHarmonyChord(rowIndex) {
   const row = harmonyRows.find(r => r.index === rowIndex);
   if (!row) return;
   selectedHarmonyChordIndex = rowIndex;
-  selectedChordName = `Harmony ${row.degree}`;
-  selectedChordNotes = row.notesString;
-  activeChordPitchClasses = new Set(row.notes.map(n => n.pc));
+  const rowMax = getRowMax(rowIndex);
+  selectedChordName = chordNameForRow(row, rowMax);
+  selectedChordNotes = chordNotesStringForRow(row, rowMax);
+  activeChordPitchClasses = new Set(row.notes.filter(n => n.degree <= rowMax).map(n => n.pc));
   renderHarmonyGrid();
   scheduleHighlightUpdate();
   updateChordHighlightUI();
@@ -1658,6 +1754,8 @@ function drawFromState(options = {}) {
   selectedChordNotes = null;
   selectedHarmonyChordIndex = null;
   selectedExplorerNotePc = null;
+  globalHarmonyMax = 7;
+  rowHarmonyMaxOverrides.clear();
   activeChordCategory = null;
   updateHarmonyKeyModeLabel();
   renderHarmonyGrid();
@@ -2123,42 +2221,57 @@ document.addEventListener("DOMContentLoaded", () => {
   const harmonyBody = document.getElementById("harmonyGridBody");
   if (harmonyBody) {
     harmonyBody.addEventListener("click", (e) => {
+      const pill = e.target.closest(".pc-band");
+      if (pill) {
+        const rowIdx = Number(pill.dataset.rowIndex ?? pill.closest(".harmony-row")?.dataset.rowIndex ?? -1);
+        const pc = Number(pill.dataset.pc);
+        if (!Number.isNaN(pc)) selectHarmonyNote(pc, Number.isNaN(rowIdx) ? null : rowIdx);
+        e.stopPropagation();
+        return;
+      }
       const cell = e.target.closest(".harmony-cell");
       const rowEl = e.target.closest(".harmony-row");
       const rowIdx = rowEl ? Number(rowEl.dataset.rowIndex) : null;
-      if (cell) {
-        const pc = Number(cell.dataset.pc);
-        if (!Number.isNaN(pc)) selectHarmonyNote(pc, rowIdx);
-        if (rowIdx !== null && rowIdx !== selectedHarmonyChordIndex) selectHarmonyChord(rowIdx);
+      if (!cell || rowIdx === null || Number.isNaN(rowIdx)) return;
+      const targetDegree = Number(cell.dataset.degree) || 3;
+      const targetMax = targetDegree === 0 ? 3 : targetDegree;
+      const currentMax = getRowMax(rowIdx);
+      if (targetMax === currentMax) {
+        selectHarmonyChord(rowIdx);
+        if (!audioMuted) playStrumOnly(rowIdx, currentMax);
         return;
       }
-      if (rowIdx !== null) selectHarmonyChord(rowIdx);
+      rowHarmonyMaxOverrides.set(rowIdx, targetMax);
+      selectHarmonyChord(rowIdx);
+      if (!audioMuted) playChordTonesThenStrum(rowIdx, targetMax);
     });
   }
 
   const harmonyHeader = document.getElementById("harmonyGridHeader");
-  const toggleLevel = (level) => {
+  const setGlobalDepth = (level) => {
     if (!level) return;
-    const next = !extensionState[level];
-    enforceExtensionLadder(level, next);
+    if (globalHarmonyMax === level) return;
+    globalHarmonyMax = level;
     renderHarmonyGrid();
-    if (selectedHarmonyChordIndex !== null) selectHarmonyChord(selectedHarmonyChordIndex);
-    else scheduleHighlightUpdate();
+    const playRow = selectedHarmonyChordIndex ?? 0;
+    if (!audioMuted && harmonyRows[playRow]) {
+      playChordTonesThenStrum(playRow, getRowMax(playRow));
+    }
   };
   if (harmonyHeader) {
     harmonyHeader.addEventListener("click", (e) => {
-      const head = e.target.closest(".tone-head[data-level]");
+      const head = e.target.closest(".tone-head[data-degree]");
       if (!head) return;
-      const level = Number(head.dataset.level);
-      toggleLevel(level);
+      const level = Number(head.dataset.degree) || 3;
+      setGlobalDepth(level);
     });
     harmonyHeader.addEventListener("keydown", (e) => {
       if (e.key !== "Enter" && e.key !== " ") return;
-      const head = e.target.closest(".tone-head[data-level]");
+      const head = e.target.closest(".tone-head[data-degree]");
       if (!head) return;
       e.preventDefault();
-      const level = Number(head.dataset.level);
-      toggleLevel(level);
+      const level = Number(head.dataset.degree) || 3;
+      setGlobalDepth(level);
     });
   }
 
