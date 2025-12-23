@@ -1051,16 +1051,6 @@ button:active {
   border-color: color-mix(in srgb, var(--pc-color, var(--deg-color, #7c6dff)), #000 35%);
 }
 
-.key.dim {
-  opacity: 0.2;
-}
-
-.key.black.dim {
-  opacity: 1;
-  background: color-mix(in srgb, #464a52, #000 10%);
-  border-color: color-mix(in srgb, #32363e, #000 10%);
-}
-
 .fretboard {
   width: 100%;
 }
@@ -1137,10 +1127,6 @@ button:active {
   background: var(--pc-color, var(--deg-color, #7c6dff));
   box-shadow: 0 0 10px color-mix(in srgb, var(--pc-color, var(--deg-color, #7c6dff)), transparent 55%);
   transform: translate(-50%, -50%) scale(1.05);
-}
-
-.fret-note.dim {
-  opacity: 0.18;
 }
 
 .button-row {

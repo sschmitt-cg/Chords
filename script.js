@@ -330,6 +330,8 @@ function buildAscendingScaleMidis(pitchClasses) {
 }
 
 function playSequence(notes, instrument, startTime, gap, token) {
+  ensureAudio();
+  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   if (!audioCtx || !masterGain) return startTime;
   let current = startTime;
   notes.forEach((note, idx) => {
@@ -344,6 +346,8 @@ function playSequence(notes, instrument, startTime, gap, token) {
 }
 
 function playStrum(notes, instrument, startTime, gap, token) {
+  ensureAudio();
+  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   if (!audioCtx || !masterGain) return startTime;
   let current = startTime;
   notes.forEach((note, idx) => {
@@ -714,7 +718,7 @@ const pcColor = (pc) => `var(--pc-${wrap(pc, 12)})`;
 
 function getHighlightSet(scalePitchClasses = currentScale.pitchClasses) {
   if (selectedExplorerNotePc !== null) {
-    return { set: new Set([selectedExplorerNotePc]), isolation: true };
+    return { set: new Set([selectedExplorerNotePc]), isolation: false };
   }
   const scaleSet = new Set(scalePitchClasses);
   return { set: scaleSet, isolation: false };
