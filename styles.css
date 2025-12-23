@@ -563,6 +563,7 @@ button:active {
 .harmony-card {
   display: grid;
   gap: 8px;
+  align-self: stretch;
 }
 
 .harmony-header {
@@ -572,6 +573,7 @@ button:active {
   top: 0;
   background: #fff;
   z-index: 2;
+  align-self: start;
 }
 
 .harmony-top-row {
@@ -603,14 +605,15 @@ button:active {
 
 .harmony-grid {
   overflow-x: auto;
-  --root-col: 104px;
-  --tone-col: 60px;
+  --rn-col: 62px;
+  --chord-col: 120px;
+  --tone-col: 52px;
   position: relative;
 }
 
 .harmony-grid-header {
   display: grid;
-  grid-template-columns: var(--root-col) repeat(var(--tone-count, 4), var(--tone-col));
+  grid-template-columns: var(--rn-col) var(--chord-col) repeat(var(--tone-count, 4), var(--tone-col));
   position: sticky;
   top: 0;
   background: linear-gradient(180deg, #fdfdff, #f1f3ff);
@@ -635,7 +638,7 @@ button:active {
 
 .tone-head.is-active {
   color: #3145ff;
-  box-shadow: inset 0 -2px 0 #5568ff;
+  box-shadow: none;
 }
 
 .tone-head:focus-visible {
@@ -702,7 +705,7 @@ button:active {
 
 .harmony-row {
   display: grid;
-  grid-template-columns: var(--root-col) repeat(var(--tone-count, 4), var(--tone-col));
+  grid-template-columns: var(--rn-col) var(--chord-col) repeat(var(--tone-count, 4), var(--tone-col));
   align-items: stretch;
   border-bottom: 1px solid #e8ecff;
 }
@@ -712,7 +715,7 @@ button:active {
 }
 
 .h-cell, .harmony-cell {
-  padding: 4px;
+  padding: 2px 3px;
   text-align: center;
   position: relative;
 }
@@ -721,19 +724,23 @@ button:active {
   cursor: pointer;
   transition: background 0.12s ease, transform 0.1s ease, box-shadow 0.12s ease;
   overflow: hidden;
+  border-right: 1px solid #e6e9f5;
+  border-bottom: 1px solid #e6e9f5;
 }
 
 .harmony-cell .pc-band {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   padding: 3px 5px;
-  border-radius: 8px;
-  background: var(--pc-color, #7c6dff);
-  border: 1px solid color-mix(in srgb, var(--pc-color, #7c6dff), #000 22%);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  background: transparent;
   color: rgba(10, 14, 28, 0.9);
   font-weight: 700;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .root-cell {
@@ -751,13 +758,19 @@ button:active {
   gap: 6px;
 }
 
-.override-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #3145ff;
-  box-shadow: 0 0 0 1px rgba(49, 69, 255, 0.25);
-  display: inline-block;
+.rn-cell {
+  font-weight: 800;
+  color: #4b5074;
+  background: #fff;
+}
+
+.chord-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-start;
+  background: color-mix(in srgb, var(--pc-color, #7c6dff) 36%, #ffffff 64%);
+  padding: 2px 4px;
 }
 
 .root-cell .degree {
@@ -766,9 +779,34 @@ button:active {
   font-weight: 700;
 }
 
+.chord-chip {
+  display: inline-block;
+  min-width: 100px;
+  max-width: 120px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-weight: 700;
+  font-size: 12px;
+  color: #151b36;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .harmony-cell.is-note-selected .pc-band,
 .harmony-row.is-selected .pc-band {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--pc-color, #5568ff) 65%, transparent);
+}
+
+.tone-cell {
+  background: color-mix(in srgb, var(--pc-color, #7c6dff) 36%, #ffffff 64%);
+}
+
+.tone-cell.is-ghost {
+  background: color-mix(in srgb, var(--pc-color, #7c6dff) 14%, #ffffff 86%);
 }
 
 .harmony-cell[data-pc]::before {
@@ -782,6 +820,7 @@ button:active {
   background: color-mix(in srgb, var(--pc-color, #7c6dff), transparent 84%);
   opacity: 0.14;
   pointer-events: none;
+  z-index: 0;
 }
 
 .harmony-cell.is-visible[data-pc]::before {
@@ -801,11 +840,28 @@ button:active {
   text-align: left;
 }
 
+.rn-head {
+  text-align: center;
+}
+
+.chord-head {
+  text-align: left;
+}
+
 .harmony-grid .sticky-col {
   position: sticky;
-  left: 0;
   z-index: 2;
-  background: inherit;
+  background: #fff;
+}
+
+.harmony-grid .sticky-col.rn-cell,
+.harmony-grid-header .rn-head {
+  left: 0;
+}
+
+.harmony-grid .sticky-col.chord-cell,
+.harmony-grid-header .chord-head {
+  left: var(--rn-col);
 }
 
 .harmony-grid .sticky-col.root-cell {
@@ -971,29 +1027,29 @@ button:active {
   position: absolute;
   inset: 2px;
   border-radius: inherit;
-  background: var(--deg-color, transparent);
+  background: transparent;
   opacity: 0;
   transition: opacity 0.18s ease;
   z-index: 0;
 }
 
 .key.lit {
-  background: color-mix(in srgb, var(--deg-color, #7c6dff) 42%, #e2e4e8);
-  border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 20%);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--deg-color, #7c6dff), #000 15%);
+  background: var(--pc-color, var(--deg-color, #7c6dff));
+  border-color: color-mix(in srgb, var(--pc-color, var(--deg-color, #7c6dff)), #000 20%);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pc-color, var(--deg-color, #7c6dff)), #000 12%);
 }
 
 .key.white.lit::before {
-  opacity: 0.65;
+  opacity: 0;
 }
 
 .key.black.lit {
-  background: color-mix(in srgb, var(--deg-color, #7c6dff) 60%, #4a4f58);
-  border-color: color-mix(in srgb, var(--deg-color, #7c6dff), #000 35%);
+  background: var(--pc-color, var(--deg-color, #7c6dff));
+  border-color: color-mix(in srgb, var(--pc-color, var(--deg-color, #7c6dff)), #000 35%);
 }
 
 .key.dim {
-  opacity: 1;
+  opacity: 0.2;
 }
 
 .key.black.dim {
@@ -1075,13 +1131,13 @@ button:active {
 
 .fret-note.lit {
   opacity: 1;
-  background: var(--deg-color, #7c6dff);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 55%);
+  background: var(--pc-color, var(--deg-color, #7c6dff));
+  box-shadow: 0 0 10px color-mix(in srgb, var(--pc-color, var(--deg-color, #7c6dff)), transparent 55%);
   transform: translate(-50%, -50%) scale(1.05);
 }
 
 .fret-note.dim {
-  opacity: 1;
+  opacity: 0.18;
 }
 
 .button-row {
@@ -1501,13 +1557,14 @@ button:active {
   }
 
   .harmony-grid {
-    --root-col: 82px;
-    --tone-col: 44px;
+    --rn-col: 58px;
+    --chord-col: 124px;
+    --tone-col: 42px;
   }
 
   .harmony-grid-header .h-cell,
   .h-cell, .harmony-cell {
-    padding: 4px;
+    padding: 3px;
   }
 
   .harmony-cell .pc-band,
@@ -1714,4 +1771,110 @@ button:active {
 .wheel-modal-list button.active {
   border-color: var(--accent);
   background: #e7eaff;
+}
+
+/* --- Harmony grid compact/full-cell color overrides (v3) --- */
+.harmony-grid-header .h-cell,
+.harmony-row .harmony-cell {
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+/* Make grid more compact on desktop */
+@media (min-width: 900px) {
+  .harmony-grid {
+    --tone-col-width: 66px;
+    --chord-col-width: 200px;
+  }
+}
+
+/* Remove pill look; make the whole cell carry the color */
+.harmony-cell.tone-cell {
+  padding: 0 !important;
+  background: color-mix(in srgb, var(--pc-color) 42%, transparent);
+}
+.harmony-cell.tone-cell.is-ghost {
+  background: color-mix(in srgb, var(--pc-color) 18%, transparent);
+}
+
+/* Inner band becomes just centered text; no background/border */
+.harmony-cell .pc-band {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Keep selection emphasis via outline, but don't shrink content */
+.harmony-cell.is-note-selected,
+.harmony-row.is-selected .harmony-cell.tone-cell.is-visible {
+  outline: 2px solid color-mix(in srgb, var(--pc-color) 55%, #2c58ff);
+  outline-offset: -2px;
+}
+
+/* Chord column should also be a full-cell color block */
+.harmony-cell.chord-cell {
+  background: color-mix(in srgb, var(--pc-color) 52%, transparent) !important;
+}
+.harmony-cell.chord-cell .pc-band {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* Roman numeral column stays plain and tight */
+.harmony-cell.rn-cell {
+  padding: 0 10px !important;
+}
+
+/* Slightly reduce row height for density */
+.harmony-row .harmony-cell {
+  min-height: 46px;
+}
+
+
+/* v3.1: correct vars + remove header underline */
+@media (min-width: 900px) {
+  .harmony-grid { --root-col: 220px; --tone-col: 66px; }
+}
+.tone-head.is-active { box-shadow: none !important; }
+
+
+/* ==============================
+   Harmony grid desktop polish (v4)
+   ============================== */
+
+@media (min-width: 900px) {
+  .main-grid { align-items: stretch; }
+  .instruments-card, .harmony-card { height: 100%; }
+
+  .harmony-grid-wrap { flex: 1; min-height: 0; }
+
+  /* tighter columns so 13 fits on desktop */
+  .harmony-grid {
+    --rn-col: 54px;
+    --chord-col: 150px;
+    --tone-col: 46px;
+    border-radius: 22px;
+    overflow: hidden;
+  }
+
+  .harmony-grid th,
+  .harmony-grid td { padding: 10px 8px; }
+
+  /* Rounded chord chip like the earlier style */
+  .harmony-grid td.pc-chord .pc-band {
+    border-radius: 16px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+  }
+
+  /* Slightly round note cells + soften selection borders */
+  .harmony-grid td.pc-note { border-radius: 10px; }
+  .harmony-grid td.pc-note.is-selected { outline-width: 2px; }
 }
