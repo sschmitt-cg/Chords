@@ -923,15 +923,16 @@ function chordNameForRow(row, maxDegree = 7) {
 
   let label = `${root.note}${qualityTag}`;
 
-  const altStr = alterations.map(a => `(${a})`).join("");
+  const altStr = alterations.length ? `(${alterations.join(",")})` : "";
   if (!highestExt) return label;
-  if (highestExt === "13") {
-    return `${label}${highestExt}${altStr}`;
-  }
-  return `${label}${altStr}${highestExt}`;
+  return `${label}${highestExt}${altStr}`;
 }
 
-const getRowMax = (rowIndex) => rowHarmonyMaxOverrides.get(rowIndex) ?? globalHarmonyMax;
+const getRowMax = (rowIndex) => {
+  const override = rowHarmonyMaxOverrides.get(rowIndex);
+  if (override && override <= globalHarmonyMax) return override;
+  return globalHarmonyMax;
+};
 
 function playChordTonesThenStrum(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
@@ -982,7 +983,7 @@ function renderHarmonyGrid() {
   headerEl.style.setProperty("--tone-count", toneCount);
   bodyEl.style.setProperty("--tone-count", toneCount);
   headerEl.innerHTML = [
-    `<div class="h-cell sticky-col rn-head" role="columnheader">RN</div>`,
+    `<div class="h-cell sticky-col rn-head" role="columnheader" aria-label="Roman numeral"></div>`,
     `<div class="h-cell sticky-col chord-head" role="columnheader">Chord</div>`,
     ...toneColumns.map(col => {
       const active = globalHarmonyMax === col.degree;
@@ -1000,10 +1001,10 @@ function renderHarmonyGrid() {
     })();
     const root = row.notes[0];
     const chordLabel = chordNameForRow(row, rowMax);
-    const overrideMark = rowHarmonyMaxOverrides.has(row.index) ? `<span class="override-dot" aria-label="Row override active"></span>` : "";
+    const chordPcStyle = root ? `style="--pc-color:${pcColor(root.pc)}; --deg-color:${pcColor(root.pc)}"` : "";
     const cells = [
       `<div class="harmony-cell sticky-col rn-cell" data-row-index="${row.index}" role="gridcell"><span class="degree">${row.degree}</span></div>`,
-      `<div class="harmony-cell sticky-col chord-cell" data-row-index="${row.index}" role="gridcell">${overrideMark}<span class="chord-chip" title="${chordLabel}">${chordLabel}</span></div>`,
+      `<div class="harmony-cell sticky-col chord-cell tone-cell pc-${root?.pc ?? 0}" data-row-index="${row.index}" data-pc="${root?.pc ?? ""}" data-degree="3" role="gridcell" ${chordPcStyle}><span class="chord-chip" title="${chordLabel}">${chordLabel}</span></div>`,
       ...toneColumns.map((col) => {
         const note = row.notes.find(n => n.label === col.label) || null;
         const targetDegree = col.degree;
@@ -2254,8 +2255,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!cell || rowIdx === null || Number.isNaN(rowIdx)) return;
       const targetDegree = Number(cell.dataset.degree);
       if (!targetDegree) return;
-      const targetMax = targetDegree;
-      const currentMax = getRowMax(rowIdx);
+      const targetMax = resolveMaxDegree(targetDegree);
+      const currentMax = resolveMaxDegree(getRowMax(rowIdx));
       if (targetMax === currentMax) {
         selectHarmonyChord(rowIdx);
         if (!audioMuted) playStrumOnly(rowIdx, currentMax);
@@ -2270,8 +2271,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const harmonyHeader = document.getElementById("harmonyGridHeader");
   const setGlobalDepth = (level) => {
     if (!level) return;
-    if (globalHarmonyMax === level) return;
-    globalHarmonyMax = level;
+    const next = resolveMaxDegree(level);
+    if (globalHarmonyMax === next) return;
+    globalHarmonyMax = next;
+    rowHarmonyMaxOverrides.forEach((val, key) => {
+      if (val > globalHarmonyMax) rowHarmonyMaxOverrides.delete(key);
+    });
     renderHarmonyGrid();
     const playRow = selectedHarmonyChordIndex ?? 0;
     if (!audioMuted && harmonyRows[playRow]) {
@@ -2307,13 +2312,6 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         setMobilePanel("keymode");
       }
-    });
-  }
-
-  const clearHarmonyBtn = document.getElementById("clearHarmonySelection");
-  if (clearHarmonyBtn) {
-    clearHarmonyBtn.addEventListener("click", () => {
-      clearHarmonySelection();
     });
   }
 
