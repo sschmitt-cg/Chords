@@ -606,8 +606,8 @@ button:active {
 .harmony-grid {
   overflow-x: auto;
   --rn-col: 62px;
-  --chord-col: 120px;
-  --tone-col: 52px;
+  --chord-col: 118px;
+  --tone-col: 50px;
   position: relative;
 }
 
@@ -637,8 +637,9 @@ button:active {
 }
 
 .tone-head.is-active {
-  color: #3145ff;
+  color: inherit;
   box-shadow: none;
+  font-weight: 800;
 }
 
 .tone-head:focus-visible {
