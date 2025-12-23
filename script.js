@@ -1695,44 +1695,6 @@ function setChordHighlight(name, notes) {
   maybePlayCurrentSelection("chord-select");
 }
 
-function populateChordSelectors() {
-  const selects = [
-    document.getElementById("chord1"),
-    document.getElementById("chord2"),
-    document.getElementById("chord3")
-  ];
-  const present = selects.filter(Boolean);
-  if (!present.length) return;
-
-  present.forEach(sel => {
-    sel.innerHTML = "";
-    const emptyOpt = document.createElement("option");
-    emptyOpt.value = "";
-    emptyOpt.textContent = "--";
-    sel.appendChild(emptyOpt);
-
-    currentChords.degrees.forEach((deg, idx) => {
-      const opt = document.createElement("option");
-      opt.value = String(idx);
-      opt.textContent = deg.triad.name;
-      sel.appendChild(opt);
-    });
-  });
-}
-
-function updateChordResult(selectEl, resultEl) {
-  const idx = parseInt(selectEl.value, 10);
-  if (isNaN(idx)) {
-    resultEl.textContent = "";
-    return;
-  }
-  const deg = currentChords.degrees[idx];
-  resultEl.innerHTML =
-    `<b>${deg.triad.name}</b>: ${deg.triad.notes}<br>` +
-    `<b>${deg.seventh.name}</b>: ${deg.seventh.notes}<br>` +
-    `<b>${deg.ninth.name}</b>: ${deg.ninth.notes}`;
-}
-
 function updatePills() {
   const pc = pillPreview.keyPc ?? currentKeyPc;
   const modeIdx = pillPreview.mode ?? currentModeIndex;
@@ -1818,13 +1780,15 @@ function drawFromState(options = {}) {
   updateHarmonyKeyModeLabel();
   renderHarmonyGrid();
   renderChordLists();
-  populateChordSelectors();
   scheduleHighlightUpdate();
   maybePlayCurrentSelection("state-change");
 
-  document.getElementById("results1").textContent = "";
-  document.getElementById("results2").textContent = "";
-  document.getElementById("results3").textContent = "";
+  const r1 = document.getElementById("results1");
+  const r2 = document.getElementById("results2");
+  const r3 = document.getElementById("results3");
+  if (r1) r1.textContent = "";
+  if (r2) r2.textContent = "";
+  if (r3) r3.textContent = "";
 }
 
 function rotateDegree(dir) {
@@ -2382,39 +2346,6 @@ document.addEventListener("DOMContentLoaded", () => {
     currentModeIndex = Math.floor(Math.random() * MODE_NAMES.length);
     drawFromState();
   });
-
-  const chord1 = document.getElementById("chord1");
-  const chord2 = document.getElementById("chord2");
-  const chord3 = document.getElementById("chord3");
-  const res1   = document.getElementById("results1");
-  const res2   = document.getElementById("results2");
-  const res3   = document.getElementById("results3");
-
-  if (chord1 && chord2 && chord3 && res1 && res2 && res3) {
-    chord1.addEventListener("change", () => updateChordResult(chord1, res1));
-    chord2.addEventListener("change", () => updateChordResult(chord2, res2));
-    chord3.addEventListener("change", () => updateChordResult(chord3, res3));
-
-    document.getElementById("clear")?.addEventListener("click", () => {
-      [chord1, chord2, chord3].forEach(sel => sel.value = "");
-      [res1, res2, res3].forEach(r => r.textContent = "");
-    });
-
-    document.getElementById("generate")?.addEventListener("click", () => {
-      if (!currentChords.degrees.length) return;
-      const n = currentChords.degrees.length;
-      chord1.value = String(Math.floor(Math.random() * n));
-      chord2.value = String(Math.floor(Math.random() * n));
-      chord3.value = String(Math.floor(Math.random() * n));
-      updateChordResult(chord1, res1);
-      updateChordResult(chord2, res2);
-      updateChordResult(chord3, res3);
-    });
-
-    document.getElementById("match")?.addEventListener("click", () => {
-      drawFromState();
-    });
-  }
 
   let resizeTimer = null;
   window.addEventListener("resize", () => {
