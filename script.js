@@ -720,7 +720,7 @@ const pcColor = (pc) => `var(--pc-${wrap(pc, 12)})`;
 
 function getHighlightSet(scalePitchClasses = currentScale.pitchClasses) {
   if (selectedExplorerNotePc !== null) {
-    return { set: new Set([selectedExplorerNotePc]), isolation: false };
+    return { set: new Set([selectedExplorerNotePc]), isolation: true };
   }
   const scaleSet = new Set(scalePitchClasses);
   return { set: scaleSet, isolation: false };
@@ -955,7 +955,7 @@ function playTestPing() {
   if (!audioCtx || !masterGain) return;
   const token = stopPlayback();
   const when = audioCtx.currentTime + 0.02;
-  playSynthNote({ midi: 69, when, dur: 0.05, instrument: "piano" });
+  playSynthNote({ midi: 69, when, dur: 0.1, instrument: "piano" });
   playbackToken = token;
 }
 
@@ -1488,9 +1488,10 @@ function updateInstrumentHighlights(options = {}) {
   const overrideScale = options.scaleOverride || previewScaleOverride || null;
   const scalePcs = overrideScale?.pitchClasses || currentScale.pitchClasses;
   const { set: highlightSet, isolation } = getHighlightSet(scalePcs);
+  const scaleSet = new Set(scalePcs);
   const elements = document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note");
   elements.forEach(el => {
-    el.classList.remove("tone-root", "tone-top", "tone-tone", "tone-selected");
+    el.classList.remove("tone-root", "tone-top", "tone-tone", "tone-selected", "emphasis");
   });
   const chordPcs = activeChordPitchClasses && activeChordPitchClasses.size ? activeChordPitchClasses : null;
   const chordRootPc = chordPcs && selectedChordNotes ? chordNotesToPcs(selectedChordNotes)[0] ?? null : null;
@@ -1504,9 +1505,11 @@ function updateInstrumentHighlights(options = {}) {
     const color = pcColor(pc);
     el.style.setProperty("--pc-color", color);
     el.style.setProperty("--deg-color", color);
-    if (highlightSet && highlightSet.has(pc)) {
+    const lit = isolation ? (highlightSet && highlightSet.has(pc)) : scaleSet.has(pc);
+    if (lit) {
       el.classList.add("lit");
-      if (chordPcs && chordPcs.has(pc)) {
+      if (!isolation && chordPcs && chordPcs.has(pc)) {
+        el.classList.add("emphasis");
         if (chordTopPc !== null && pc === chordTopPc && !(chordRootPc !== null && pc === chordRootPc)) el.classList.add("tone-top");
         else if (chordRootPc !== null && pc === chordRootPc) el.classList.add("tone-root");
         else el.classList.add("tone-tone");

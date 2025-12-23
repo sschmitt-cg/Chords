@@ -549,7 +549,7 @@ button:active {
 
 #keyboardVisualizer .key.emphasis,
 #fretboardVisualizer .fret-note.emphasis {
-  box-shadow: 0 0 0 2px rgba(255, 176, 76, 0.6), 0 10px 22px rgba(255, 176, 76, 0.35);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 30%), 0 10px 22px color-mix(in srgb, var(--deg-color, #7c6dff), transparent 75%);
 }
 
 .chords-scroll {
