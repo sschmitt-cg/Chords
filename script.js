@@ -854,6 +854,7 @@ function buildHarmonyRows() {
 }
 
 const degreeOrder = [1, 3, 5, 7, 9, 11, 13];
+const resolveMaxDegree = (val) => (val === 3 ? 5 : val);
 
 function chordNotesStringForRow(row, maxDegree = 7) {
   const notes = row?.notes || [];
@@ -876,35 +877,58 @@ function chordNameForRow(row, maxDegree = 7) {
   const ninthNote = row.notes.find(n => n.degree === 9);
   const eleventhNote = row.notes.find(n => n.degree === 11);
   const thirteenthNote = row.notes.find(n => n.degree === 13);
-  let label = `${root.note}${triad.suffix}`;
-
   let seventhQual = null;
   if (maxDegree >= 7 && seventhNote) {
     const int7 = wrap(seventhNote.pc - root.pc, 12);
     seventhQual = seventhQuality(triad, int7);
-    label = `${root.note}${seventhQual.label}`;
   }
+
+  const alterations = [];
+  let highestExt = "";
 
   if (maxDegree >= 9 && ninthNote) {
     const int9 = wrap(ninthNote.pc - root.pc, 12);
-    const ninthQual = ninthQuality(seventhQual || { label: triad.suffix, valid: true }, int9);
-    label = `${root.note}${ninthQual.label}`;
+    if (int9 === 1) alterations.push("b9");
+    else if (int9 === 3) alterations.push("#9");
+    if (!highestExt) highestExt = "9";
   }
 
   if (maxDegree >= 11 && eleventhNote) {
     const int11 = wrap(eleventhNote.pc - root.pc, 12);
-    const ext = int11 === 5 ? "11" : int11 === 6 ? "(#11)" : "(b11)";
-    label += ext;
+    if (int11 === 6) alterations.push("#11");
+    else if (int11 !== 5) alterations.push("b11");
+    highestExt = "11";
   }
 
   if (maxDegree >= 13 && thirteenthNote) {
     const int13 = wrap(thirteenthNote.pc - root.pc, 12);
-    let ext = "13";
-    if (int13 === 8) ext = "(b13)";
-    else if (int13 === 10) ext = "(#13)";
-    label += ext;
+    if (int13 === 8) alterations.push("b13");
+    else if (int13 === 10) alterations.push("#13");
+    highestExt = "13";
   }
-  return label;
+
+  const qualityTag = (() => {
+    if (!seventhQual) return triad.suffix;
+    const useCondensed = Boolean(highestExt) && !(highestExt === "11" && alterations.length > 0);
+    if (!useCondensed) return seventhQual.label;
+    switch (seventhQual.label) {
+      case "maj7": return "maj";
+      case "7": return "";
+      case "m7": return "m";
+      case "m7b5": return "m7b5";
+      case "dim7": return "dim";
+      default: return seventhQual.label.replace(/7$/, "");
+    }
+  })();
+
+  let label = `${root.note}${qualityTag}`;
+
+  const altStr = alterations.map(a => `(${a})`).join("");
+  if (!highestExt) return label;
+  if (highestExt === "13") {
+    return `${label}${highestExt}${altStr}`;
+  }
+  return `${label}${altStr}${highestExt}`;
 }
 
 const getRowMax = (rowIndex) => rowHarmonyMaxOverrides.get(rowIndex) ?? globalHarmonyMax;
@@ -913,7 +937,8 @@ function playChordTonesThenStrum(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
   const row = harmonyRows[rowIndex];
   if (!row) return;
-  const notesStr = chordNotesStringForRow(row, maxDegree);
+  const effectiveMax = resolveMaxDegree(maxDegree);
+  const notesStr = chordNotesStringForRow(row, effectiveMax);
   if (!notesStr) return;
   const notes = buildChordPlaybackMidisFromNotes(notesStr);
   if (!notes.length) return;
@@ -929,7 +954,8 @@ function playStrumOnly(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
   const row = harmonyRows[rowIndex];
   if (!row) return;
-  const notesStr = chordNotesStringForRow(row, maxDegree);
+  const effectiveMax = resolveMaxDegree(maxDegree);
+  const notesStr = chordNotesStringForRow(row, effectiveMax);
   if (!notesStr) return;
   const notes = buildChordPlaybackMidisFromNotes(notesStr);
   if (!notes.length) return;
@@ -944,9 +970,7 @@ function renderHarmonyGrid() {
   const bodyEl = document.getElementById("harmonyGridBody");
   if (!headerEl || !bodyEl) return;
   buildHarmonyRows();
-  const columns = [
-    { label: "Chord", degree: 0 },
-    { label: "Root", degree: 3 },
+  const toneColumns = [
     { label: "3", degree: 3 },
     { label: "5", degree: 5 },
     { label: "7", degree: 7 },
@@ -954,49 +978,51 @@ function renderHarmonyGrid() {
     { label: "11", degree: 11 },
     { label: "13", degree: 13 }
   ];
-  const toneCount = columns.length - 1;
+  const toneCount = toneColumns.length;
   headerEl.style.setProperty("--tone-count", toneCount);
   bodyEl.style.setProperty("--tone-count", toneCount);
-  headerEl.innerHTML = columns.map((col, idx) => {
-    if (idx === 0) {
-      return `<div class="h-cell sticky-col root-head" role="columnheader">Chord</div>`;
-    }
-    const active = globalHarmonyMax === col.degree;
-    return `<div class="h-cell tone-head ${active ? "is-active" : ""}" data-degree="${col.degree}" role="columnheader" tabindex="0" aria-pressed="${active ? "true" : "false"}">${col.label}</div>`;
-  }).join("");
+  headerEl.innerHTML = [
+    `<div class="h-cell sticky-col rn-head" role="columnheader">RN</div>`,
+    `<div class="h-cell sticky-col chord-head" role="columnheader">Chord</div>`,
+    ...toneColumns.map(col => {
+      const active = globalHarmonyMax === col.degree;
+      return `<div class="h-cell tone-head ${active ? "is-active" : ""}" data-degree="${col.degree}" role="columnheader" tabindex="0" aria-pressed="${active ? "true" : "false"}">${col.label}</div>`;
+    })
+  ].join("");
 
   bodyEl.innerHTML = harmonyRows.map(row => {
-    const isSelected = row.index === selectedHarmonyChordIndex;
-    const rowMax = rowHarmonyMaxOverrides.get(row.index) ?? globalHarmonyMax;
+    const isSelected = selectedExplorerNotePc === null && row.index === selectedHarmonyChordIndex;
+    const rowMaxSetting = rowHarmonyMaxOverrides.get(row.index) ?? globalHarmonyMax;
+    const rowMax = resolveMaxDegree(rowMaxSetting);
     const topPc = (() => {
       const filtered = row.notes.filter(n => n.degree <= rowMax);
       return filtered.length ? filtered[filtered.length - 1].pc : null;
     })();
-    const cells = columns.map((col, idx) => {
-      if (idx === 0) {
-        const chordLabel = chordNameForRow(row, rowMax);
-        const root = row.notes[0];
-        const pcStyle = root ? `style="--pc-color:${pcColor(root.pc)}; --deg-color:${pcColor(root.pc)}"` : "";
-        const overrideMark = rowHarmonyMaxOverrides.has(row.index) ? `<span class="override-dot"></span>` : "";
-        return `<div class="harmony-cell sticky-col root-cell" data-row-index="${row.index}" role="gridcell">
-          <div class="root-label">${overrideMark}<span class="degree">${row.degree}</span><span class="pc-band pc-${root?.pc ?? 0} tone-root" ${pcStyle} data-pc="${root?.pc ?? ""}">${chordLabel}</span></div>
+    const root = row.notes[0];
+    const chordLabel = chordNameForRow(row, rowMax);
+    const overrideMark = rowHarmonyMaxOverrides.has(row.index) ? `<span class="override-dot" aria-label="Row override active"></span>` : "";
+    const cells = [
+      `<div class="harmony-cell sticky-col rn-cell" data-row-index="${row.index}" role="gridcell"><span class="degree">${row.degree}</span></div>`,
+      `<div class="harmony-cell sticky-col chord-cell" data-row-index="${row.index}" role="gridcell">${overrideMark}<span class="chord-chip" title="${chordLabel}">${chordLabel}</span></div>`,
+      ...toneColumns.map((col) => {
+        const note = row.notes.find(n => n.label === col.label) || null;
+        const targetDegree = col.degree;
+        if (!note) {
+          return `<div class="harmony-cell tone-cell" data-row-index="${row.index}" data-degree="${targetDegree}" role="gridcell"></div>`;
+        }
+        const pcStyle = `style="--pc-color:${pcColor(note.pc)}; --deg-color:${pcColor(note.pc)}"`;
+        const isVisible = targetDegree <= rowMax;
+        const visibilityClass = isVisible ? "is-visible" : "is-ghost";
+        const isNoteSelected = selectedExplorerNotePc !== null && selectedExplorerNotePc === note.pc;
+        const bandToneClass = selectedExplorerNotePc === null
+          ? (topPc !== null && note.pc === topPc ? "tone-top" : (note.pc === root.pc ? "tone-root" : "tone-tone"))
+          : "";
+        const cellClasses = `harmony-cell tone-cell ${visibilityClass} pc-${note.pc} ${isNoteSelected ? "is-note-selected" : ""}`;
+        return `<div class="${cellClasses}" data-row-index="${row.index}" data-pc="${note.pc}" data-degree="${targetDegree}" role="gridcell" ${pcStyle}>
+          <div class="pc-band ${bandToneClass}" data-row-index="${row.index}" data-pc="${note.pc}">${note.note}</div>
         </div>`;
-      }
-      const targetDegree = col.degree === 3 && idx === 1 ? 3 : col.degree;
-      const note = row.notes.find(n => n.label === col.label) || null;
-      if (!note) {
-        return `<div class="harmony-cell" data-row-index="${row.index}" data-degree="${targetDegree}" role="gridcell"></div>`;
-      }
-      const isNoteSelected = selectedExplorerNotePc !== null && selectedExplorerNotePc === note.pc;
-      const pcStyle = `style="--pc-color:${pcColor(note.pc)}; --deg-color:${pcColor(note.pc)}"`;
-      const isVisible = targetDegree <= rowMax;
-      const bandToneClass = targetDegree === 3 && col.label === "Root"
-        ? "tone-root"
-        : (topPc !== null && note.pc === topPc ? "tone-top" : "tone-tone");
-      const visibilityClass = isVisible ? "is-visible" : "is-ghost";
-      const noteLabel = `<div class="pc-band ${bandToneClass} pc-${note.pc}" ${pcStyle} data-pc="${note.pc}" data-row-index="${row.index}">${note.note}</div>`;
-      return `<div class="harmony-cell ${visibilityClass} ${isNoteSelected ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${note.pc}" data-degree="${targetDegree}" role="gridcell">${noteLabel}</div>`;
-    }).join("");
+      })
+    ].join("");
     return `<div class="harmony-row${isSelected ? " is-selected" : ""}" data-row-index="${row.index}" role="row">${cells}</div>`;
   }).join("");
 }
@@ -1005,7 +1031,8 @@ function selectHarmonyChord(rowIndex) {
   const row = harmonyRows.find(r => r.index === rowIndex);
   if (!row) return;
   selectedHarmonyChordIndex = rowIndex;
-  const rowMax = getRowMax(rowIndex);
+  const rowMaxSetting = getRowMax(rowIndex);
+  const rowMax = resolveMaxDegree(rowMaxSetting);
   selectedChordName = chordNameForRow(row, rowMax);
   selectedChordNotes = chordNotesStringForRow(row, rowMax);
   activeChordPitchClasses = new Set(row.notes.filter(n => n.degree <= rowMax).map(n => n.pc));
@@ -2221,20 +2248,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const harmonyBody = document.getElementById("harmonyGridBody");
   if (harmonyBody) {
     harmonyBody.addEventListener("click", (e) => {
-      const pill = e.target.closest(".pc-band");
-      if (pill) {
-        const rowIdx = Number(pill.dataset.rowIndex ?? pill.closest(".harmony-row")?.dataset.rowIndex ?? -1);
-        const pc = Number(pill.dataset.pc);
-        if (!Number.isNaN(pc)) selectHarmonyNote(pc, Number.isNaN(rowIdx) ? null : rowIdx);
-        e.stopPropagation();
-        return;
-      }
       const cell = e.target.closest(".harmony-cell");
       const rowEl = e.target.closest(".harmony-row");
       const rowIdx = rowEl ? Number(rowEl.dataset.rowIndex) : null;
       if (!cell || rowIdx === null || Number.isNaN(rowIdx)) return;
-      const targetDegree = Number(cell.dataset.degree) || 3;
-      const targetMax = targetDegree === 0 ? 3 : targetDegree;
+      const targetDegree = Number(cell.dataset.degree);
+      if (!targetDegree) return;
+      const targetMax = targetDegree;
       const currentMax = getRowMax(rowIdx);
       if (targetMax === currentMax) {
         selectHarmonyChord(rowIdx);
