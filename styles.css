@@ -43,6 +43,7 @@ body {
   overflow-x: hidden;
 }
 
+/* Header */
 .page-shell {
   width: 100%;
   max-width: 1100px;
@@ -54,13 +55,12 @@ body {
   margin-bottom: 18px;
 }
 
-.app-title {
-  margin: 0;
-  font-size: clamp(17px, 3vw, 20px);
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  font-weight: 600;
-  color: rgba(244, 246, 255, 0.9);
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 4px;
 }
 
 .eyebrow {
@@ -69,14 +69,6 @@ body {
   font-size: 12px;
   color: #a9b4e2;
   margin: 0;
-}
-
-.title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  justify-content: center;
-  margin-bottom: 4px;
 }
 
 .info-button {
@@ -94,6 +86,15 @@ body {
   align-items: center;
   justify-content: center;
   transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.info-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.info-button:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .sound-toggle {
@@ -153,15 +154,6 @@ body {
 .sound-toggle:focus-visible {
   outline: 2px solid #dfe3fb;
   outline-offset: 2px;
-}
-
-.info-button:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.info-button:active {
-  transform: scale(0.95);
-  background: rgba(255, 255, 255, 0.2);
 }
 
 .panel {
@@ -261,29 +253,6 @@ body {
   text-overflow: ellipsis;
 }
 
-.enharmonic-toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 10px;
-  padding: 4px 6px;
-  height: 32px;
-  visibility: hidden;
-  pointer-events: none;
-  opacity: 0;
-}
-
-.enharmonic-toggle.visible {
-  visibility: visible;
-  pointer-events: auto;
-  opacity: 1;
-  background: #f7f8ff;
-  border: 1px solid #dfe3fb;
-}
-
 .key-dual {
   display: inline-flex;
   align-items: center;
@@ -312,27 +281,6 @@ body {
   opacity: 0.6;
 }
 
-.tiny-toggle {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  border: 1px solid #dfe3fb;
-  background: #fff;
-  color: #0f1636;
-  font-weight: 800;
-  cursor: pointer;
-  padding: 0;
-  display: grid;
-  place-items: center;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.tiny-toggle.active {
-  background: #e7eaff;
-  border-color: var(--accent);
-  color: #1f2655;
-}
-
 #modePill {
   flex: 1 1 auto;
 }
@@ -340,11 +288,6 @@ body {
 .eyebrow.subtle {
   margin: 0;
   color: var(--muted);
-}
-
-.strip-stack {
-  display: grid;
-  gap: 8px;
 }
 
 button {
@@ -370,13 +313,6 @@ button:focus-visible {
 
 button:active {
   transform: translateY(1px);
-}
-
-@media (hover: hover) {
-  button:hover {
-    background: var(--accent-strong);
-    box-shadow: 0 12px 24px rgba(49, 69, 255, 0.25);
-  }
 }
 
 .ghost {
@@ -1136,61 +1072,6 @@ button:active {
   transform: translate(-50%, -50%) scale(1.05);
 }
 
-.fret-note.dim {
-  opacity: 0.18;
-}
-
-.button-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.button-row button {
-  flex: 1 1 140px;
-}
-
-#chordSelections {
-  display: grid;
-  gap: 10px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
-.chordSelection {
-  border: 1px solid #e5e8f6;
-  border-radius: 12px;
-  padding: 12px;
-  background: var(--surface);
-  display: grid;
-  gap: 8px;
-}
-
-.chordSelection label {
-  font-weight: 700;
-  color: #2f3562;
-}
-
-.chordSelection select {
-  padding: 10px 12px;
-  border-radius: 10px;
-  border: 1px solid var(--card-border);
-  background: #fff;
-}
-
-.results {
-  min-height: 60px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  background: #fff;
-  border: 1px dashed #cfd5f1;
-  color: #1e2340;
-  font-size: 14px;
-}
-
-.results b {
-  color: #0f1636;
-}
-
 .scale-strip {
   background: #fff;
   border: 1px solid #e1e5f7;
@@ -1482,6 +1363,149 @@ button:active {
   font-weight: 600;
 }
 
+.wheel-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 40;
+}
+
+.wheel-modal.hidden {
+  display: none;
+}
+
+.wheel-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(4, 6, 20, 0.55);
+}
+
+.wheel-modal-content {
+  position: relative;
+  background: #fff;
+  border-radius: 16px;
+  padding: 12px;
+  width: min(320px, 90vw);
+  max-height: min(84vh, calc(100dvh - 40px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(5, 8, 30, 0.35);
+}
+
+.wheel-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wheel-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+}
+
+#closeWheelModal,
+#closeInfoModal {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+
+.wheel-modal-list {
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+  flex: 1 1 auto;
+}
+
+.wheel-modal-list button {
+  width: 100%;
+  text-align: left;
+  background: #f6f7ff;
+  color: #0f1636;
+  border: 1px solid #e3e6f7;
+  padding: 10px 12px;
+}
+
+.wheel-modal-list button.active {
+  border-color: var(--accent);
+  background: #e7eaff;
+}
+
+/* --- Harmony grid compact/full-cell color overrides (v3) --- */
+.harmony-grid-header .h-cell,
+.harmony-row .harmony-cell {
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+/* Remove pill look; make the whole cell carry the color */
+.harmony-cell.tone-cell {
+  padding: 0 !important;
+  background: color-mix(in srgb, var(--pc-color) 42%, transparent);
+}
+.harmony-cell.tone-cell.is-ghost {
+  background: color-mix(in srgb, var(--pc-color) 18%, transparent);
+}
+
+/* Inner band becomes just centered text; no background/border */
+.harmony-cell .pc-band {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Keep selection emphasis via outline, but don't shrink content */
+.harmony-cell.is-note-selected,
+.harmony-row.is-selected .harmony-cell.tone-cell.is-visible {
+  outline: 2px solid color-mix(in srgb, var(--pc-color) 55%, #2c58ff);
+  outline-offset: -2px;
+}
+
+/* Chord column should also be a full-cell color block */
+.harmony-cell.chord-cell {
+  background: color-mix(in srgb, var(--pc-color) 52%, transparent) !important;
+}
+.harmony-cell.chord-cell .pc-band {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+/* Roman numeral column stays plain and tight */
+.harmony-cell.rn-cell {
+  padding: 0 10px !important;
+}
+
+/* Slightly reduce row height for density */
+.harmony-row .harmony-cell {
+  min-height: 46px;
+}
+
+@media (hover: hover) {
+  button:hover {
+    background: var(--accent-strong);
+    box-shadow: 0 12px 24px rgba(49, 69, 255, 0.25);
+  }
+}
+
 @media (max-width: 768px) {
   body {
     padding: 12px 10px 28px;
@@ -1588,10 +1612,6 @@ button:active {
     padding: 14px 10px 24px;
   }
 
-  .action-buttons, .button-row {
-    flex-direction: column;
-  }
-
   button {
     width: 100%;
   }
@@ -1694,92 +1714,6 @@ button:active {
   }
 }
 
-.wheel-modal {
-  position: fixed;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  z-index: 40;
-}
-
-.wheel-modal.hidden {
-  display: none;
-}
-
-.wheel-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(4, 6, 20, 0.55);
-}
-
-.wheel-modal-content {
-  position: relative;
-  background: #fff;
-  border-radius: 16px;
-  padding: 12px;
-  width: min(320px, 90vw);
-  max-height: min(84vh, calc(100dvh - 40px));
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow: hidden;
-  box-shadow: 0 20px 60px rgba(5, 8, 30, 0.35);
-}
-
-.wheel-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.wheel-modal-header h3 {
-  margin: 0;
-  font-size: 16px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex: 1 1 auto;
-}
-
-#closeWheelModal,
-#closeInfoModal {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-}
-
-.wheel-modal-list {
-  overflow-y: auto;
-  display: grid;
-  gap: 6px;
-  flex: 1 1 auto;
-}
-
-.wheel-modal-list button {
-  width: 100%;
-  text-align: left;
-  background: #f6f7ff;
-  color: #0f1636;
-  border: 1px solid #e3e6f7;
-  padding: 10px 12px;
-}
-
-.wheel-modal-list button.active {
-  border-color: var(--accent);
-  background: #e7eaff;
-}
-
-/* --- Harmony grid compact/full-cell color overrides (v3) --- */
-.harmony-grid-header .h-cell,
-.harmony-row .harmony-cell {
-  box-sizing: border-box;
-  white-space: nowrap;
-}
-
 /* Make grid more compact on desktop */
 @media (min-width: 900px) {
   .harmony-grid {
@@ -1787,57 +1721,6 @@ button:active {
     --chord-col-width: 200px;
   }
 }
-
-/* Remove pill look; make the whole cell carry the color */
-.harmony-cell.tone-cell {
-  padding: 0 !important;
-  background: color-mix(in srgb, var(--pc-color) 42%, transparent);
-}
-.harmony-cell.tone-cell.is-ghost {
-  background: color-mix(in srgb, var(--pc-color) 18%, transparent);
-}
-
-/* Inner band becomes just centered text; no background/border */
-.harmony-cell .pc-band {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-  border-radius: 0;
-  border: none;
-  background: transparent;
-  box-shadow: none;
-}
-
-/* Keep selection emphasis via outline, but don't shrink content */
-.harmony-cell.is-note-selected,
-.harmony-row.is-selected .harmony-cell.tone-cell.is-visible {
-  outline: 2px solid color-mix(in srgb, var(--pc-color) 55%, #2c58ff);
-  outline-offset: -2px;
-}
-
-/* Chord column should also be a full-cell color block */
-.harmony-cell.chord-cell {
-  background: color-mix(in srgb, var(--pc-color) 52%, transparent) !important;
-}
-.harmony-cell.chord-cell .pc-band {
-  font-weight: 700;
-  letter-spacing: 0.2px;
-}
-
-/* Roman numeral column stays plain and tight */
-.harmony-cell.rn-cell {
-  padding: 0 10px !important;
-}
-
-/* Slightly reduce row height for density */
-.harmony-row .harmony-cell {
-  min-height: 46px;
-}
-
 
 /* v3.1: correct vars + remove header underline */
 @media (min-width: 900px) {

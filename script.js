@@ -1758,18 +1758,6 @@ function drawFromState(options = {}) {
   renderChordLists();
   scheduleHighlightUpdate();
   maybePlayCurrentSelection("state-change");
-
-  const r1 = document.getElementById("results1");
-  const r2 = document.getElementById("results2");
-  const r3 = document.getElementById("results3");
-  if (r1) r1.textContent = "";
-  if (r2) r2.textContent = "";
-  if (r3) r3.textContent = "";
-}
-
-function rotateDegree(dir) {
-  if (!currentScale.pitchClasses.length) return;
-  rotateDegrees(dir);
 }
 
 function rotateDegrees(steps) {
