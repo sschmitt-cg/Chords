@@ -971,7 +971,9 @@ button:active {
 /* Instrument tone emphasis */
 #keyboardVisualizer .key.tone-root,
 #fretboardVisualizer .fret-note.tone-root {
-  background: color-mix(in srgb, var(--pc-color, #7c6dff) 78%, var(--key-base, --key-white-base) 22%);
+  background: var(--pc-color, #7c6dff);
+  border: 3px solid color-mix(in srgb, var(--pc-color, #7c6dff), #000 28%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3), 0 0 0 3px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 60%);
 }
 
 #keyboardVisualizer .key.tone-tone,
@@ -983,6 +985,11 @@ button:active {
 #fretboardVisualizer .fret-note.tone-top {
   background: color-mix(in srgb, var(--pc-color, #7c6dff) 55%, var(--key-base, --key-white-base) 45%);
   box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 25%), 0 0 12px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 60%);
+}
+
+#fretboardVisualizer .fret-note.tone-root {
+  border: 2px solid color-mix(in srgb, var(--pc-color, #7c6dff), #000 28%);
+  border-radius: 4px;
 }
 
 .key.dim {
