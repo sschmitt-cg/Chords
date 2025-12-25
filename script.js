@@ -108,23 +108,7 @@ const ENHARMONIC_OPTIONS = {
   8: { sharp: "G#", flat: "Ab" },
   10: { sharp: "A#", flat: "Bb" }
 };
-const DEGREE_COLORS = [
-  "#ff6f6f",
-  "#ff9f43",
-  "#ffd166",
-  "#5cd39b",
-  "#4cc9f0",
-  "#7c6dff",
-  "#b392f0"
-];
-const degreeColorByIndex = (idx) => DEGREE_COLORS[wrap(idx, 7)];
-const degreeColorByDegree = (degree) => DEGREE_COLORS[wrap(degree - 1, 7)];
-const degreeColorForColumn = (degree) => {
-  // Map chord tone degrees to base scale degrees: 3->3,5->5,7->7,9->2,11->4,13->6
-  const map = { 3: 3, 5: 5, 7: 7, 9: 2, 11: 4, 13: 6 };
-  const base = map[degree] || degree;
-  return degreeColorByDegree(base);
-};
+const pcColor = (pc) => `var(--pc-${wrap(pc - currentKeyPc, 12)})`;
 
 const CHORD_CATEGORIES = [
   { key: "triads", label: "Triads" },
@@ -682,16 +666,6 @@ function chordNotesToPcs(notes) {
     .filter(pc => pc !== null);
 }
 
-function getDegreeColorMap(pitchClasses = currentScale.pitchClasses) {
-  const map = new Map();
-  pitchClasses.forEach((pc, idx) => {
-    map.set(pc, DEGREE_COLORS[idx]);
-  });
-  return map;
-}
-
-const pcColor = (pc) => `var(--pc-${wrap(pc, 12)})`;
-
 function getHighlightSet(scalePitchClasses = currentScale.pitchClasses) {
   if (selectedExplorerNotePc !== null) {
     return { set: new Set([selectedExplorerNotePc]), isolation: false };
@@ -1004,7 +978,7 @@ function renderHarmonyGrid() {
     })();
     const root = row.notes[0];
     const chordLabel = chordNameForRow(row, rowMax);
-    const chordColor = degreeColorByDegree(row.index + 1);
+    const chordColor = pcColor(root?.pc ?? currentKeyPc);
     const chordPcStyle = `style="--pc-color:${chordColor}; --deg-color:${chordColor}"`;
     const cells = [
       `<div class="harmony-cell sticky-col rn-cell" data-row-index="${row.index}" role="gridcell"><span class="degree">${row.degree}</span></div>`,
@@ -1015,7 +989,7 @@ function renderHarmonyGrid() {
         if (!note) {
           return `<div class="harmony-cell tone-cell" data-row-index="${row.index}" data-degree="${targetDegree}" role="gridcell"></div>`;
         }
-        const cellColor = degreeColorForColumn(targetDegree);
+        const cellColor = pcColor(note.pc);
         const pcStyle = `style="--pc-color:${cellColor}; --deg-color:${cellColor}"`;
         const isVisible = targetDegree <= rowMax;
         const visibilityClass = isVisible ? "is-visible" : "is-ghost";
@@ -1257,9 +1231,11 @@ function renderScaleStrip(scale) {
   track.style.transform = "translate3d(0,0,0)";
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
-  const notes = scale.map((note, idx) =>
-    `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${degreeColorByIndex(idx)}"><div>${note}</div></div>`
-  ).join("");
+  const notes = scale.map((note, idx) => {
+    const pc = currentScale.pitchClasses[idx];
+    const color = pcColor(pc);
+    return `<div class="note-label${idx === 0 ? " tonic" : ""}${selectedRootNote === note ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${color}"><div>${note}</div></div>`;
+  }).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
 }
 
@@ -1284,7 +1260,7 @@ function renderHorizontalWithWrap(scale) {
   const notes = extended.map((note, idx) => {
     const isTonic = idx === scale.length;
     const isSelected = selectedRootNote === note && idx >= scale.length && idx < scale.length * 2;
-    const color = degreeColorByIndex(idx % scale.length);
+    const color = pcColor(currentScale.pitchClasses[idx % scale.length]);
     return `<div class="note-label${isTonic ? " tonic" : ""}${isSelected ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${color}"><div>${note}</div></div>`;
   }).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer" id="notesLayer">${notes}</div>`;
@@ -1311,7 +1287,7 @@ function renderVerticalRows() {
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${rowHeight}px;flex:0 0 auto">${row.notes.map((note, idx) =>
-      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${degreeColorByIndex(idx)}"><div>${note}</div></div>`
+      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${pcColor(currentScale.pitchClasses[idx])}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer" style="height:${rowHeight * rows.length}px">${rowsHtml}</div>`;

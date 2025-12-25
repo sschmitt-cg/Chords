@@ -9,18 +9,18 @@
   --accent: #5568ff;
   --accent-strong: #3145ff;
   --surface: #f3f5ff;
-  --pc-0: #ff6f6f;   /* C */
-  --pc-1: #ff8d6f;   /* C#/Db */
-  --pc-2: #ffad6f;   /* D */
-  --pc-3: #ffd46f;   /* D#/Eb */
-  --pc-4: #c6e16f;   /* E */
-  --pc-5: #8ee58a;   /* F */
-  --pc-6: #6fe1c6;   /* F#/Gb */
-  --pc-7: #6fd2f0;   /* G */
-  --pc-8: #6f9dff;   /* G#/Ab */
-  --pc-9: #8b6dff;   /* A */
-  --pc-10: #c26dff;  /* A#/Bb */
-  --pc-11: #ff6de2;  /* B */
+  --pc-0: #ff6f6f;   /* root */
+  --pc-1: #ff8d6f;   /* +1 semitone */
+  --pc-2: #ffad6f;   /* +2 semitones */
+  --pc-3: #ffd46f;   /* +3 semitones */
+  --pc-4: #c6e16f;   /* +4 semitones */
+  --pc-5: #8ee58a;   /* +5 semitones */
+  --pc-6: #6fe1c6;   /* +6 semitones */
+  --pc-7: #6fd2f0;   /* +7 semitones */
+  --pc-8: #6f9dff;   /* +8 semitones */
+  --pc-9: #8b6dff;   /* +9 semitones */
+  --pc-10: #c26dff;  /* +10 semitones */
+  --pc-11: #ff6de2;  /* +11 semitones */
 }
 
 * {
