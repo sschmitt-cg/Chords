@@ -108,7 +108,7 @@ const ENHARMONIC_OPTIONS = {
   8: { sharp: "G#", flat: "Ab" },
   10: { sharp: "A#", flat: "Bb" }
 };
-const pcColor = (pc) => `var(--pc-${wrap(pc - currentKeyPc, 12)})`;
+const pcColor = (pc) => `var(--pc-${wrap(pc, 12)})`;
 
 const CHORD_CATEGORIES = [
   { key: "triads", label: "Triads" },
@@ -1471,7 +1471,7 @@ function updateInstrumentHighlights(options = {}) {
     }
   });
   document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note").forEach(el => {
-    el.classList.remove("spotlit", "emphasis");
+    el.classList.remove("spotlit");
   });
   if (selectedExplorerNotePc !== null) {
     const spot = document.querySelectorAll(`#keyboardVisualizer .key[data-pc="${selectedExplorerNotePc}"], #fretboardVisualizer .fret-note[data-pc="${selectedExplorerNotePc}"]`);
