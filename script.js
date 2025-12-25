@@ -1276,18 +1276,21 @@ function renderVerticalRows() {
   const rows = [];
   for (let i = range; i >= -range; i--) {
     let notes = currentScale.spelled;
+    let pcs = currentScale.pitchClasses;
     if (i !== 0) {
       const shiftedPc = wrap(currentScale.pitchClasses[0] + i, 12);
       const pref = enharmonicPreferenceByPc[shiftedPc] || null;
-      notes = computeDisplayScale(shiftedPc, currentModeIndex, pref).spelled;
+      const shiftedScale = computeDisplayScale(shiftedPc, currentModeIndex, pref);
+      notes = shiftedScale.spelled;
+      pcs = shiftedScale.pitchClasses;
     }
-    rows.push({ shift: i, notes });
+    rows.push({ shift: i, notes, pcs });
   }
   const romans = computeRomans(currentScale.pitchClasses);
   const slots = romans.map(r => `<div class="slot">${r}</div>`).join("");
   const rowsHtml = rows.map(row =>
     `<div class="tile-row" style="height:${rowHeight}px;flex:0 0 auto">${row.notes.map((note, idx) =>
-      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${pcColor(currentScale.pitchClasses[idx])}"><div>${note}</div></div>`
+      `<div class="note-label${idx === 0 && row.shift === 0 ? " tonic" : ""}${selectedRootNote === note && row.shift === 0 ? " root-selected" : ""}" data-note="${note}" style="--deg-color:${pcColor(row.pcs[idx])}"><div>${note}</div></div>`
     ).join("")}</div>`
   ).join("");
   track.innerHTML = `<div class="slots-row">${slots}</div><div class="notes-layer vertical" id="notesLayer" style="height:${rowHeight * rows.length}px">${rowsHtml}</div>`;
@@ -1473,6 +1476,11 @@ function updateInstrumentHighlights(options = {}) {
   document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note").forEach(el => {
     el.classList.remove("spotlit");
   });
+  const tonicPc = currentScale.pitchClasses[0] ?? null;
+  if (!chordPcs && tonicPc !== null && !isolation) {
+    const tonicEls = document.querySelectorAll(`#keyboardVisualizer .key[data-pc="${tonicPc}"], #fretboardVisualizer .fret-note[data-pc="${tonicPc}"]`);
+    tonicEls.forEach(el => el.classList.add("tone-root"));
+  }
   if (selectedExplorerNotePc !== null) {
     const spot = document.querySelectorAll(`#keyboardVisualizer .key[data-pc="${selectedExplorerNotePc}"], #fretboardVisualizer .fret-note[data-pc="${selectedExplorerNotePc}"]`);
     spot.forEach(el => el.classList.add("spotlit"));
