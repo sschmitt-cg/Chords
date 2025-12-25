@@ -1476,7 +1476,7 @@ function updateInstrumentHighlights(options = {}) {
   document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note").forEach(el => {
     el.classList.remove("spotlit");
   });
-  const tonicPc = currentScale.pitchClasses[0] ?? null;
+  const tonicPc = scalePcs?.[0] ?? null;
   if (!chordPcs && tonicPc !== null && !isolation) {
     const tonicEls = document.querySelectorAll(`#keyboardVisualizer .key[data-pc="${tonicPc}"], #fretboardVisualizer .fret-note[data-pc="${tonicPc}"]`);
     tonicEls.forEach(el => el.classList.add("tone-root"));
