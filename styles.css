@@ -9,18 +9,20 @@
   --accent: #5568ff;
   --accent-strong: #3145ff;
   --surface: #f3f5ff;
-  --pc-0: #ff6f6f;   /* root */
-  --pc-1: #ff8d6f;   /* +1 semitone */
-  --pc-2: #ffad6f;   /* +2 semitones */
-  --pc-3: #ffd46f;   /* +3 semitones */
-  --pc-4: #c6e16f;   /* +4 semitones */
-  --pc-5: #8ee58a;   /* +5 semitones */
-  --pc-6: #6fe1c6;   /* +6 semitones */
-  --pc-7: #6fd2f0;   /* +7 semitones */
-  --pc-8: #6f9dff;   /* +8 semitones */
-  --pc-9: #8b6dff;   /* +9 semitones */
-  --pc-10: #c26dff;  /* +10 semitones */
-  --pc-11: #ff6de2;  /* +11 semitones */
+  --key-white-base: #d8dbe1;
+  --key-black-base: #5e6064;
+  --pc-0: #ff6f6f;   /* C */
+  --pc-1: #ff8d6f;   /* C#/Db */
+  --pc-2: #ffad6f;   /* D */
+  --pc-3: #ffd46f;   /* D#/Eb */
+  --pc-4: #c6e16f;   /* E */
+  --pc-5: #8ee58a;   /* F */
+  --pc-6: #6fe1c6;   /* F#/Gb */
+  --pc-7: #6fd2f0;   /* G */
+  --pc-8: #6f9dff;   /* G#/Ab */
+  --pc-9: #8b6dff;   /* A */
+  --pc-10: #c26dff;  /* A#/Bb */
+  --pc-11: #ff6de2;  /* B */
 }
 
 * {
@@ -469,25 +471,6 @@ button:active {
   gap: 8px;
 }
 
-.note-label.is-playing > div,
-#keyboardVisualizer .key.is-playing,
-#fretboardVisualizer .fret-note.is-playing {
-  box-shadow: 0 0 0 2px rgba(85, 104, 255, 0.35), 0 8px 18px rgba(85, 104, 255, 0.35);
-  filter: brightness(1.08);
-  transform: translateY(-1px) scale(1.01);
-  transition: box-shadow 0.08s ease, filter 0.08s ease, transform 0.08s ease;
-}
-
-#keyboardVisualizer .key.spotlit,
-#fretboardVisualizer .fret-note.spotlit {
-  box-shadow: 0 0 0 2px rgba(85, 104, 255, 0.45), 0 8px 16px rgba(85, 104, 255, 0.25);
-}
-
-#keyboardVisualizer .key.emphasis,
-#fretboardVisualizer .fret-note.emphasis {
-  box-shadow: 0 0 0 2px rgba(255, 176, 76, 0.6), 0 10px 22px rgba(255, 176, 76, 0.35);
-}
-
 .chords-scroll {
   flex: 1 1 auto;
   overflow: auto;
@@ -615,22 +598,6 @@ button:active {
 
 .tone-selected {
   box-shadow: 0 0 0 2px rgba(49, 69, 255, 0.45), 0 0 10px rgba(49, 69, 255, 0.35);
-}
-
-#keyboardVisualizer .key.tone-root,
-#fretboardVisualizer .fret-note.tone-root {
-  background: color-mix(in srgb, var(--pc-color, #7c6dff) 78%, #ffffff 22%);
-}
-
-#keyboardVisualizer .key.tone-tone,
-#fretboardVisualizer .fret-note.tone-tone {
-  background: color-mix(in srgb, var(--pc-color, #7c6dff) 35%, #ffffff 65%);
-}
-
-#keyboardVisualizer .key.tone-top,
-#fretboardVisualizer .fret-note.tone-top {
-  background: color-mix(in srgb, var(--pc-color, #7c6dff) 55%, #ffffff 45%);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 25%), 0 0 12px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 60%);
 }
 
 .harmony-grid-body {
@@ -905,6 +872,21 @@ button:active {
   position: relative;
 }
 
+/* Keyboard */
+.note-label.is-playing > div,
+#keyboardVisualizer .key.is-playing,
+#fretboardVisualizer .fret-note.is-playing {
+  box-shadow: 0 0 0 2px rgba(85, 104, 255, 0.35), 0 8px 18px rgba(85, 104, 255, 0.35);
+  filter: brightness(1.08);
+  transform: translateY(-1px) scale(1.01);
+  transition: box-shadow 0.08s ease, filter 0.08s ease, transform 0.08s ease;
+}
+
+#keyboardVisualizer .key.spotlit,
+#fretboardVisualizer .fret-note.spotlit {
+  box-shadow: 0 0 0 2px rgba(85, 104, 255, 0.45), 0 8px 16px rgba(85, 104, 255, 0.25);
+}
+
 .keyboard {
   width: 100%;
 }
@@ -935,9 +917,10 @@ button:active {
 }
 
 .key {
+  --key-base: var(--key-white-base);
   border-radius: 8px;
   border: none;
-  background: #d1d4d9;
+  background: var(--key-base);
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
   box-shadow: inset 0 0 0 1px #b8bcc8;
@@ -946,11 +929,12 @@ button:active {
 }
 
 .key.black {
+  --key-base: var(--key-black-base);
   position: absolute;
   top: 0;
   height: calc(var(--instrument-height) * 0.62);
   width: calc(100% / var(--white-count) * 0.6);
-  background: #464a52;
+  background: var(--key-base);
   border: 1px solid #32363e;
   border-radius: 6px;
   transform: translateX(-50%);
@@ -982,6 +966,23 @@ button:active {
 .key.black.lit {
   background: var(--pc-color, var(--deg-color, #7c6dff));
   border-color: color-mix(in srgb, var(--pc-color, var(--deg-color, #7c6dff)), #000 35%);
+}
+
+/* Instrument tone emphasis */
+#keyboardVisualizer .key.tone-root,
+#fretboardVisualizer .fret-note.tone-root {
+  background: color-mix(in srgb, var(--pc-color, #7c6dff) 78%, var(--key-base, --key-white-base) 22%);
+}
+
+#keyboardVisualizer .key.tone-tone,
+#fretboardVisualizer .fret-note.tone-tone {
+  background: color-mix(in srgb, var(--pc-color, #7c6dff) 35%, var(--key-base, --key-white-base) 65%);
+}
+
+#keyboardVisualizer .key.tone-top,
+#fretboardVisualizer .fret-note.tone-top {
+  background: color-mix(in srgb, var(--pc-color, #7c6dff) 55%, var(--key-base, --key-white-base) 45%);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 25%), 0 0 12px color-mix(in srgb, var(--pc-color, #7c6dff), transparent 60%);
 }
 
 .key.dim {
