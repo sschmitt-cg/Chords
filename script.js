@@ -2375,8 +2375,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const soundToggle = document.getElementById("soundToggle");
   updateSoundToggleUI();
   if (soundToggle) {
+    let lastToggleTs = 0;
     const handleToggle = async (e) => {
       if (e?.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
+      const now = performance.now();
+      if (now - lastToggleTs < 250) return;
+      lastToggleTs = now;
       if (e?.cancelable) e.preventDefault();
       if (audioMuted) {
         // Unmute: must be a user gesture to unlock audio.
@@ -2404,6 +2408,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
     soundToggle.addEventListener("pointerdown", handleToggle);
+    soundToggle.addEventListener("touchstart", handleToggle, { passive: false });
+    soundToggle.addEventListener("click", handleToggle);
     soundToggle.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
