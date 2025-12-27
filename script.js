@@ -87,6 +87,7 @@ let masterGain = null;
 let limiter = null;
 let mediaDest = null;
 let audioOutEl = null;
+let audioUnlocked = false;
 let playbackToken = 0;
 let activeVoices = [];
 const AUDIO_MASTER_GAIN = 0.2;
@@ -121,7 +122,7 @@ const CHORD_CATEGORIES = [
 // -------------------- AUDIO ------------------------
 
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const IOS_SILENT_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
+const IOS_SILENT_AUDIO = "data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAABAA==";
 
 function ensureAudio() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -162,10 +163,24 @@ async function ensureAudioRunning() {
       audioOutEl.playsInline = true;
       audioOutEl.volume = 0.001;
     }
-    try {
-      if (audioOutEl.paused) await audioOutEl.play();
-    } catch (e) {
-      console.warn("iOS audio element unlock failed", e);
+    if (audioOutEl.paused) {
+      const playPromise = audioOutEl.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch((e) => console.warn("iOS audio element unlock failed", e));
+      }
+    }
+    if (!audioUnlocked) {
+      try {
+        const buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.start(0);
+        source.stop(0.01);
+        audioUnlocked = true;
+      } catch (e) {
+        console.warn("iOS audio context unlock failed", e);
+      }
     }
   }
   try {
