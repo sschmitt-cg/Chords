@@ -179,36 +179,69 @@ function logAudioDiagnostics(tag) {
   });
 }
 
+function unlockAudioGestureSync(reason = "unmute") {
+  if (!ensureAudio() || !audioCtx) return false;
+  if (isIOS()) {
+    if (!audioMediaDest) {
+      audioMediaDest = audioCtx.createMediaStreamDestination();
+      limiter?.connect(audioMediaDest);
+    }
+    if (!audioOutEl) {
+      audioOutEl = document.getElementById("audioOut");
+    }
+    if (audioOutEl && audioMediaDest && audioOutEl.srcObject !== audioMediaDest.stream) {
+      audioOutEl.srcObject = audioMediaDest.stream;
+    }
+    if (audioOutEl) {
+      audioOutEl.playsInline = true;
+      audioOutEl.autoplay = true;
+      audioOutEl.muted = false;
+      const playPromise = audioOutEl.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch((e) => console.warn("iOS audio element unlock failed", e));
+      }
+    }
+  }
+  const resumePromise = audioCtx.resume();
+  if (resumePromise && typeof resumePromise.catch === "function") {
+    resumePromise.catch((e) => console.warn("audioCtx.resume() failed", e));
+  }
+  if (!audioWarmupDone) {
+    try {
+      const warmGain = audioCtx.createGain();
+      warmGain.gain.value = 0.0001;
+      const warmOsc = audioCtx.createOscillator();
+      warmOsc.frequency.value = 220;
+      warmOsc.connect(warmGain).connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+      warmOsc.start(now);
+      warmOsc.stop(now + 0.03);
+      warmOsc.onended = () => {
+        try { warmOsc.disconnect(); } catch (_) {}
+        try { warmGain.disconnect(); } catch (_) {}
+      };
+      audioWarmupDone = true;
+    } catch (e) {
+      console.warn("audio warmup failed", e);
+    }
+  }
+  logAudioDiagnostics(reason === "unmute" ? "unmute" : "first-unlock");
+  return true;
+}
+
 async function unlockAudioIfNeeded(reason = "first-unlock") {
   if (audioUnlockInFlight) return audioUnlockInFlight;
   audioUnlockInFlight = (async () => {
     if (!ensureAudio() || !audioCtx) return false;
     if (isIOS()) {
-      if (!audioMediaDest) {
-        audioMediaDest = audioCtx.createMediaStreamDestination();
-        limiter?.connect(audioMediaDest);
-      }
-      if (!audioOutEl) {
-        audioOutEl = document.getElementById("audioOut");
-      }
-      if (audioOutEl && audioMediaDest && audioOutEl.srcObject !== audioMediaDest.stream) {
-        audioOutEl.srcObject = audioMediaDest.stream;
-      }
-      if (audioOutEl) {
-        audioOutEl.playsInline = true;
-        audioOutEl.autoplay = true;
-        audioOutEl.muted = false;
-        const playPromise = audioOutEl.play();
-        if (playPromise && typeof playPromise.catch === "function") {
-          playPromise.catch((e) => console.warn("iOS audio element unlock failed", e));
-        }
-      }
+      unlockAudioGestureSync(reason);
     }
     if (audioCtx.state !== "running") {
       try {
         await audioCtx.resume();
       } catch (e) {
         console.warn("audioCtx.resume() failed", e);
+        if (isIOS()) return true;
         return false;
       }
     }
@@ -2382,9 +2415,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const now = performance.now();
       if (now - lastToggleTs < 250) return;
       lastToggleTs = now;
-      if (e?.type !== "touchstart" && e?.cancelable) e.preventDefault();
+      if (!isIOS() && e?.type !== "touchstart" && e?.cancelable) e.preventDefault();
       if (audioMuted) {
         // Unmute: must be a user gesture to unlock audio.
+        if (isIOS()) {
+          unlockAudioGestureSync("unmute");
+          audioMuted = false;
+          updateSoundToggleUI();
+          setTimeout(() => {
+            const ctxState = audioCtx?.state || "none";
+            const hasOut = Boolean(audioOutEl);
+            const hasStream = Boolean(audioOutEl && audioOutEl.srcObject);
+            if (ctxState !== "running") {
+              audioMuted = true;
+              updateSoundToggleUI();
+              console.warn("iOS unlock failed: audioCtx not running", { state: ctxState, audioOutEl: hasOut, audioOutStream: hasStream });
+              return;
+            }
+            if (masterGain && audioCtx) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
+            playTestPing();
+            maybePlayCurrentSelection("unmute");
+          }, 220);
+          return;
+        }
         audioMuted = false;
         updateSoundToggleUI();
         const ok = await unlockAudioIfNeeded("unmute");
