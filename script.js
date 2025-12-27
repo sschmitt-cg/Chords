@@ -90,6 +90,7 @@ let audioOutEl = null;
 let audioWarmupDone = false;
 let audioUnlockInFlight = null;
 let audioDiagnosticsLogged = { firstUnlock: false };
+let iosUnlockAttemptInFlight = false;
 let playbackToken = 0;
 let activeVoices = [];
 const AUDIO_MASTER_GAIN = 0.2;
@@ -2444,23 +2445,39 @@ document.addEventListener("DOMContentLoaded", () => {
       if (audioMuted) {
         // Unmute: must be a user gesture to unlock audio.
         if (isIOS()) {
+          if (iosUnlockAttemptInFlight) return;
+          iosUnlockAttemptInFlight = true;
+          let pinged = false;
+          unlockAudioGestureSync("unmute");
           audioMuted = false;
           updateSoundToggleUI();
-          unlockAudioGestureSync("unmute");
-          setTimeout(() => {
-            const ctxState = audioCtx?.state || "none";
-            const hasOut = Boolean(audioOutEl);
-            const hasStream = Boolean(audioOutEl && audioOutEl.srcObject);
-            if (ctxState !== "running") {
-              audioMuted = true;
-              updateSoundToggleUI();
-              console.warn("iOS unlock failed: audioCtx not running", { state: ctxState, audioOutEl: hasOut, audioOutStream: hasStream });
-              return;
+          if (masterGain && audioCtx) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
+          const finalizeIfRunning = () => {
+            if (audioCtx?.state !== "running") return false;
+            if (!pinged) {
+              pinged = true;
+              playTestPing();
+              maybePlayCurrentSelection("unmute");
             }
-            if (masterGain && audioCtx) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-            playTestPing();
-            maybePlayCurrentSelection("unmute");
-          }, 220);
+            iosUnlockAttemptInFlight = false;
+            return true;
+          };
+          setTimeout(() => {
+            if (finalizeIfRunning()) return;
+            unlockAudioGestureSync("retry");
+            finalizeIfRunning();
+          }, 350);
+          setTimeout(() => {
+            if (finalizeIfRunning()) return;
+            console.warn("iOS unlock still not running", {
+              state: audioCtx?.state || "none",
+              audioOutEl: Boolean(audioOutEl),
+              audioOutStream: Boolean(audioOutEl && audioOutEl.srcObject)
+            });
+          }, 900);
+          setTimeout(() => {
+            iosUnlockAttemptInFlight = false;
+          }, 1000);
           return;
         }
         audioMuted = false;
