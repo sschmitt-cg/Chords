@@ -121,6 +121,7 @@ const CHORD_CATEGORIES = [
 // -------------------- AUDIO ------------------------
 
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+const IOS_SILENT_AUDIO = "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
 
 function ensureAudio() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -153,6 +154,20 @@ function ensureAudio() {
 async function ensureAudioRunning() {
   if (!ensureAudio()) return false;
   if (!audioCtx) return false;
+  if (isIOS()) {
+    if (!audioOutEl) {
+      audioOutEl = new Audio(IOS_SILENT_AUDIO);
+      audioOutEl.loop = true;
+      audioOutEl.preload = "auto";
+      audioOutEl.playsInline = true;
+      audioOutEl.volume = 0.001;
+    }
+    try {
+      if (audioOutEl.paused) await audioOutEl.play();
+    } catch (e) {
+      console.warn("iOS audio element unlock failed", e);
+    }
+  }
   try {
     if (audioCtx.state !== "running") await audioCtx.resume();
   } catch (e) {
@@ -2310,6 +2325,9 @@ document.addEventListener("DOMContentLoaded", () => {
         audioMuted = true;
         stopPlayback();
         if (masterGain && audioCtx) masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        if (audioOutEl && !audioOutEl.paused) {
+          try { audioOutEl.pause(); } catch (_) {}
+        }
         updateSoundToggleUI();
       }
     });
