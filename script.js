@@ -2487,9 +2487,23 @@ document.addEventListener("DOMContentLoaded", () => {
         updateSoundToggleUI();
       }
     };
-    soundToggle.addEventListener("pointerdown", handleToggle);
-    soundToggle.addEventListener("touchstart", handleToggle, { passive: false });
-    soundToggle.addEventListener("click", handleToggle);
+    // Sound toggle: avoid duplicate firing on iOS/touch devices (touchstart -> click ghost).
+    // We attach exactly ONE primary gesture listener:
+    // - iOS / touch devices: touchstart (passive:false) so we can preventDefault and stop the follow-up click.
+    // - non-touch: pointerdown for snappy desktop behavior.
+    const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+    if (isIOS() || isTouchDevice) {
+      soundToggle.addEventListener("touchstart", (e) => {
+        // Prevent the synthetic click that follows a touch on iOS/Safari.
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+        handleToggle(e);
+      }, { passive: false });
+    } else {
+      soundToggle.addEventListener("pointerdown", handleToggle);
+    }
+
+    // Keyboard accessibility
     soundToggle.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
