@@ -141,6 +141,7 @@ function ensureAudio() {
     } catch (_) {
       audioCtx = new Ctx();
     }
+
     masterGain = audioCtx.createGain();
     limiter = audioCtx.createDynamicsCompressor();
     limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
@@ -150,15 +151,24 @@ function ensureAudio() {
     limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
 
     masterGain.connect(limiter);
-    limiter.connect(audioCtx.destination);
+  }
+
+  // (Re)wire outputs so iOS does NOT double-route audio.
+  // Non-iOS: limiter -> audioCtx.destination
+  // iOS:     limiter -> audioMediaDest (played by <audio id="audioOut">)
+  try { limiter && limiter.disconnect(); } catch (_) {}
+
+  if (audioCtx && limiter) {
     if (isIOS()) {
-      audioMediaDest = audioCtx.createMediaStreamDestination();
-      limiter.connect(audioMediaDest);
+      if (!audioMediaDest) audioMediaDest = audioCtx.createMediaStreamDestination();
+      try { limiter.connect(audioMediaDest); } catch (_) {}
+    } else {
+      try { limiter.connect(audioCtx.destination); } catch (_) {}
     }
   }
 
-  // Keep gain in sync with mute state.
-  if (masterGain) {
+  // Keep gain in sync with mute state (must reflect CURRENT audioMuted value).
+  if (masterGain && audioCtx) {
     const target = audioMuted ? 0 : AUDIO_MASTER_GAIN;
     masterGain.gain.setValueAtTime(target, audioCtx.currentTime);
   }
@@ -181,14 +191,10 @@ function logAudioDiagnostics(tag) {
 
 function unlockAudioGestureSync(reason = "unmute") {
   if (!ensureAudio() || !audioCtx) return false;
+
   if (isIOS()) {
-    if (!audioMediaDest) {
-      audioMediaDest = audioCtx.createMediaStreamDestination();
-      limiter?.connect(audioMediaDest);
-    }
-    if (!audioOutEl) {
-      audioOutEl = document.getElementById("audioOut");
-    }
+    if (!audioOutEl) audioOutEl = document.getElementById("audioOut");
+    // Ensure the <audio> element is fed by the MediaStreamDestination.
     if (audioOutEl && audioMediaDest && audioOutEl.srcObject !== audioMediaDest.stream) {
       audioOutEl.srcObject = audioMediaDest.stream;
     }
@@ -196,36 +202,55 @@ function unlockAudioGestureSync(reason = "unmute") {
       audioOutEl.playsInline = true;
       audioOutEl.autoplay = true;
       audioOutEl.muted = false;
-      const playPromise = audioOutEl.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch((e) => console.warn("iOS audio element unlock failed", e));
+      audioOutEl.volume = 1;
+
+      // Call play() inside the user gesture; don't await.
+      try {
+        const p = audioOutEl.play();
+        if (p && typeof p.catch === "function") {
+          p.catch((e) => console.warn("iOS audio element unlock failed", e));
+        }
+      } catch (e) {
+        console.warn("iOS audioOutEl.play() threw", e);
       }
     }
   }
-  const resumePromise = audioCtx.resume();
-  if (resumePromise && typeof resumePromise.catch === "function") {
-    resumePromise.catch((e) => console.warn("audioCtx.resume() failed", e));
+
+  // Kick the context; don't await to preserve gesture semantics.
+  try {
+    const resumePromise = audioCtx.resume();
+    if (resumePromise && typeof resumePromise.catch === "function") {
+      resumePromise.catch((e) => console.warn("audioCtx.resume() failed", e));
+    }
+  } catch (e) {
+    console.warn("audioCtx.resume() threw", e);
   }
+
+  // One-time warmup to reduce Android/iOS first-note latency; routed through the same graph.
   if (!audioWarmupDone) {
     try {
       const warmGain = audioCtx.createGain();
       warmGain.gain.value = 0.0001;
+      warmGain.connect(masterGain);
+
       const warmOsc = audioCtx.createOscillator();
-      warmOsc.frequency.value = 220;
-      warmOsc.connect(warmGain).connect(audioCtx.destination);
-      const now = audioCtx.currentTime;
-      warmOsc.start(now);
-      warmOsc.stop(now + 0.03);
+      warmOsc.type = "sine";
+      warmOsc.frequency.value = 440;
+
+      warmOsc.connect(warmGain);
+      warmOsc.start();
+      warmOsc.stop(audioCtx.currentTime + 0.03);
       warmOsc.onended = () => {
         try { warmOsc.disconnect(); } catch (_) {}
         try { warmGain.disconnect(); } catch (_) {}
       };
+
       audioWarmupDone = true;
     } catch (e) {
       console.warn("audio warmup failed", e);
     }
   }
-  logAudioDiagnostics(reason === "unmute" ? "unmute" : "first-unlock");
+
   return true;
 }
 
@@ -2419,9 +2444,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (audioMuted) {
         // Unmute: must be a user gesture to unlock audio.
         if (isIOS()) {
-          unlockAudioGestureSync("unmute");
           audioMuted = false;
           updateSoundToggleUI();
+          unlockAudioGestureSync("unmute");
           setTimeout(() => {
             const ctxState = audioCtx?.state || "none";
             const hasOut = Boolean(audioOutEl);
