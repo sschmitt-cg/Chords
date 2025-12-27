@@ -183,14 +183,6 @@ async function unlockAudioIfNeeded(reason = "first-unlock") {
   if (audioUnlockInFlight) return audioUnlockInFlight;
   audioUnlockInFlight = (async () => {
     if (!ensureAudio() || !audioCtx) return false;
-    if (audioCtx.state !== "running") {
-      try {
-        await audioCtx.resume();
-      } catch (e) {
-        console.warn("audioCtx.resume() failed", e);
-        return false;
-      }
-    }
     if (isIOS()) {
       if (!audioMediaDest) {
         audioMediaDest = audioCtx.createMediaStreamDestination();
@@ -204,10 +196,19 @@ async function unlockAudioIfNeeded(reason = "first-unlock") {
       }
       if (audioOutEl) {
         audioOutEl.playsInline = true;
+        audioOutEl.autoplay = true;
         const playPromise = audioOutEl.play();
         if (playPromise && typeof playPromise.catch === "function") {
           playPromise.catch((e) => console.warn("iOS audio element unlock failed", e));
         }
+      }
+    }
+    if (audioCtx.state !== "running") {
+      try {
+        await audioCtx.resume();
+      } catch (e) {
+        console.warn("audioCtx.resume() failed", e);
+        return false;
       }
     }
     if (!audioWarmupDone) {
