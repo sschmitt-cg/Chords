@@ -2462,10 +2462,16 @@ document.addEventListener("DOMContentLoaded", () => {
             iosUnlockAttemptInFlight = false;
             return true;
           };
+          const start = performance.now();
+          const poll = () => {
+            if (finalizeIfRunning()) return;
+            if (performance.now() - start > 650) return;
+            setTimeout(poll, 60);
+          };
+          poll();
           setTimeout(() => {
             if (finalizeIfRunning()) return;
             unlockAudioGestureSync("retry");
-            finalizeIfRunning();
           }, 350);
           setTimeout(() => {
             if (finalizeIfRunning()) return;
