@@ -2463,12 +2463,26 @@ document.addEventListener("DOMContentLoaded", () => {
             return true;
           };
           const start = performance.now();
-          const poll = () => {
-            if (finalizeIfRunning()) return;
-            if (performance.now() - start > 650) return;
-            setTimeout(poll, 60);
-          };
-          poll();
+          audioMuted = false;
+          
+          updateSoundToggleUI();
+          ensureAudio(); // ensures graph + gain reflect unmuted state
+
+          unlockAudioIfNeeded("unmute").then((ok) => {
+            if (!ok || audioMuted) return;
+
+            // Make sure gain is immediately correct
+            if (audioCtx && masterGain) {
+              masterGain.gain.setValueAtTime(
+                AUDIO_MASTER_GAIN,
+                audioCtx.currentTime
+              );
+            }
+
+            playTestPing();
+            maybePlayCurrentSelection("unmute");
+          });
+
           setTimeout(() => {
             if (finalizeIfRunning()) return;
             unlockAudioGestureSync("retry");
