@@ -197,6 +197,7 @@ async function unlockAudioIfNeeded(reason = "first-unlock") {
       if (audioOutEl) {
         audioOutEl.playsInline = true;
         audioOutEl.autoplay = true;
+        audioOutEl.muted = false;
         const playPromise = audioOutEl.play();
         if (playPromise && typeof playPromise.catch === "function") {
           playPromise.catch((e) => console.warn("iOS audio element unlock failed", e));
@@ -2381,16 +2382,17 @@ document.addEventListener("DOMContentLoaded", () => {
       const now = performance.now();
       if (now - lastToggleTs < 250) return;
       lastToggleTs = now;
-      if (e?.cancelable) e.preventDefault();
+      if (e?.type !== "touchstart" && e?.cancelable) e.preventDefault();
       if (audioMuted) {
         // Unmute: must be a user gesture to unlock audio.
+        audioMuted = false;
+        updateSoundToggleUI();
         const ok = await unlockAudioIfNeeded("unmute");
         if (!ok) {
           audioMuted = true;
           updateSoundToggleUI();
           return;
         }
-        audioMuted = false;
         // Sync gain now that we're unmuted.
         if (masterGain) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
         updateSoundToggleUI();
