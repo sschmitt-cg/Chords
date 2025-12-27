@@ -85,9 +85,11 @@ let audioMuted = true;
 let audioCtx = null;
 let masterGain = null;
 let limiter = null;
-let mediaDest = null;
+let audioMediaDest = null;
 let audioOutEl = null;
-let audioUnlocked = false;
+let audioWarmupDone = false;
+let audioUnlockInFlight = null;
+let audioDiagnosticsLogged = { firstUnlock: false };
 let playbackToken = 0;
 let activeVoices = [];
 const AUDIO_MASTER_GAIN = 0.2;
@@ -122,7 +124,13 @@ const CHORD_CATEGORIES = [
 // -------------------- AUDIO ------------------------
 
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-const IOS_SILENT_AUDIO = "data:audio/wav;base64,UklGRjQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAABAA==";
+const isAndroid = () => /Android/i.test(navigator.userAgent);
+
+function platformLabel() {
+  if (isIOS()) return "ios";
+  if (isAndroid()) return "android";
+  return "other";
+}
 
 function ensureAudio() {
   const Ctx = window.AudioContext || window.webkitAudioContext;
@@ -141,7 +149,12 @@ function ensureAudio() {
     limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
     limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
 
-    masterGain.connect(limiter).connect(audioCtx.destination);
+    masterGain.connect(limiter);
+    limiter.connect(audioCtx.destination);
+    if (isIOS()) {
+      audioMediaDest = audioCtx.createMediaStreamDestination();
+      limiter.connect(audioMediaDest);
+    }
   }
 
   // Keep gain in sync with mute state.
@@ -152,44 +165,78 @@ function ensureAudio() {
   return true;
 }
 
-async function ensureAudioRunning() {
-  if (!ensureAudio()) return false;
-  if (!audioCtx) return false;
-  if (isIOS()) {
-    if (!audioOutEl) {
-      audioOutEl = new Audio(IOS_SILENT_AUDIO);
-      audioOutEl.loop = true;
-      audioOutEl.preload = "auto";
-      audioOutEl.playsInline = true;
-      audioOutEl.volume = 0.001;
-    }
-    if (audioOutEl.paused) {
-      const playPromise = audioOutEl.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch((e) => console.warn("iOS audio element unlock failed", e));
-      }
-    }
-    if (!audioUnlocked) {
+function logAudioDiagnostics(tag) {
+  if (tag === "first-unlock" && audioDiagnosticsLogged.firstUnlock) return;
+  if (tag === "first-unlock") audioDiagnosticsLogged.firstUnlock = true;
+  const baseLatency = audioCtx?.baseLatency;
+  const audioOutActive = Boolean(isIOS() && audioOutEl && audioMediaDest && audioOutEl.srcObject === audioMediaDest.stream);
+  console.log("[audio]", {
+    tag,
+    platform: platformLabel(),
+    state: audioCtx?.state || "none",
+    baseLatency: Number.isFinite(baseLatency) ? baseLatency : null,
+    iosOutActive: audioOutActive
+  });
+}
+
+async function unlockAudioIfNeeded(reason = "first-unlock") {
+  if (audioUnlockInFlight) return audioUnlockInFlight;
+  audioUnlockInFlight = (async () => {
+    if (!ensureAudio() || !audioCtx) return false;
+    if (audioCtx.state !== "running") {
       try {
-        const buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-        source.start(0);
-        source.stop(0.01);
-        audioUnlocked = true;
+        await audioCtx.resume();
       } catch (e) {
-        console.warn("iOS audio context unlock failed", e);
+        console.warn("audioCtx.resume() failed", e);
+        return false;
       }
     }
-  }
+    if (isIOS()) {
+      if (!audioMediaDest) {
+        audioMediaDest = audioCtx.createMediaStreamDestination();
+        limiter?.connect(audioMediaDest);
+      }
+      if (!audioOutEl) {
+        audioOutEl = document.getElementById("audioOut");
+      }
+      if (audioOutEl && audioMediaDest && audioOutEl.srcObject !== audioMediaDest.stream) {
+        audioOutEl.srcObject = audioMediaDest.stream;
+      }
+      if (audioOutEl) {
+        audioOutEl.playsInline = true;
+        const playPromise = audioOutEl.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch((e) => console.warn("iOS audio element unlock failed", e));
+        }
+      }
+    }
+    if (!audioWarmupDone) {
+      try {
+        const warmGain = audioCtx.createGain();
+        warmGain.gain.value = 0.0001;
+        const warmOsc = audioCtx.createOscillator();
+        warmOsc.frequency.value = 220;
+        warmOsc.connect(warmGain).connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
+        warmOsc.start(now);
+        warmOsc.stop(now + 0.03);
+        warmOsc.onended = () => {
+          try { warmOsc.disconnect(); } catch (_) {}
+          try { warmGain.disconnect(); } catch (_) {}
+        };
+        audioWarmupDone = true;
+      } catch (e) {
+        console.warn("audio warmup failed", e);
+      }
+    }
+    logAudioDiagnostics(reason === "unmute" ? "unmute" : "first-unlock");
+    return true;
+  })();
   try {
-    if (audioCtx.state !== "running") await audioCtx.resume();
-  } catch (e) {
-    console.warn("audioCtx.resume() failed", e);
-    return false;
+    return await audioUnlockInFlight;
+  } finally {
+    audioUnlockInFlight = null;
   }
-  return true;
 }
 
 
@@ -214,7 +261,6 @@ const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 function playSynthNote({ midi, when, dur = 0.18 }) {
   if (audioMuted) return;
   ensureAudio();
-  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   if (!audioCtx || !masterGain) return;
   if (!Number.isFinite(midi)) return;
   const start = Math.max(when, audioCtx.currentTime);
@@ -247,20 +293,32 @@ function playSynthNote({ midi, when, dur = 0.18 }) {
   osc.stop(end + 0.05);
   harmonic.stop(end + 0.05);
 
+  let cleanupTimer = null;
+  const cleanup = () => {
+    if (voice.disposed) return;
+    voice.disposed = true;
+    if (cleanupTimer) clearTimeout(cleanupTimer);
+    [osc, harmonic, harmonicGain, gain].forEach(node => {
+      try { node.disconnect?.(); } catch (_) {}
+    });
+    activeVoices = activeVoices.filter(v => v !== voice);
+  };
+
   const voice = {
+    disposed: false,
     stop: () => {
+      if (voice.disposed) return;
       try { gain.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.01); } catch (_) {}
-      [osc, harmonic, harmonicGain, gain].forEach(node => {
+      [osc, harmonic].forEach(node => {
         try { node.stop?.(); } catch (_) {}
-        try { node.disconnect?.(); } catch (_) {}
       });
+      cleanup();
     }
   };
   activeVoices.push(voice);
-  setTimeout(() => {
-    voice.stop();
-    activeVoices = activeVoices.filter(v => v !== voice);
-  }, Math.max(0, (end - audioCtx.currentTime + 0.2) * 1000));
+  osc.onended = cleanup;
+  harmonic.onended = cleanup;
+  cleanupTimer = setTimeout(cleanup, Math.max(0, (end - audioCtx.currentTime + 0.2) * 1000));
 }
 
 function flashEl(el) {
@@ -320,7 +378,6 @@ function buildAscendingScaleMidis(pitchClasses) {
 function playSequence(notes, instrument, startTime, gap, token) {
   if (audioMuted) return startTime;
   ensureAudio();
-  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   if (!audioCtx || !masterGain) return startTime;
   let current = startTime;
   notes.forEach((note, idx) => {
@@ -337,7 +394,6 @@ function playSequence(notes, instrument, startTime, gap, token) {
 function playStrum(notes, instrument, startTime, gap, token) {
   if (audioMuted) return startTime;
   ensureAudio();
-  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   if (!audioCtx || !masterGain) return startTime;
   let current = startTime;
   notes.forEach((note, idx) => {
@@ -946,7 +1002,6 @@ function playTestPing() {
 function playChordTonesThenStrum(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
   ensureAudio();
-  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   const row = harmonyRows[rowIndex];
   if (!row) return;
   const effectiveMax = resolveMaxDegree(maxDegree);
@@ -965,7 +1020,6 @@ function playChordTonesThenStrum(rowIndex, maxDegree) {
 function playStrumOnly(rowIndex, maxDegree) {
   if (audioMuted || stripDragging) return;
   ensureAudio();
-  try { if (audioCtx && audioCtx.state !== "running") audioCtx.resume(); } catch (_) {}
   const row = harmonyRows[rowIndex];
   if (!row) return;
   const effectiveMax = resolveMaxDegree(maxDegree);
@@ -2320,10 +2374,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const soundToggle = document.getElementById("soundToggle");
   updateSoundToggleUI();
   if (soundToggle) {
-    soundToggle.addEventListener("click", async () => {
+    const handleToggle = async (e) => {
+      if (e?.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
+      if (e?.cancelable) e.preventDefault();
       if (audioMuted) {
         // Unmute: must be a user gesture to unlock audio.
-        const ok = await ensureAudioRunning();
+        const ok = await unlockAudioIfNeeded("unmute");
         if (!ok) {
           audioMuted = true;
           updateSoundToggleUI();
@@ -2345,8 +2401,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         updateSoundToggleUI();
       }
+    };
+    soundToggle.addEventListener("pointerdown", handleToggle);
+    soundToggle.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleToggle(e);
+      }
     });
   }
+
+  document.addEventListener("pointerdown", () => {
+    unlockAudioIfNeeded("first-unlock");
+  }, { once: true, passive: true });
 
   document.getElementById("random").addEventListener("click", () => {
     currentKeyIndex = Math.floor(Math.random() * KEY_OPTIONS.length);
