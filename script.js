@@ -2462,25 +2462,12 @@ document.addEventListener("DOMContentLoaded", () => {
             iosUnlockAttemptInFlight = false;
             return true;
           };
-          const start = performance.now();
-          audioMuted = false;
-          
-          updateSoundToggleUI();
           ensureAudio(); // ensures graph + gain reflect unmuted state
 
           unlockAudioIfNeeded("unmute").then((ok) => {
             if (!ok || audioMuted) return;
-
-            // Make sure gain is immediately correct
-            if (audioCtx && masterGain) {
-              masterGain.gain.setValueAtTime(
-                AUDIO_MASTER_GAIN,
-                audioCtx.currentTime
-              );
-            }
-
-            playTestPing();
-            maybePlayCurrentSelection("unmute");
+            // When the resume/play promise resolves, attempt to finalize once.
+            finalizeIfRunning();
           });
 
           setTimeout(() => {
