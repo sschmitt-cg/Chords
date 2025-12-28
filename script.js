@@ -111,6 +111,7 @@ let audioWarmupDone = false;
 let audioUnlockInFlight = null;
 let audioDiagnosticsLogged = { firstUnlock: false };
 let iosUnlockAttemptInFlight = false;
+let iosFirstPlaybackPending = true;
 let playbackToken = 0;
 let activeVoices = [];
 const AUDIO_MASTER_GAIN = 0.2;
@@ -717,7 +718,14 @@ function setupAudioControls() {
             if (audioCtx?.state !== "running") return false;
             if (!pinged) {
               pinged = true;
-              maybePlayCurrentSelection("unmute");
+              if (iosFirstPlaybackPending) {
+                iosFirstPlaybackPending = false;
+                setTimeout(() => {
+                  if (!audioMuted) maybePlayCurrentSelection("unmute");
+                }, 80);
+              } else {
+                maybePlayCurrentSelection("unmute");
+              }
             }
             iosUnlockAttemptInFlight = false;
             return true;
