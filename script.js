@@ -81,30 +81,6 @@ const enharmonicPreferenceByPc = {};
 let previewScaleOverride = null;
 let highlightRafPending = false;
 let pendingHighlightScale = null;
-let audioMuted = true;
-let audioCtx = null;
-let masterGain = null;
-let limiter = null;
-let audioMediaDest = null;
-let audioOutEl = null;
-let audioWarmupDone = false;
-let audioUnlockInFlight = null;
-let audioDiagnosticsLogged = { firstUnlock: false };
-let iosUnlockAttemptInFlight = false;
-let playbackToken = 0;
-let activeVoices = [];
-const AUDIO_MASTER_GAIN = 0.2;
-const FLASH_DURATION = 140;
-const SCALE_GAP = 0.22;
-const SCALE_DUR = 0.32;
-const NOTE_GAP  = 0.22;
-const NOTE_DUR  = 0.32;
-const CHORD_TONE_GAP = 0.18;
-const CHORD_TONE_DUR = 0.30;
-const STRUM_GAP = 0.02;
-const STRUM_DUR = 0.9;
-const MUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8l4 4m0 0l-4 4m4-4H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const UNMUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M17 9c1.333 1 2 2.333 2 4s-.667 3-2 4M15 11.5c.667.5 1 1.333 1 2.5s-.333 2-1 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const ENHARMONIC_OPTIONS = {
   1: { sharp: "C#", flat: "Db" },
   3: { sharp: "D#", flat: "Eb" },
@@ -124,18 +100,48 @@ const CHORD_CATEGORIES = [
 
 // -------------------- AUDIO ------------------------
 
+// Shared audio state and settings.
+let audioMuted = true;
+let audioCtx = null;
+let masterGain = null;
+let limiter = null;
+let audioMediaDest = null;
+let audioOutEl = null;
+let audioWarmupDone = false;
+let audioUnlockInFlight = null;
+let audioDiagnosticsLogged = { firstUnlock: false };
+let iosUnlockAttemptInFlight = false;
+let audioUnlockPingDone = false;
+let playbackToken = 0;
+let activeVoices = [];
+const AUDIO_MASTER_GAIN = 0.2;
+const FLASH_DURATION = 140;
+const SCALE_GAP = 0.22;
+const SCALE_DUR = 0.32;
+const NOTE_GAP  = 0.22;
+const NOTE_DUR  = 0.32;
+const CHORD_TONE_GAP = 0.18;
+const CHORD_TONE_DUR = 0.30;
+const STRUM_GAP = 0.02;
+const STRUM_DUR = 0.9;
+const MUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8l4 4m0 0l-4 4m4-4H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const UNMUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M17 9c1.333 1 2 2.333 2 4s-.667 3-2 4M15 11.5c.667.5 1 1.333 1 2.5s-.333 2-1 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// Platform checks influence how audio is routed/unlocked.
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 const isAndroid = () => /Android/i.test(navigator.userAgent);
 
 function platformLabel() {
+  // Compact label for diagnostics.
   if (isIOS()) return "ios";
   if (isAndroid()) return "android";
   return "other";
 }
 
 function ensureAudio() {
-  const Ctx = window.AudioContext || window.webkitAudioContext;
   if (!audioCtx) {
+    // Create the shared AudioContext and master graph once.
+    const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return false;
     try {
       audioCtx = new Ctx({ latencyHint: "interactive" });
@@ -143,6 +149,7 @@ function ensureAudio() {
       audioCtx = new Ctx();
     }
 
+    // Master gain + limiter keep the synth output controlled.
     masterGain = audioCtx.createGain();
     limiter = audioCtx.createDynamicsCompressor();
     limiter.threshold.setValueAtTime(-18, audioCtx.currentTime);
@@ -150,16 +157,11 @@ function ensureAudio() {
     limiter.ratio.setValueAtTime(12, audioCtx.currentTime);
     limiter.attack.setValueAtTime(0.003, audioCtx.currentTime);
     limiter.release.setValueAtTime(0.25, audioCtx.currentTime);
-
     masterGain.connect(limiter);
-  }
 
-  // (Re)wire outputs so iOS does NOT double-route audio.
-  // Non-iOS: limiter -> audioCtx.destination
-  // iOS:     limiter -> audioMediaDest (played by <audio id="audioOut">)
-  try { limiter && limiter.disconnect(); } catch (_) {}
-
-  if (audioCtx && limiter) {
+    // Wire outputs once so iOS does NOT double-route audio.
+    // Non-iOS: limiter -> audioCtx.destination
+    // iOS:     limiter -> audioMediaDest (played by <audio id="audioOut">)
     if (isIOS()) {
       if (!audioMediaDest) audioMediaDest = audioCtx.createMediaStreamDestination();
       try { limiter.connect(audioMediaDest); } catch (_) {}
@@ -168,6 +170,7 @@ function ensureAudio() {
     }
   }
 
+  // Apply current mute state immediately on the master gain.
   // Keep gain in sync with mute state (must reflect CURRENT audioMuted value).
   if (masterGain && audioCtx) {
     const target = audioMuted ? 0 : AUDIO_MASTER_GAIN;
@@ -179,6 +182,7 @@ function ensureAudio() {
 function logAudioDiagnostics(tag) {
   if (tag === "first-unlock" && audioDiagnosticsLogged.firstUnlock) return;
   if (tag === "first-unlock") audioDiagnosticsLogged.firstUnlock = true;
+  // Log minimal device/audio state to help debug unlock issues.
   const baseLatency = audioCtx?.baseLatency;
   const audioOutActive = Boolean(isIOS() && audioOutEl && audioMediaDest && audioOutEl.srcObject === audioMediaDest.stream);
   console.log("[audio]", {
@@ -200,6 +204,7 @@ function unlockAudioGestureSync(reason = "unmute") {
       audioOutEl.srcObject = audioMediaDest.stream;
     }
     if (audioOutEl) {
+      // iOS requires a real <audio> element to play a MediaStream.
       audioOutEl.playsInline = true;
       audioOutEl.autoplay = true;
       audioOutEl.muted = false;
@@ -228,36 +233,63 @@ function unlockAudioGestureSync(reason = "unmute") {
   }
 
   // One-time warmup to reduce Android/iOS first-note latency; routed through the same graph.
-  if (!audioWarmupDone) {
-    try {
-      const warmGain = audioCtx.createGain();
-      warmGain.gain.value = 0.0001;
-      warmGain.connect(masterGain);
-
-      const warmOsc = audioCtx.createOscillator();
-      warmOsc.type = "sine";
-      warmOsc.frequency.value = 440;
-
-      warmOsc.connect(warmGain);
-      warmOsc.start();
-      warmOsc.stop(audioCtx.currentTime + 0.03);
-      warmOsc.onended = () => {
-        try { warmOsc.disconnect(); } catch (_) {}
-        try { warmGain.disconnect(); } catch (_) {}
-      };
-
-      audioWarmupDone = true;
-    } catch (e) {
-      console.warn("audio warmup failed", e);
-    }
-  }
+  warmupAudioOnce("gesture");
 
   return true;
+}
+
+function warmupAudioOnce(source = "unknown") {
+  if (audioWarmupDone || !audioCtx) return;
+  try {
+    const warmGain = audioCtx.createGain();
+    warmGain.gain.value = 0.0001;
+    warmGain.connect(masterGain);
+
+    const warmOsc = audioCtx.createOscillator();
+    warmOsc.type = "sine";
+    warmOsc.frequency.value = source === "async" ? 220 : 440;
+
+    // Tiny blip through the master graph primes hardware output.
+    warmOsc.connect(warmGain);
+    warmOsc.start();
+    warmOsc.stop(audioCtx.currentTime + 0.03);
+    warmOsc.onended = () => {
+      try { warmOsc.disconnect(); } catch (_) {}
+      try { warmGain.disconnect(); } catch (_) {}
+    };
+
+    audioWarmupDone = true;
+  } catch (e) {
+    console.warn("audio warmup failed", e);
+  }
+}
+
+function playSilentUnlockPing() {
+  if (audioUnlockPingDone || !audioCtx || !masterGain) return;
+  try {
+    const pingGain = audioCtx.createGain();
+    pingGain.gain.value = 0.0001;
+    const pingOsc = audioCtx.createOscillator();
+    pingOsc.type = "sine";
+    pingOsc.frequency.value = 440;
+    pingOsc.connect(pingGain).connect(masterGain);
+    const now = audioCtx.currentTime;
+    pingOsc.start(now);
+    pingOsc.stop(now + 0.03);
+    pingOsc.onended = () => {
+      try { pingOsc.disconnect(); } catch (_) {}
+      try { pingGain.disconnect(); } catch (_) {}
+    };
+    audioUnlockPingDone = true;
+  } catch (e) {
+    console.warn("audio silent ping failed", e);
+  }
 }
 
 async function unlockAudioIfNeeded(reason = "first-unlock") {
   if (audioUnlockInFlight) return audioUnlockInFlight;
   audioUnlockInFlight = (async () => {
+    // Serialize unlock attempts to avoid multiple overlapping resumes.
     if (!ensureAudio() || !audioCtx) return false;
     if (isIOS()) {
       unlockAudioGestureSync(reason);
@@ -271,25 +303,8 @@ async function unlockAudioIfNeeded(reason = "first-unlock") {
         return false;
       }
     }
-    if (!audioWarmupDone) {
-      try {
-        const warmGain = audioCtx.createGain();
-        warmGain.gain.value = 0.0001;
-        const warmOsc = audioCtx.createOscillator();
-        warmOsc.frequency.value = 220;
-        warmOsc.connect(warmGain).connect(audioCtx.destination);
-        const now = audioCtx.currentTime;
-        warmOsc.start(now);
-        warmOsc.stop(now + 0.03);
-        warmOsc.onended = () => {
-          try { warmOsc.disconnect(); } catch (_) {}
-          try { warmGain.disconnect(); } catch (_) {}
-        };
-        audioWarmupDone = true;
-      } catch (e) {
-        console.warn("audio warmup failed", e);
-      }
-    }
+    warmupAudioOnce("async");
+    // Emit once-per-session diagnostics for debugging.
     logAudioDiagnostics(reason === "unmute" ? "unmute" : "first-unlock");
     return true;
   })();
@@ -302,14 +317,17 @@ async function unlockAudioIfNeeded(reason = "first-unlock") {
 
 
 function stopPlayback() {
+  // Bump token to cancel any scheduled flashes or notes.
   playbackToken += 1;
   if (masterGain && audioCtx) {
+    // Quick dip prevents clicks when stopping voices mid-envelope.
     const now = audioCtx.currentTime;
     masterGain.gain.cancelScheduledValues(now);
     masterGain.gain.setValueAtTime(masterGain.gain.value, now);
     masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
     masterGain.gain.exponentialRampToValueAtTime(AUDIO_MASTER_GAIN, now + 0.08);
   }
+  // Stop and clear any tracked oscillators.
   activeVoices.forEach(v => {
     try { v.stop(); } catch (_) {}
   });
@@ -317,6 +335,7 @@ function stopPlayback() {
   return playbackToken;
 }
 
+// MIDI note number to frequency in Hz.
 const midiToFreq = (midi) => 440 * Math.pow(2, (midi - 69) / 12);
 
 function playSynthNote({ midi, when, dur = 0.18 }) {
@@ -324,6 +343,7 @@ function playSynthNote({ midi, when, dur = 0.18 }) {
   ensureAudio();
   if (!audioCtx || !masterGain) return;
   if (!Number.isFinite(midi)) return;
+  // Build a single voice with a simple two-oscillator timbre.
   const start = Math.max(when, audioCtx.currentTime);
   const end = start + dur;
   const gain = audioCtx.createGain();
@@ -340,8 +360,10 @@ function playSynthNote({ midi, when, dur = 0.18 }) {
   harmonic.connect(harmonicGain).connect(gain);
   osc.connect(gain);
 
+  // Route through the master gain/limiter chain.
   gain.connect(masterGain);
 
+  // Simple ADSR-ish envelope for a plucked feel.
   const attack = 0.01;
   const decay = 0.18;
   const sustainLevel = 0.35;
@@ -349,6 +371,7 @@ function playSynthNote({ midi, when, dur = 0.18 }) {
   gain.gain.linearRampToValueAtTime(sustainLevel, start + attack + decay * 0.4);
   gain.gain.exponentialRampToValueAtTime(0.0001, end);
 
+  // Schedule oscillator lifetime and cleanup.
   osc.start(start);
   harmonic.start(start);
   osc.stop(end + 0.05);
@@ -365,6 +388,7 @@ function playSynthNote({ midi, when, dur = 0.18 }) {
     activeVoices = activeVoices.filter(v => v !== voice);
   };
 
+  // Track the voice so stopPlayback can cancel it early.
   const voice = {
     disposed: false,
     stop: () => {
@@ -384,6 +408,7 @@ function playSynthNote({ midi, when, dur = 0.18 }) {
 
 function flashEl(el) {
   if (!el) return;
+  // Visual pulse that mirrors the audio timing.
   el.classList.add("is-playing");
   setTimeout(() => el.classList.remove("is-playing"), FLASH_DURATION);
 }
@@ -395,6 +420,7 @@ function spelledNoteForPc(pc) {
 }
 
 function flashPitchClass(pc) {
+  // Flash the note label that matches the pitch class.
   const note = pcToSpelledFallback(pc);
   if (!note) return;
   const tiles = document.querySelectorAll(`.note-label[data-note="${note}"]`);
@@ -402,11 +428,13 @@ function flashPitchClass(pc) {
 }
 
 function flashTargets(pc, elements = []) {
+  // Flash both the note label and any instrument elements.
   flashPitchClass(pc);
   elements.forEach(flashEl);
 }
 
 function selectionPitchClass() {
+  // Only return a single pitch class when we're in note mode.
   if (selectedChordName && activeChordPitchClasses && activeChordPitchClasses.size) return null;
   if (selectedRootNote) return noteNameToPc(selectedRootNote);
   return null;
@@ -415,6 +443,7 @@ function selectionPitchClass() {
 function pcToSpelledFallback(pc) {
   const spelled = spelledNoteForPc(pc);
   if (spelled) return spelled;
+  // If the scale doesn't define the spelling, choose per key bias.
   const preferFlat = enharmonicPreferenceByPc[currentKeyPc] === "flat";
   const sharpMap = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
   const flatMap  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
@@ -423,6 +452,7 @@ function pcToSpelledFallback(pc) {
 
 function buildAscendingScaleMidis(pitchClasses) {
   if (!pitchClasses?.length) return [];
+  // Build an ascending MIDI list for the scale (one octave + return).
   const tonicPc = pitchClasses[0];
   let lastMidi = 60 + tonicPc;
   const midis = [lastMidi];
@@ -440,6 +470,7 @@ function playSequence(notes, instrument, startTime, gap, token) {
   if (audioMuted) return startTime;
   ensureAudio();
   if (!audioCtx || !masterGain) return startTime;
+  // Schedule notes at fixed intervals with matching visual flashes.
   let current = startTime;
   notes.forEach((note, idx) => {
     if (token !== playbackToken) return;
@@ -456,6 +487,7 @@ function playStrum(notes, instrument, startTime, gap, token) {
   if (audioMuted) return startTime;
   ensureAudio();
   if (!audioCtx || !masterGain) return startTime;
+  // Strum is just a faster sequence with longer per-note durations.
   let current = startTime;
   notes.forEach((note, idx) => {
     if (token !== playbackToken) return;
@@ -468,6 +500,7 @@ function playStrum(notes, instrument, startTime, gap, token) {
 }
 
 function collectChordElements(chordSet) {
+  // Gather keyboard + fretboard elements for a chord to flash during playback.
   const elements = Array.from(document.querySelectorAll("#keyboardVisualizer .key, #fretboardVisualizer .fret-note"))
     .filter(el => chordSet.has(Number(el.dataset.pc)));
   return elements
@@ -477,6 +510,7 @@ function collectChordElements(chordSet) {
 }
 
 function buildFretVoicing(chordSet) {
+  // Choose the lowest note per string for a simple guitar voicing.
   const perString = new Map();
   const notes = Array.from(document.querySelectorAll("#fretboardVisualizer .fret-note"));
   notes.forEach(n => {
@@ -495,6 +529,7 @@ function buildFretVoicing(chordSet) {
 }
 
 function buildKeyboardChordPlaybackList(chordSet, rootPc) {
+  // Order keyboard notes so the root is first and duplicates are removed.
   const chordKeys = Array.from(document.querySelectorAll("#keyboardVisualizer .key"))
     .filter(el => chordSet.has(Number(el.dataset.pc)))
     .map(el => ({ el, midi: Number(el.dataset.midi), pc: Number(el.dataset.pc) }))
@@ -539,6 +574,7 @@ function buildKeyboardChordPlaybackList(chordSet, rootPc) {
 }
 
 function parseChordRootPc() {
+  // Parse the root pitch class from the current chord label.
   if (!selectedChordName) return null;
   const m = selectedChordName.match(/^([A-G][b#x♯♭]{0,2})/);
   if (m) {
@@ -550,6 +586,7 @@ function parseChordRootPc() {
 
 function scheduleFlash(pc, targets = [], when, token) {
   if (!audioCtx) return;
+  // Convert audio time to wall-clock delay for UI highlight sync.
   const delayMs = Math.max(0, (when - audioCtx.currentTime) * 1000);
   setTimeout(() => {
     if (token !== playbackToken) return;
@@ -565,6 +602,7 @@ function maybePlayCurrentSelection(reason = "") {
   const type = getSelectionType();
   const baseStart = audioCtx.currentTime + 0.05;
 
+  // Scale playback: ascending scale with visual highlights.
   if (type === "scale") {
     const pcs = currentScale.pitchClasses;
     const midis = buildAscendingScaleMidis(pcs);
@@ -578,6 +616,7 @@ function maybePlayCurrentSelection(reason = "") {
     return;
   }
 
+  // Single-note playback: play each visible key for the selected pitch class.
   if (type === "note") {
     const pc = selectionPitchClass();
     if (pc === null) return;
@@ -593,6 +632,7 @@ function maybePlayCurrentSelection(reason = "") {
     return;
   }
 
+  // Chord playback: arpeggiate tones, then strum the full voicing.
   if (type === "chord") {
     const chordNotes = selectedChordNotes
       ? buildChordPlaybackMidisFromNotes(selectedChordNotes)
@@ -617,10 +657,168 @@ function maybePlayCurrentSelection(reason = "") {
 function updateSoundToggleUI() {
   const btn = document.getElementById("soundToggle");
   if (!btn) return;
+  // Reflect mute state in button styling and accessible label.
   btn.classList.toggle("is-unmuted", !audioMuted);
   btn.classList.toggle("is-muted", audioMuted);
   btn.setAttribute("aria-label", audioMuted ? "Unmute" : "Mute");
   btn.innerHTML = audioMuted ? MUTED_ICON : UNMUTED_ICON;
+}
+
+function playTestPing() {
+  // Quick short note to confirm audio output after unlock.
+  if (!audioCtx || !masterGain) return;
+  const token = stopPlayback();
+  const when = audioCtx.currentTime + 0.02;
+  playSynthNote({ midi: 69, when, dur: 0.05, instrument: "piano" });
+  playbackToken = token;
+}
+
+function playChordTonesThenStrum(rowIndex, maxDegree) {
+  if (audioMuted || stripDragging) return;
+  ensureAudio();
+  const row = harmonyRows[rowIndex];
+  if (!row) return;
+  const effectiveMax = resolveMaxDegree(maxDegree);
+  const notesStr = chordNotesStringForRow(row, effectiveMax);
+  if (!notesStr) return;
+  const notes = buildChordPlaybackMidisFromNotes(notesStr);
+  if (!notes.length) return;
+  // Arpeggiate tones, then strum the same voicing.
+  const token = stopPlayback();
+  const start = audioCtx?.currentTime ? audioCtx.currentTime + 0.05 : 0;
+  const seqNotes = notes.map(n => ({ ...n, dur: CHORD_TONE_DUR }));
+  const lastTime = playSequence(seqNotes, "piano", start, CHORD_TONE_GAP, token);
+  const strumNotes = notes.map(n => ({ ...n, dur: STRUM_DUR }));
+  playStrum(strumNotes, "piano", lastTime + 0.08, STRUM_GAP, token);
+}
+
+function playStrumOnly(rowIndex, maxDegree) {
+  if (audioMuted || stripDragging) return;
+  ensureAudio();
+  const row = harmonyRows[rowIndex];
+  if (!row) return;
+  const effectiveMax = resolveMaxDegree(maxDegree);
+  const notesStr = chordNotesStringForRow(row, effectiveMax);
+  if (!notesStr) return;
+  const notes = buildChordPlaybackMidisFromNotes(notesStr);
+  if (!notes.length) return;
+  // Strum the chord without the lead-in arpeggio.
+  const token = stopPlayback();
+  const start = audioCtx?.currentTime ? audioCtx.currentTime + 0.05 : 0;
+  const strumNotes = notes.map(n => ({ ...n, dur: STRUM_DUR }));
+  playStrum(strumNotes, "piano", start, STRUM_GAP, token);
+}
+
+function setupAudioControls() {
+  // Wire up the sound toggle button and initial unlock gesture.
+  const soundToggle = document.getElementById("soundToggle");
+  updateSoundToggleUI();
+  if (soundToggle) {
+    let lastToggleTs = 0;
+    const handleToggle = async (e) => {
+      if (e?.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
+      const now = performance.now();
+      if (now - lastToggleTs < 250) return;
+      lastToggleTs = now;
+      if (!isIOS() && e?.type !== "touchstart" && e?.cancelable) e.preventDefault();
+      if (audioMuted) {
+        // Unmute: must be a user gesture to unlock audio.
+        if (isIOS()) {
+          if (iosUnlockAttemptInFlight) return;
+          iosUnlockAttemptInFlight = true;
+          let pinged = false;
+          unlockAudioGestureSync("unmute");
+          audioMuted = false;
+          updateSoundToggleUI();
+          if (masterGain && audioCtx) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
+          playSilentUnlockPing();
+          const finalizeIfRunning = () => {
+            if (audioCtx?.state !== "running") return false;
+            if (!pinged) {
+              pinged = true;
+              maybePlayCurrentSelection("unmute");
+            }
+            iosUnlockAttemptInFlight = false;
+            return true;
+          };
+          ensureAudio(); // ensures graph + gain reflect unmuted state
+
+          unlockAudioIfNeeded("unmute").then((ok) => {
+            if (!ok || audioMuted) return;
+            // When the resume/play promise resolves, attempt to finalize once.
+            finalizeIfRunning();
+          });
+
+          setTimeout(() => {
+            if (finalizeIfRunning()) return;
+            unlockAudioGestureSync("retry");
+          }, 350);
+          setTimeout(() => {
+            if (finalizeIfRunning()) return;
+            console.warn("iOS unlock still not running", {
+              state: audioCtx?.state || "none",
+              audioOutEl: Boolean(audioOutEl),
+              audioOutStream: Boolean(audioOutEl && audioOutEl.srcObject)
+            });
+          }, 900);
+          setTimeout(() => {
+            iosUnlockAttemptInFlight = false;
+          }, 1000);
+          return;
+        }
+        audioMuted = false;
+        updateSoundToggleUI();
+        const ok = await unlockAudioIfNeeded("unmute");
+        if (!ok) {
+          audioMuted = true;
+          updateSoundToggleUI();
+          return;
+        }
+        // Sync gain now that we're unmuted.
+        if (masterGain) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
+        updateSoundToggleUI();
+        playTestPing();
+        maybePlayCurrentSelection("unmute");
+      } else {
+        // Mute
+        audioMuted = true;
+        stopPlayback();
+        if (masterGain && audioCtx) masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        if (audioOutEl && !audioOutEl.paused) {
+          try { audioOutEl.pause(); } catch (_) {}
+        }
+        updateSoundToggleUI();
+      }
+    };
+    // Sound toggle: avoid duplicate firing on iOS/touch devices (touchstart -> click ghost).
+    // We attach exactly ONE primary gesture listener:
+    // - iOS / touch devices: touchstart (passive:false) so we can preventDefault and stop the follow-up click.
+    // - non-touch: pointerdown for snappy desktop behavior.
+    const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+    if (isIOS() || isTouchDevice) {
+      soundToggle.addEventListener("touchstart", (e) => {
+        // Prevent the synthetic click that follows a touch on iOS/Safari.
+        if (e.cancelable) e.preventDefault();
+        e.stopPropagation();
+        handleToggle(e);
+      }, { passive: false });
+    } else {
+      soundToggle.addEventListener("pointerdown", handleToggle);
+    }
+
+    // Keyboard accessibility
+    soundToggle.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleToggle(e);
+      }
+    });
+  }
+
+  // First interaction primes audio unlock on platforms that require it.
+  document.addEventListener("pointerdown", () => {
+    unlockAudioIfNeeded("first-unlock");
+  }, { once: true, passive: true });
 }
 
 // -------------------- HELPERS ------------------------
@@ -1051,48 +1249,6 @@ const getRowMax = (rowIndex) => {
   if (override) return override;
   return globalHarmonyMax;
 };
-
-function playTestPing() {
-  if (!audioCtx || !masterGain) return;
-  const token = stopPlayback();
-  const when = audioCtx.currentTime + 0.02;
-  playSynthNote({ midi: 69, when, dur: 0.05, instrument: "piano" });
-  playbackToken = token;
-}
-
-function playChordTonesThenStrum(rowIndex, maxDegree) {
-  if (audioMuted || stripDragging) return;
-  ensureAudio();
-  const row = harmonyRows[rowIndex];
-  if (!row) return;
-  const effectiveMax = resolveMaxDegree(maxDegree);
-  const notesStr = chordNotesStringForRow(row, effectiveMax);
-  if (!notesStr) return;
-  const notes = buildChordPlaybackMidisFromNotes(notesStr);
-  if (!notes.length) return;
-  const token = stopPlayback();
-  const start = audioCtx?.currentTime ? audioCtx.currentTime + 0.05 : 0;
-  const seqNotes = notes.map(n => ({ ...n, dur: CHORD_TONE_DUR }));
-  const lastTime = playSequence(seqNotes, "piano", start, CHORD_TONE_GAP, token);
-  const strumNotes = notes.map(n => ({ ...n, dur: STRUM_DUR }));
-  playStrum(strumNotes, "piano", lastTime + 0.08, STRUM_GAP, token);
-}
-
-function playStrumOnly(rowIndex, maxDegree) {
-  if (audioMuted || stripDragging) return;
-  ensureAudio();
-  const row = harmonyRows[rowIndex];
-  if (!row) return;
-  const effectiveMax = resolveMaxDegree(maxDegree);
-  const notesStr = chordNotesStringForRow(row, effectiveMax);
-  if (!notesStr) return;
-  const notes = buildChordPlaybackMidisFromNotes(notesStr);
-  if (!notes.length) return;
-  const token = stopPlayback();
-  const start = audioCtx?.currentTime ? audioCtx.currentTime + 0.05 : 0;
-  const strumNotes = notes.map(n => ({ ...n, dur: STRUM_DUR }));
-  playStrum(strumNotes, "piano", start, STRUM_GAP, token);
-}
 
 let harmonyGridAnimationTimer = null;
 
@@ -2432,113 +2588,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const soundToggle = document.getElementById("soundToggle");
-  updateSoundToggleUI();
-  if (soundToggle) {
-    let lastToggleTs = 0;
-    const handleToggle = async (e) => {
-      if (e?.type === "pointerdown" && e.button !== undefined && e.button !== 0) return;
-      const now = performance.now();
-      if (now - lastToggleTs < 250) return;
-      lastToggleTs = now;
-      if (!isIOS() && e?.type !== "touchstart" && e?.cancelable) e.preventDefault();
-      if (audioMuted) {
-        // Unmute: must be a user gesture to unlock audio.
-        if (isIOS()) {
-          if (iosUnlockAttemptInFlight) return;
-          iosUnlockAttemptInFlight = true;
-          let pinged = false;
-          unlockAudioGestureSync("unmute");
-          audioMuted = false;
-          updateSoundToggleUI();
-          if (masterGain && audioCtx) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-          const finalizeIfRunning = () => {
-            if (audioCtx?.state !== "running") return false;
-            if (!pinged) {
-              pinged = true;
-              playTestPing();
-              maybePlayCurrentSelection("unmute");
-            }
-            iosUnlockAttemptInFlight = false;
-            return true;
-          };
-          ensureAudio(); // ensures graph + gain reflect unmuted state
-
-          unlockAudioIfNeeded("unmute").then((ok) => {
-            if (!ok || audioMuted) return;
-            // When the resume/play promise resolves, attempt to finalize once.
-            finalizeIfRunning();
-          });
-
-          setTimeout(() => {
-            if (finalizeIfRunning()) return;
-            unlockAudioGestureSync("retry");
-          }, 350);
-          setTimeout(() => {
-            if (finalizeIfRunning()) return;
-            console.warn("iOS unlock still not running", {
-              state: audioCtx?.state || "none",
-              audioOutEl: Boolean(audioOutEl),
-              audioOutStream: Boolean(audioOutEl && audioOutEl.srcObject)
-            });
-          }, 900);
-          setTimeout(() => {
-            iosUnlockAttemptInFlight = false;
-          }, 1000);
-          return;
-        }
-        audioMuted = false;
-        updateSoundToggleUI();
-        const ok = await unlockAudioIfNeeded("unmute");
-        if (!ok) {
-          audioMuted = true;
-          updateSoundToggleUI();
-          return;
-        }
-        // Sync gain now that we're unmuted.
-        if (masterGain) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-        updateSoundToggleUI();
-        playTestPing();
-        maybePlayCurrentSelection("unmute");
-      } else {
-        // Mute
-        audioMuted = true;
-        stopPlayback();
-        if (masterGain && audioCtx) masterGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        if (audioOutEl && !audioOutEl.paused) {
-          try { audioOutEl.pause(); } catch (_) {}
-        }
-        updateSoundToggleUI();
-      }
-    };
-    // Sound toggle: avoid duplicate firing on iOS/touch devices (touchstart -> click ghost).
-    // We attach exactly ONE primary gesture listener:
-    // - iOS / touch devices: touchstart (passive:false) so we can preventDefault and stop the follow-up click.
-    // - non-touch: pointerdown for snappy desktop behavior.
-    const isTouchDevice = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
-    if (isIOS() || isTouchDevice) {
-      soundToggle.addEventListener("touchstart", (e) => {
-        // Prevent the synthetic click that follows a touch on iOS/Safari.
-        if (e.cancelable) e.preventDefault();
-        e.stopPropagation();
-        handleToggle(e);
-      }, { passive: false });
-    } else {
-      soundToggle.addEventListener("pointerdown", handleToggle);
-    }
-
-    // Keyboard accessibility
-    soundToggle.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        handleToggle(e);
-      }
-    });
-  }
-
-  document.addEventListener("pointerdown", () => {
-    unlockAudioIfNeeded("first-unlock");
-  }, { once: true, passive: true });
+  setupAudioControls();
 
   document.getElementById("random").addEventListener("click", () => {
     currentKeyIndex = Math.floor(Math.random() * KEY_OPTIONS.length);
