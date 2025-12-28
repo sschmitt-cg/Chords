@@ -111,7 +111,6 @@ let audioWarmupDone = false;
 let audioUnlockInFlight = null;
 let audioDiagnosticsLogged = { firstUnlock: false };
 let iosUnlockAttemptInFlight = false;
-let audioUnlockPingDone = false;
 let playbackToken = 0;
 let activeVoices = [];
 const AUDIO_MASTER_GAIN = 0.2;
@@ -261,28 +260,6 @@ function warmupAudioOnce(source = "unknown") {
     audioWarmupDone = true;
   } catch (e) {
     console.warn("audio warmup failed", e);
-  }
-}
-
-function playUnlockPing({ audible = false } = {}) {
-  if (audioUnlockPingDone || !audioCtx || !masterGain) return;
-  try {
-    const pingGain = audioCtx.createGain();
-    pingGain.gain.value = audible ? 0.08 : 0.0001;
-    const pingOsc = audioCtx.createOscillator();
-    pingOsc.type = "sine";
-    pingOsc.frequency.value = 440;
-    pingOsc.connect(pingGain).connect(masterGain);
-    const now = audioCtx.currentTime;
-    pingOsc.start(now);
-    pingOsc.stop(now + 0.03);
-    pingOsc.onended = () => {
-      try { pingOsc.disconnect(); } catch (_) {}
-      try { pingGain.disconnect(); } catch (_) {}
-    };
-    audioUnlockPingDone = true;
-  } catch (e) {
-    console.warn("audio unlock ping failed", e);
   }
 }
 
@@ -730,13 +707,17 @@ function setupAudioControls() {
           unlockAudioGestureSync("unmute");
           audioMuted = false;
           updateSoundToggleUI();
-          if (masterGain && audioCtx) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
-          playUnlockPing({ audible: true });
-          maybePlayCurrentSelection("unmute");
+          if (masterGain && audioCtx) {
+            const now = audioCtx.currentTime;
+            masterGain.gain.cancelScheduledValues(now);
+            masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+            masterGain.gain.linearRampToValueAtTime(AUDIO_MASTER_GAIN, now + 0.05);
+          }
           const finalizeIfRunning = () => {
             if (audioCtx?.state !== "running") return false;
             if (!pinged) {
               pinged = true;
+              maybePlayCurrentSelection("unmute");
             }
             iosUnlockAttemptInFlight = false;
             return true;
@@ -752,7 +733,7 @@ function setupAudioControls() {
           setTimeout(() => {
             if (finalizeIfRunning()) return;
             unlockAudioGestureSync("retry");
-          }, 350);
+          }, 100);
           setTimeout(() => {
             if (finalizeIfRunning()) return;
             console.warn("iOS unlock still not running", {
@@ -775,7 +756,12 @@ function setupAudioControls() {
           return;
         }
         // Sync gain now that we're unmuted.
-        if (masterGain) masterGain.gain.setValueAtTime(AUDIO_MASTER_GAIN, audioCtx.currentTime);
+        if (masterGain && audioCtx) {
+          const now = audioCtx.currentTime;
+          masterGain.gain.cancelScheduledValues(now);
+          masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+          masterGain.gain.linearRampToValueAtTime(AUDIO_MASTER_GAIN, now + 0.05);
+        }
         updateSoundToggleUI();
         playTestPing();
         maybePlayCurrentSelection("unmute");
