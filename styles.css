@@ -192,6 +192,10 @@ body {
   color: #7b81a8;
 }
 
+.harmony-strip-label {
+  font-weight: 700;
+}
+
 .scale-stack {
   display: grid;
   gap: 8px;
@@ -481,8 +485,9 @@ button:active {
 
 .harmony-card {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   align-self: stretch;
+  padding: 10px;
 }
 
 .harmony-header {
@@ -517,22 +522,26 @@ button:active {
 
 .harmony-grid-shell {
   border: 1px solid #e3e7fb;
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   background: #ffffff;
 }
 
 .harmony-grid {
   overflow-x: auto;
-  --rn-col: 62px;
-  --chord-col: 120px;
-  --tone-col: 52px;
+  --rn-col-min: 50px;
+  --chord-col-min: 120px;
+  --tone-col-min: 46px;
+  --harmony-base-fill: 42%;
+  --harmony-active-fill: 75%;
+  --harmony-ghost-fill: 18%;
   position: relative;
+  width: 100%;
 }
 
 .harmony-grid-header {
   display: grid;
-  grid-template-columns: var(--rn-col) var(--chord-col) repeat(var(--tone-count, 4), var(--tone-col));
+  grid-template-columns: minmax(var(--rn-col-min), 0.8fr) minmax(var(--chord-col-min), 1.6fr) repeat(var(--tone-count, 4), minmax(var(--tone-col-min), 1fr));
   position: sticky;
   top: 0;
   background: linear-gradient(180deg, #fdfdff, #f1f3ff);
@@ -540,8 +549,8 @@ button:active {
 }
 
 .harmony-grid-header .h-cell {
-  padding: 4px 6px;
-  font-size: 11px;
+  padding: 2px 4px;
+  font-size: 10px;
   font-weight: 700;
   text-align: center;
   color: #4b5074;
@@ -611,9 +620,10 @@ button:active {
 
 .harmony-row {
   display: grid;
-  grid-template-columns: var(--rn-col) var(--chord-col) repeat(var(--tone-count, 4), var(--tone-col));
+  grid-template-columns: minmax(var(--rn-col-min), 0.8fr) minmax(var(--chord-col-min), 1.6fr) repeat(var(--tone-count, 4), minmax(var(--tone-col-min), 1fr));
   align-items: stretch;
   border-bottom: 1px solid #e8ecff;
+  position: relative;
 }
 
 .harmony-row:last-child {
@@ -632,7 +642,7 @@ button:active {
 }
 
 .h-cell, .harmony-cell {
-  padding: 1px 2px;
+  padding: 0 2px;
   text-align: center;
   position: relative;
   border-radius: 8px;
@@ -716,8 +726,7 @@ button:active {
   text-overflow: ellipsis;
 }
 
-.harmony-cell.is-note-selected .pc-band,
-.harmony-row.is-selected .pc-band {
+.harmony-cell.is-note-selected .pc-band {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--pc-color, #5568ff) 65%, transparent);
 }
 
@@ -788,9 +797,6 @@ button:active {
   z-index: 3;
 }
 
-.harmony-grid .harmony-row.is-selected {
-  background: rgba(0, 0, 0, 0.03);
-}
 
 .filter-status {
   font-size: 12px;
@@ -1498,10 +1504,13 @@ button:active {
 /* Remove pill look; make the whole cell carry the color */
 .harmony-cell.tone-cell {
   padding: 0 !important;
-  background: color-mix(in srgb, var(--pc-color) 42%, transparent);
+  background: color-mix(in srgb, var(--pc-color) var(--harmony-base-fill), transparent);
+}
+.harmony-cell.tone-cell.is-visible {
+  background: color-mix(in srgb, var(--pc-color) var(--harmony-active-fill), transparent);
 }
 .harmony-cell.tone-cell.is-ghost {
-  background: color-mix(in srgb, var(--pc-color) 18%, transparent);
+  background: color-mix(in srgb, var(--pc-color) var(--harmony-ghost-fill), transparent);
 }
 
 /* Inner band becomes just centered text; no background/border */
@@ -1519,16 +1528,34 @@ button:active {
   box-shadow: none;
 }
 
+/* Avoid tone-root/tone-tone overlays inside the harmony grid. */
+.harmony-grid .pc-band.tone-root,
+.harmony-grid .pc-band.tone-tone {
+  background: transparent !important;
+  box-shadow: none;
+  color: inherit;
+}
+
 /* Keep selection emphasis via outline, but don't shrink content */
-.harmony-cell.is-note-selected,
-.harmony-row.is-selected .harmony-cell.tone-cell.is-visible {
+.harmony-cell.is-note-selected {
   outline: 2px solid color-mix(in srgb, var(--pc-color) 55%, #2c58ff);
   outline-offset: -2px;
 }
 
+.harmony-row-outline {
+  grid-row: 1;
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  pointer-events: none;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--row-color, #5568ff) 55%, #2c58ff);
+  z-index: 3;
+}
+
 /* Chord column should also be a full-cell color block */
 .harmony-cell.chord-cell {
-  background: color-mix(in srgb, var(--pc-color) 52%, transparent) !important;
+  background: color-mix(in srgb, var(--pc-color) var(--harmony-active-fill), transparent);
 }
 .harmony-cell.chord-cell .pc-band {
   font-weight: 700;
@@ -1537,12 +1564,12 @@ button:active {
 
 /* Roman numeral column stays plain and tight */
 .harmony-cell.rn-cell {
-  padding: 0 10px !important;
+  padding: 0 6px !important;
 }
 
 /* Slightly reduce row height for density */
 .harmony-row .harmony-cell {
-  min-height: 46px;
+  min-height: 40px;
 }
 
 @media (hover: hover) {
@@ -1578,15 +1605,31 @@ button:active {
     padding: 14px;
   }
 
+  .harmony-card {
+    padding: 10px;
+  }
+
   .harmony-strip {
     display: flex;
   }
 
+  #keymodeStrip {
+    display: none;
+  }
+
   body.mobile-panel-keymode #harmonyStrip {
+    display: flex;
+  }
+
+  body.mobile-panel-keymode #keymodeStrip {
     display: none;
   }
 
   body.mobile-panel-harmony #harmonyStrip {
+    display: none;
+  }
+
+  body.mobile-panel-harmony #keymodeStrip {
     display: flex;
   }
 
@@ -1617,8 +1660,12 @@ button:active {
   }
 
   body.mobile-panel-keymode #harmonyContainer {
-    max-height: 120px;
-    opacity: 1;
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-6px);
+    padding: 0;
+    border-width: 0;
+    margin: 0;
   }
 
   body.mobile-panel-harmony #harmonyContainer {
@@ -1627,14 +1674,14 @@ button:active {
   }
 
   .harmony-grid {
-    --rn-col: 58px;
-    --chord-col: 124px;
-    --tone-col: 42px;
+    --rn-col-min: 48px;
+    --chord-col-min: 124px;
+    --tone-col-min: 40px;
   }
 
   .harmony-grid-header .h-cell,
   .h-cell, .harmony-cell {
-    padding: 3px;
+    padding: 2px;
   }
 
   .harmony-cell .pc-band,
@@ -1787,9 +1834,9 @@ button:active {
 
   /* tighter columns so 13 fits on desktop */
   .harmony-grid {
-    --rn-col: 54px;
-    --chord-col: 150px;
-    --tone-col: 46px;
+    --rn-col-min: 46px;
+    --chord-col-min: 150px;
+    --tone-col-min: 42px;
     border-radius: 22px;
     overflow: hidden;
   }
