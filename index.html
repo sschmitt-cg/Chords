@@ -45,8 +45,8 @@
 
         <section id="outputArea" class="output-panel">
             <div id="mainContainer" class="main-grid">
-                <div id="harmonyStrip" class="harmony-strip" role="button" tabindex="0" aria-label="Open key and mode selector">
-                    <span id="harmonyStripLabel"></span>
+                <div id="keymodeStrip" class="harmony-strip" role="button" tabindex="0" aria-label="Open key and mode selector">
+                    <span id="keymodeStripLabel" class="harmony-strip-label">Key &amp; Mode</span>
                     <span class="harmony-strip-hint">Tap to change key/mode</span>
                 </div>
                 <div id="instrumentContainer" class="card instruments-card">
@@ -55,14 +55,11 @@
                         <div id="fretboardVisualizer" class="instrument fretboard" aria-label="Guitar fretboard"></div>
                     </div>
                 </div>
+                <div id="harmonyStrip" class="harmony-strip" role="button" tabindex="0" aria-label="Open Harmony Explorer">
+                    <span id="harmonyStripLabel">Harmony Explorer</span>
+                    <span class="harmony-strip-hint">Tap to explore chords in this key</span>
+                </div>
                 <div id="harmonyContainer" class="card harmony-card">
-                    <div class="harmony-header">
-                        <div class="harmony-top-row">
-                            <div class="harmony-keymode" id="harmonyKeyMode"></div>
-                            <div class="harmony-actions">
-                            </div>
-                        </div>
-                    </div>
                     <div class="harmony-grid-shell">
                         <div class="harmony-grid" id="harmonyGrid" role="grid" aria-label="Harmony Explorer grid">
                             <div class="harmony-grid-header" id="harmonyGridHeader"></div>

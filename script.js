@@ -1288,9 +1288,11 @@ function renderHarmonyGrid(scaleOverride = null, options = {}) {
     const chordLabel = chordNameForRow(row, rowMax);
     const chordColor = pcColor(root?.pc ?? currentKeyPc);
     const chordPcStyle = `style="--pc-color:${chordColor}; --deg-color:${chordColor}"`;
+    const rowStyle = `style="--row-color:${chordColor}"`;
+    const isRootSelectedNote = selectedExplorerNotePc !== null && root?.pc === selectedExplorerNotePc;
     const cells = [
       `<div class="harmony-cell sticky-col rn-cell" data-row-index="${row.index}" role="gridcell"><span class="degree">${row.degree}</span></div>`,
-      `<div class="harmony-cell sticky-col chord-cell tone-cell pc-${root?.pc ?? 0}" data-row-index="${row.index}" data-pc="${root?.pc ?? ""}" data-degree="${rowMax}" role="gridcell" ${chordPcStyle}><div class="pc-band tone-root">${chordLabel}</div></div>`,
+      `<div class="harmony-cell sticky-col chord-cell tone-cell pc-${root?.pc ?? 0} ${isRootSelectedNote ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${root?.pc ?? ""}" data-degree="${rowMax}" role="gridcell" ${chordPcStyle}><div class="pc-band tone-root">${chordLabel}</div></div>`,
       ...toneColumns.map((col) => {
         const note = row.notes.find(n => n.label === col.label) || null;
         const targetDegree = col.degree;
@@ -1312,15 +1314,43 @@ function renderHarmonyGrid(scaleOverride = null, options = {}) {
         </div>`;
       })
     ].join("");
-    return `<div class="harmony-row${isSelected ? " is-selected" : ""}" data-row-index="${row.index}" role="row">${cells}</div>`;
+    return `<div class="harmony-row${isSelected ? " is-selected" : ""}" data-row-index="${row.index}" role="row" ${rowStyle}>${cells}</div>`;
   }).join("");
 
   if (options.animate) animateHarmonyGrid(bodyEl);
+  updateHarmonyRowOutline(bodyEl);
+}
+
+function updateHarmonyRowOutline(bodyEl) {
+  const row = bodyEl.querySelector(".harmony-row.is-selected");
+  const existing = bodyEl.querySelector(".harmony-row-outline");
+  if (!row) {
+    if (existing) existing.remove();
+    return;
+  }
+  const chordCell = row.querySelector(".harmony-cell.chord-cell");
+  const visibleTones = row.querySelectorAll(".harmony-cell.tone-cell.is-visible");
+  const lastTone = visibleTones.length ? visibleTones[visibleTones.length - 1] : null;
+  if (!chordCell || !lastTone) {
+    if (existing) existing.remove();
+    return;
+  }
+  const rowRect = row.getBoundingClientRect();
+  const startRect = chordCell.getBoundingClientRect();
+  const endRect = lastTone.getBoundingClientRect();
+  const left = Math.max(0, startRect.left - rowRect.left);
+  const width = Math.max(0, endRect.right - startRect.left);
+  const outline = existing || document.createElement("div");
+  outline.className = "harmony-row-outline";
+  outline.style.left = `${left}px`;
+  outline.style.width = `${width}px`;
+  if (!existing) row.appendChild(outline);
 }
 
 function selectHarmonyChord(rowIndex) {
   const row = harmonyRows.find(r => r.index === rowIndex);
   if (!row) return;
+  selectedExplorerNotePc = null;
   selectedHarmonyChordIndex = rowIndex;
   const rowMaxSetting = getRowMax(rowIndex);
   const rowMax = resolveMaxDegree(rowMaxSetting);
@@ -1369,10 +1399,12 @@ function selectExplorerNote(pc) {
 function applyMobilePanelState() {
   if (!isMobile) {
     document.body.classList.remove("mobile-panel-keymode", "mobile-panel-harmony");
+    updateHarmonyStripUI();
     return;
   }
   document.body.classList.remove("mobile-panel-keymode", "mobile-panel-harmony");
   document.body.classList.add(mobileActivePanel === "harmony" ? "mobile-panel-harmony" : "mobile-panel-keymode");
+  updateHarmonyStripUI();
 }
 
 function setMobilePanel(panel) {
@@ -1383,12 +1415,20 @@ function setMobilePanel(panel) {
 
 function updateHarmonyKeyModeLabel() {
   const labelEl = document.getElementById("harmonyKeyMode");
-  const stripEl = document.getElementById("harmonyStripLabel");
+  const stripLabel = document.getElementById("keymodeStripLabel");
   const modeName = MODE_NAMES[currentModeIndex] || "";
   const keyLabelStr = keyLabel(currentKeyIndex);
   const text = `${keyLabelStr} ${modeName}`;
   if (labelEl) labelEl.textContent = text;
-  if (stripEl) stripEl.textContent = text;
+  if (stripLabel) stripLabel.textContent = text;
+  updateHarmonyStripUI();
+}
+
+function updateHarmonyStripUI() {
+  const stripLabel = document.getElementById("harmonyStripLabel");
+  const stripHint = document.querySelector("#harmonyStrip .harmony-strip-hint");
+  if (stripLabel) stripLabel.textContent = "Harmony Explorer";
+  if (stripHint) stripHint.textContent = "Tap to explore chords in this key";
 }
 
 // -------------------- CHORD ANALYSIS ------------------------
@@ -2525,6 +2565,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!audioMuted) playChordTonesThenStrum(rowIdx, targetMax);
     });
   }
+  const harmonyGrid = document.getElementById("harmonyGrid");
+  if (harmonyGrid && harmonyBody) {
+    harmonyGrid.addEventListener("scroll", () => updateHarmonyRowOutline(harmonyBody), { passive: true });
+    window.addEventListener("resize", () => updateHarmonyRowOutline(harmonyBody));
+  }
 
   const harmonyHeader = document.getElementById("harmonyGridHeader");
   const setGlobalDepth = (level) => {
@@ -2573,10 +2618,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   const harmonyStrip = document.getElementById("harmonyStrip");
   if (harmonyStrip) {
-    harmonyStrip.addEventListener("click", () => setMobilePanel("keymode"));
+    harmonyStrip.addEventListener("click", () => {
+      if (!isMobile) return;
+      setMobilePanel("harmony");
+    });
     harmonyStrip.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
+        if (!isMobile) return;
+        setMobilePanel("harmony");
+      }
+    });
+  }
+
+  const keymodeStrip = document.getElementById("keymodeStrip");
+  if (keymodeStrip) {
+    keymodeStrip.addEventListener("click", () => {
+      if (!isMobile) return;
+      setMobilePanel("keymode");
+    });
+    keymodeStrip.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (!isMobile) return;
         setMobilePanel("keymode");
       }
     });
