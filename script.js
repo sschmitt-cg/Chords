@@ -126,6 +126,26 @@ const STRUM_GAP = 0.02;
 const STRUM_DUR = 0.9;
 const MUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8l4 4m0 0l-4 4m4-4H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const UNMUTED_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M17 9c1.333 1 2 2.333 2 4s-.667 3-2 4M15 11.5c.667.5 1 1.333 1 2.5s-.333 2-1 2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const METRONOME_DEFAULT_BPM = 120;
+const metronomeState = {
+  bpm: METRONOME_DEFAULT_BPM,
+  beatUnit: 4,
+  beatsPerBar: 4,
+  accent: true,
+  isRunning: false,
+  intervalId: null,
+  nextTickTime: 0,
+  beatIndex: 0,
+  tapTimes: []
+};
+const tunerState = {
+  isRunning: false,
+  stream: null,
+  source: null,
+  analyser: null,
+  data: null,
+  rafId: null
+};
 
 // Platform checks influence how audio is routed/unlocked.
 const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -642,6 +662,18 @@ function updateSoundToggleUI() {
   btn.innerHTML = audioMuted ? MUTED_ICON : UNMUTED_ICON;
 }
 
+function setAudioMutedState(nextMuted) {
+  audioMuted = Boolean(nextMuted);
+  if (masterGain && audioCtx) {
+    const now = audioCtx.currentTime;
+    const target = audioMuted ? 0 : AUDIO_MASTER_GAIN;
+    masterGain.gain.cancelScheduledValues(now);
+    masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+    masterGain.gain.linearRampToValueAtTime(target, now + 0.05);
+  }
+  updateSoundToggleUI();
+}
+
 function playTestPing() {
   // Quick short note to confirm audio output after unlock.
   if (!audioCtx || !masterGain) return;
@@ -685,6 +717,227 @@ function playStrumOnly(rowIndex, maxDegree) {
   const start = audioCtx?.currentTime ? audioCtx.currentTime + 0.05 : 0;
   const strumNotes = notes.map(n => ({ ...n, dur: STRUM_DUR }));
   playStrum(strumNotes, "piano", start, STRUM_GAP, token);
+}
+
+// -------------------- METRONOME / TUNER ------------------------
+
+const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+
+function getBeatDuration() {
+  const beatUnit = metronomeState.beatUnit || 4;
+  return (60 / metronomeState.bpm) * (4 / beatUnit);
+}
+
+function scheduleMetronomeTick(time, isDownbeat) {
+  if (!audioCtx || !masterGain) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const freq = isDownbeat && metronomeState.accent ? 880 : 440;
+  osc.frequency.setValueAtTime(freq, time);
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.exponentialRampToValueAtTime(0.4, time + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.08);
+  osc.connect(gain).connect(masterGain);
+  osc.start(time);
+  osc.stop(time + 0.1);
+  osc.onended = () => {
+    try { osc.disconnect(); } catch (_) {}
+    try { gain.disconnect(); } catch (_) {}
+  };
+}
+
+function metronomeScheduler() {
+  if (!audioCtx) return;
+  const lookahead = 0.2;
+  while (metronomeState.nextTickTime < audioCtx.currentTime + lookahead) {
+    const isDownbeat = metronomeState.beatIndex === 0;
+    scheduleMetronomeTick(metronomeState.nextTickTime, isDownbeat);
+    metronomeState.nextTickTime += getBeatDuration();
+    metronomeState.beatIndex = (metronomeState.beatIndex + 1) % metronomeState.beatsPerBar;
+  }
+}
+
+function startMetronome() {
+  if (metronomeState.isRunning) return;
+  if (!ensureAudio()) return;
+  setAudioMutedState(false);
+  unlockAudioGestureSync("metronome");
+  unlockAudioIfNeeded("metronome");
+  metronomeState.isRunning = true;
+  metronomeState.beatIndex = 0;
+  metronomeState.nextTickTime = audioCtx.currentTime + 0.05;
+  metronomeScheduler();
+  metronomeState.intervalId = setInterval(metronomeScheduler, 60);
+}
+
+function stopMetronome() {
+  metronomeState.isRunning = false;
+  if (metronomeState.intervalId) clearInterval(metronomeState.intervalId);
+  metronomeState.intervalId = null;
+}
+
+function setMetronomeBpm(nextBpm) {
+  const bpm = Math.max(30, Math.min(260, Math.round(nextBpm)));
+  metronomeState.bpm = bpm;
+  const input = document.getElementById("tempoInput");
+  if (input) input.value = String(bpm);
+  if (metronomeState.isRunning && audioCtx) {
+    metronomeState.nextTickTime = audioCtx.currentTime + 0.05;
+  }
+}
+
+function applyTimeSignature(top, bottom) {
+  metronomeState.beatsPerBar = Math.max(1, Math.min(12, Number(top) || 4));
+  metronomeState.beatUnit = Math.max(2, Math.min(16, Number(bottom) || 4));
+  if (metronomeState.isRunning && audioCtx) {
+    metronomeState.beatIndex = 0;
+    metronomeState.nextTickTime = audioCtx.currentTime + 0.05;
+  }
+}
+
+function registerTapTempo() {
+  const now = performance.now();
+  const taps = metronomeState.tapTimes;
+  taps.push(now);
+  while (taps.length > 6) taps.shift();
+  if (taps.length >= 2) {
+    const intervals = taps.slice(1).map((t, idx) => t - taps[idx]);
+    const avgMs = intervals.reduce((sum, v) => sum + v, 0) / intervals.length;
+    if (avgMs > 0) setMetronomeBpm(60000 / avgMs);
+  }
+}
+
+function autocorrelate(buffer, sampleRate) {
+  let rms = 0;
+  for (let i = 0; i < buffer.length; i += 1) {
+    const val = buffer[i];
+    rms += val * val;
+  }
+  rms = Math.sqrt(rms / buffer.length);
+  if (rms < 0.01) return null;
+
+  let r1 = 0;
+  let r2 = buffer.length - 1;
+  const threshold = 0.2;
+  for (let i = 0; i < buffer.length / 2; i += 1) {
+    if (Math.abs(buffer[i]) < threshold) { r1 = i; break; }
+  }
+  for (let i = 1; i < buffer.length / 2; i += 1) {
+    if (Math.abs(buffer[buffer.length - i]) < threshold) { r2 = buffer.length - i; break; }
+  }
+
+  const trimmed = buffer.slice(r1, r2);
+  const size = trimmed.length;
+  const c = new Array(size).fill(0);
+  for (let i = 0; i < size; i += 1) {
+    for (let j = 0; j < size - i; j += 1) {
+      c[i] += trimmed[j] * trimmed[j + i];
+    }
+  }
+  let d = 0;
+  while (c[d] > c[d + 1]) d += 1;
+  let maxval = -1;
+  let maxpos = -1;
+  for (let i = d; i < size; i += 1) {
+    if (c[i] > maxval) {
+      maxval = c[i];
+      maxpos = i;
+    }
+  }
+  if (maxpos <= 0) return null;
+  return sampleRate / maxpos;
+}
+
+function updateTunerUI(freq) {
+  const noteEl = document.getElementById("tunerNote");
+  const centsEl = document.getElementById("tunerCents");
+  const needle = document.getElementById("tunerNeedle");
+  if (!noteEl || !centsEl || !needle) return;
+  if (!freq) {
+    noteEl.textContent = "--";
+    centsEl.textContent = "0 cents";
+    needle.style.left = "50%";
+    return;
+  }
+  const noteNum = Math.round(12 * (Math.log(freq / 440) / Math.log(2)) + 69);
+  const note = NOTE_NAMES[(noteNum + 1200) % 12];
+  const octave = Math.floor(noteNum / 12) - 1;
+  const targetFreq = 440 * Math.pow(2, (noteNum - 69) / 12);
+  const cents = Math.round(1200 * (Math.log(freq / targetFreq) / Math.log(2)));
+  const clamped = Math.max(-50, Math.min(50, cents));
+  noteEl.textContent = `${note}${octave}`;
+  centsEl.textContent = `${cents} cents`;
+  needle.style.left = `${50 + clamped}%`;
+}
+
+function tunerLoop() {
+  if (!tunerState.analyser || !tunerState.data) return;
+  tunerState.analyser.getFloatTimeDomainData(tunerState.data);
+  const freq = autocorrelate(tunerState.data, audioCtx.sampleRate);
+  const status = document.getElementById("tunerStatus");
+  if (status) status.textContent = freq ? "Listening..." : "No signal detected.";
+  updateTunerUI(freq);
+  tunerState.rafId = requestAnimationFrame(tunerLoop);
+}
+
+async function startTuner() {
+  if (tunerState.isRunning) return;
+  if (!ensureAudio()) return;
+  const status = document.getElementById("tunerStatus");
+  if (status) status.textContent = "Requesting microphone...";
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    tunerState.stream = stream;
+    tunerState.source = audioCtx.createMediaStreamSource(stream);
+    tunerState.analyser = audioCtx.createAnalyser();
+    tunerState.analyser.fftSize = 2048;
+    tunerState.data = new Float32Array(tunerState.analyser.fftSize);
+    tunerState.source.connect(tunerState.analyser);
+    tunerState.isRunning = true;
+    if (status) status.textContent = "Listening...";
+    tunerLoop();
+  } catch (e) {
+    if (status) status.textContent = "Microphone access denied.";
+  }
+}
+
+function stopTuner() {
+  tunerState.isRunning = false;
+  if (tunerState.rafId) cancelAnimationFrame(tunerState.rafId);
+  tunerState.rafId = null;
+  if (tunerState.stream) {
+    tunerState.stream.getTracks().forEach(track => track.stop());
+  }
+  if (tunerState.source) {
+    try { tunerState.source.disconnect(); } catch (_) {}
+  }
+  tunerState.stream = null;
+  tunerState.source = null;
+  tunerState.analyser = null;
+  tunerState.data = null;
+  const status = document.getElementById("tunerStatus");
+  if (status) status.textContent = "Tap start to enable the mic.";
+  updateTunerUI(null);
+}
+
+function playReferenceTone(freq = 440) {
+  if (!ensureAudio()) return;
+  setAudioMutedState(false);
+  unlockAudioGestureSync("tuner");
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  const now = audioCtx.currentTime;
+  osc.frequency.setValueAtTime(freq, now);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.25, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+  osc.connect(gain).connect(masterGain);
+  osc.start(now);
+  osc.stop(now + 0.9);
+  osc.onended = () => {
+    try { osc.disconnect(); } catch (_) {}
+    try { gain.disconnect(); } catch (_) {}
+  };
 }
 
 function setupAudioControls() {
@@ -2660,6 +2913,101 @@ document.addEventListener("DOMContentLoaded", () => {
   if (fifthUpBtn) fifthUpBtn.addEventListener("click", () => shiftKeyByFifth("up"));
   const fifthDownBtn = document.getElementById("fifthDown");
   if (fifthDownBtn) fifthDownBtn.addEventListener("click", () => shiftKeyByFifth("down"));
+
+  const metronomeModal = document.getElementById("metronomeModal");
+  const metronomeBackdrop = metronomeModal?.querySelector(".wheel-modal-backdrop");
+  const closeMetronome = document.getElementById("closeMetronome");
+  const openMetronome = () => {
+    if (metronomeModal) metronomeModal.classList.remove("hidden");
+  };
+  const closeMetronomeModal = () => {
+    if (metronomeModal) metronomeModal.classList.add("hidden");
+  };
+
+  const tunerModal = document.getElementById("tunerModal");
+  const tunerBackdrop = tunerModal?.querySelector(".wheel-modal-backdrop");
+  const closeTuner = document.getElementById("closeTuner");
+  const openTuner = () => {
+    if (tunerModal) tunerModal.classList.remove("hidden");
+    startTuner();
+  };
+  const closeTunerModal = () => {
+    if (tunerModal) tunerModal.classList.add("hidden");
+    stopTuner();
+  };
+
+  const metronomeBtn = document.getElementById("metronomeBtn");
+  if (metronomeBtn) metronomeBtn.addEventListener("click", openMetronome);
+  if (metronomeBackdrop) metronomeBackdrop.addEventListener("click", closeMetronomeModal);
+  if (closeMetronome) closeMetronome.addEventListener("click", closeMetronomeModal);
+
+  const tunerBtn = document.getElementById("tunerBtn");
+  if (tunerBtn) tunerBtn.addEventListener("click", openTuner);
+  if (tunerBackdrop) tunerBackdrop.addEventListener("click", closeTunerModal);
+  if (closeTuner) closeTuner.addEventListener("click", closeTunerModal);
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && metronomeModal && !metronomeModal.classList.contains("hidden")) {
+      closeMetronomeModal();
+    }
+    if (e.key === "Escape" && tunerModal && !tunerModal.classList.contains("hidden")) {
+      closeTunerModal();
+    }
+  });
+
+  const tempoInput = document.getElementById("tempoInput");
+  if (tempoInput) {
+    tempoInput.addEventListener("change", (e) => setMetronomeBpm(Number(e.target.value)));
+    setMetronomeBpm(Number(tempoInput.value || METRONOME_DEFAULT_BPM));
+  }
+  const tempoUp = document.getElementById("tempoUp");
+  if (tempoUp) tempoUp.addEventListener("click", () => setMetronomeBpm(metronomeState.bpm + 1));
+  const tempoDown = document.getElementById("tempoDown");
+  if (tempoDown) tempoDown.addEventListener("click", () => setMetronomeBpm(metronomeState.bpm - 1));
+
+  const tapTempo = document.getElementById("tapTempo");
+  if (tapTempo) tapTempo.addEventListener("click", registerTapTempo);
+
+  const meterSelect = document.getElementById("meterSelect");
+  const meterCustom = document.getElementById("meterCustom");
+  const meterTop = document.getElementById("meterTop");
+  const meterBottom = document.getElementById("meterBottom");
+  if (meterSelect) {
+    meterSelect.addEventListener("change", (e) => {
+      const value = e.target.value;
+      if (value === "custom") {
+        if (meterCustom) meterCustom.classList.remove("is-hidden");
+        applyTimeSignature(meterTop?.value, meterBottom?.value);
+        return;
+      }
+      if (meterCustom) meterCustom.classList.add("is-hidden");
+      const [top, bottom] = value.split("/");
+      applyTimeSignature(top, bottom);
+    });
+  }
+  if (meterTop) meterTop.addEventListener("change", () => applyTimeSignature(meterTop.value, meterBottom?.value));
+  if (meterBottom) meterBottom.addEventListener("change", () => applyTimeSignature(meterTop?.value, meterBottom.value));
+  applyTimeSignature(meterTop?.value, meterBottom?.value);
+
+  const accentToggle = document.getElementById("accentToggle");
+  if (accentToggle) {
+    accentToggle.checked = metronomeState.accent;
+    accentToggle.addEventListener("change", (e) => {
+      metronomeState.accent = e.target.checked;
+    });
+  }
+
+  const metronomeStart = document.getElementById("metronomeStart");
+  if (metronomeStart) metronomeStart.addEventListener("click", startMetronome);
+  const metronomeStop = document.getElementById("metronomeStop");
+  if (metronomeStop) metronomeStop.addEventListener("click", stopMetronome);
+
+  const tunerStart = document.getElementById("tunerStart");
+  if (tunerStart) tunerStart.addEventListener("click", startTuner);
+  const tunerStop = document.getElementById("tunerStop");
+  if (tunerStop) tunerStop.addEventListener("click", stopTuner);
+  const tunerA = document.getElementById("tunerA");
+  if (tunerA) tunerA.addEventListener("click", () => playReferenceTone(440));
 
   document.getElementById("random").addEventListener("click", () => {
     currentKeyIndex = Math.floor(Math.random() * KEY_OPTIONS.length);

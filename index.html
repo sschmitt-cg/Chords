@@ -41,6 +41,8 @@
                     <button id="fifthUp" class="ghost">+5th</button>
                     <button id="fifthDown" class="ghost">-5th</button>
                     <button id="random" class="ghost">Randomize</button>
+                    <button id="metronomeBtn" class="ghost">Metronome</button>
+                    <button id="tunerBtn" class="ghost">Tuner</button>
                 </div>
             </div>
         </section>
@@ -157,6 +159,93 @@
                         <li>Randomizes key and mode, updating tiles, visualizers, and chords.</li>
                         <li>Use +5th / -5th to move the key by a perfect fifth.</li>
                     </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Metronome</p>
+                    <ul>
+                        <li>Open the metronome to set tempo, time signature, and start/stop the click.</li>
+                        <li>Tap the tempo pad to set the BPM by feel.</li>
+                        <li>Enable the downbeat ping to emphasize beat 1.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Tuner</p>
+                    <ul>
+                        <li>Allow microphone access to detect pitch and show the nearest note.</li>
+                        <li>Use the A button for a reference tone.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="metronomeModal" class="wheel-modal hidden" role="dialog" aria-modal="true">
+        <div class="wheel-modal-backdrop"></div>
+        <div class="wheel-modal-content tool-modal">
+            <div class="wheel-modal-header">
+                <h3>Metronome</h3>
+                <button id="closeMetronome" class="ghost micro" aria-label="Close metronome">✕</button>
+            </div>
+            <div class="tool-body">
+                <div class="tempo-display">
+                    <button id="tempoDown" class="ghost micro" aria-label="Decrease tempo">-</button>
+                    <input id="tempoInput" type="number" min="30" max="260" step="1" value="120" aria-label="Tempo in BPM">
+                    <button id="tempoUp" class="ghost micro" aria-label="Increase tempo">+</button>
+                </div>
+                <div class="tempo-meta">
+                    <span class="tempo-label">BPM</span>
+                    <button id="tapTempo" class="ghost">Tap Tempo</button>
+                </div>
+                <div class="meter-row">
+                    <label for="meterSelect" class="tempo-label">Time Signature</label>
+                    <select id="meterSelect">
+                        <option value="4/4" selected>4/4</option>
+                        <option value="3/4">3/4</option>
+                        <option value="6/8">6/8</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div id="meterCustom" class="meter-custom is-hidden">
+                    <input id="meterTop" type="number" min="1" max="12" step="1" value="4" aria-label="Beats per bar">
+                    <span class="meter-slash">/</span>
+                    <input id="meterBottom" type="number" min="2" max="16" step="1" value="4" aria-label="Note value">
+                </div>
+                <div class="toggle-row">
+                    <label class="toggle">
+                        <input id="accentToggle" type="checkbox" checked>
+                        <span>Ping on beat 1</span>
+                    </label>
+                </div>
+                <div class="metronome-actions">
+                    <button id="metronomeStart" class="ghost">Start</button>
+                    <button id="metronomeStop" class="ghost">Stop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="tunerModal" class="wheel-modal hidden" role="dialog" aria-modal="true">
+        <div class="wheel-modal-backdrop"></div>
+        <div class="wheel-modal-content tool-modal">
+            <div class="wheel-modal-header">
+                <h3>Tuner</h3>
+                <button id="closeTuner" class="ghost micro" aria-label="Close tuner">✕</button>
+            </div>
+            <div class="tool-body tuner-body">
+                <div class="tuner-readout">
+                    <div id="tunerNote" class="tuner-note">--</div>
+                    <div id="tunerCents" class="tuner-cents">0 cents</div>
+                </div>
+                <div class="tuner-meter">
+                    <span class="meter-label">Flat</span>
+                    <div class="meter-track">
+                        <div id="tunerNeedle" class="meter-needle"></div>
+                    </div>
+                    <span class="meter-label">Sharp</span>
+                </div>
+                <div id="tunerStatus" class="tuner-status">Tap start to enable the mic.</div>
+                <div class="tuner-actions">
+                    <button id="tunerStart" class="ghost">Start Listening</button>
+                    <button id="tunerStop" class="ghost">Stop</button>
+                    <button id="tunerA" class="ghost">Play A</button>
                 </div>
             </div>
         </div>

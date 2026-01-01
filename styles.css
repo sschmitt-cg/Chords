@@ -338,6 +338,11 @@ button:active {
   display: flex;
   justify-content: center;
   gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.inline-actions .ghost {
+  padding: 8px 8px;
 }
 
 .output-panel {
@@ -1459,7 +1464,9 @@ button:active {
 }
 
 #closeWheelModal,
-#closeInfoModal {
+#closeInfoModal,
+#closeMetronome,
+#closeTuner {
   width: 40px;
   height: 40px;
   min-width: 40px;
@@ -1487,6 +1494,164 @@ button:active {
 .wheel-modal-list button.active {
   border-color: var(--accent);
   background: #e7eaff;
+}
+
+.tool-modal {
+  width: min(420px, 92vw);
+}
+
+.tool-body {
+  display: grid;
+  gap: 12px;
+  padding: 8px;
+}
+
+.tempo-display {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.tempo-display input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d7dcf2;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: center;
+}
+
+.tempo-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tempo-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6b74a3;
+  font-weight: 700;
+}
+
+.meter-row {
+  display: grid;
+  gap: 6px;
+}
+
+.meter-row select {
+  border-radius: 10px;
+  border: 1px solid #d7dcf2;
+  padding: 8px 10px;
+  font-weight: 600;
+}
+
+.meter-custom {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.meter-custom.is-hidden {
+  display: none;
+}
+
+.meter-custom input {
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid #d7dcf2;
+  text-align: center;
+  font-weight: 600;
+}
+
+.meter-slash {
+  font-weight: 700;
+  color: #7b81a8;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+}
+
+.toggle {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  color: #1e2340;
+}
+
+.metronome-actions,
+.tuner-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tuner-body {
+  gap: 14px;
+}
+
+.tuner-readout {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.tuner-note {
+  font-size: 32px;
+  font-weight: 800;
+  color: #101738;
+}
+
+.tuner-cents {
+  font-size: 14px;
+  color: #6b74a3;
+}
+
+.tuner-meter {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.meter-track {
+  position: relative;
+  height: 8px;
+  border-radius: 999px;
+  background: #e6e9f7;
+}
+
+.meter-needle {
+  position: absolute;
+  top: -4px;
+  width: 12px;
+  height: 16px;
+  border-radius: 6px;
+  background: var(--accent);
+  transform: translateX(-50%);
+  left: 50%;
+  transition: left 0.08s ease;
+}
+
+.meter-label {
+  font-size: 12px;
+  color: #7b81a8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.tuner-status {
+  font-size: 13px;
+  color: #5c6385;
+  text-align: center;
 }
 
 /* --- Harmony grid compact/full-cell color overrides (v3) --- */
@@ -1708,6 +1873,15 @@ button:active {
 
   button {
     width: 100%;
+  }
+
+  .inline-actions button {
+    width: auto;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 6px 6px;
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   .scale-tiles {
