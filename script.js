@@ -1336,8 +1336,9 @@ function updateHarmonyRowOutline(bodyEl) {
   const rowRect = row.getBoundingClientRect();
   const startRect = chordCell.getBoundingClientRect();
   const endRect = lastTone.getBoundingClientRect();
-  const left = Math.max(0, startRect.left - rowRect.left);
-  const width = Math.max(0, endRect.right - startRect.left);
+  const inset = 2;
+  const left = Math.max(0, startRect.left - rowRect.left + inset);
+  const width = Math.max(0, endRect.right - startRect.left - inset * 2);
   const outline = existing || document.createElement("div");
   outline.className = "harmony-row-outline";
   outline.style.left = `${left}px`;
