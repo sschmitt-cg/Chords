@@ -1272,7 +1272,6 @@ function renderHarmonyGrid(scaleOverride = null, options = {}) {
   headerEl.style.setProperty("--tone-count", toneCount);
   bodyEl.style.setProperty("--tone-count", toneCount);
   headerEl.innerHTML = [
-    `<div class="h-cell sticky-col rn-head" role="columnheader" aria-label="Roman numeral"></div>`,
     `<div class="h-cell sticky-col chord-head" role="columnheader">Chord</div>`,
     ...toneColumns.map(col => {
       const active = globalHarmonyMax === col.degree;
@@ -1291,8 +1290,7 @@ function renderHarmonyGrid(scaleOverride = null, options = {}) {
     const rowStyle = `style="--row-color:${chordColor}"`;
     const isRootSelectedNote = selectedExplorerNotePc !== null && root?.pc === selectedExplorerNotePc;
     const cells = [
-      `<div class="harmony-cell sticky-col rn-cell" data-row-index="${row.index}" role="gridcell"><span class="degree">${row.degree}</span></div>`,
-      `<div class="harmony-cell sticky-col chord-cell tone-cell pc-${root?.pc ?? 0} ${isRootSelectedNote ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${root?.pc ?? ""}" data-degree="${rowMax}" role="gridcell" ${chordPcStyle}><div class="pc-band tone-root">${chordLabel}</div></div>`,
+      `<div class="harmony-cell sticky-col chord-cell tone-cell pc-${root?.pc ?? 0} ${isRootSelectedNote ? "is-note-selected" : ""}" data-row-index="${row.index}" data-pc="${root?.pc ?? ""}" data-degree="${rowMax}" role="gridcell" ${chordPcStyle}><span class="roman-overlay">${row.degree}</span><div class="pc-band tone-root">${chordLabel}</div></div>`,
       ...toneColumns.map((col) => {
         const note = row.notes.find(n => n.label === col.label) || null;
         const targetDegree = col.degree;
