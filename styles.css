@@ -342,7 +342,7 @@ button:active {
 }
 
 .inline-actions .ghost {
-  padding: 8px 8px;
+  padding: 6px 6px;
 }
 
 .output-panel {
@@ -1879,9 +1879,11 @@ button:active {
     width: auto;
     flex: 1 1 0;
     min-width: 0;
-    padding: 6px 6px;
-    font-size: 12px;
-    white-space: nowrap;
+    padding: 4px 4px;
+    font-size: 11px;
+    white-space: normal;
+    line-height: 1.1;
+    text-align: center;
   }
 
   .scale-tiles {
