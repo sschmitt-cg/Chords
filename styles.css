@@ -337,6 +337,7 @@ button:active {
 .inline-actions {
   display: flex;
   justify-content: center;
+  gap: 8px;
 }
 
 .output-panel {
