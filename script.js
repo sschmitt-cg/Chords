@@ -2647,6 +2647,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setupAudioControls();
 
+  const shiftKeyByFifth = (direction) => {
+    const semitones = direction === "up" ? 7 : -7;
+    const nextPc = wrap(currentKeyPc + semitones, 12);
+    const biasName = keyValue(currentKeyIndex);
+    currentKeyIndex = findKeyIndexForPc(nextPc, biasName);
+    currentKeyPc = NOTE_TO_INDEX[keyValue(currentKeyIndex)];
+    drawFromState();
+  };
+
+  const fifthUpBtn = document.getElementById("fifthUp");
+  if (fifthUpBtn) fifthUpBtn.addEventListener("click", () => shiftKeyByFifth("up"));
+  const fifthDownBtn = document.getElementById("fifthDown");
+  if (fifthDownBtn) fifthDownBtn.addEventListener("click", () => shiftKeyByFifth("down"));
+
   document.getElementById("random").addEventListener("click", () => {
     currentKeyIndex = Math.floor(Math.random() * KEY_OPTIONS.length);
     currentKeyPc = NOTE_TO_INDEX[keyValue(currentKeyIndex)];
