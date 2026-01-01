@@ -529,7 +529,6 @@ button:active {
 
 .harmony-grid {
   overflow-x: auto;
-  --rn-col-min: 50px;
   --chord-col-min: 120px;
   --tone-col-min: 46px;
   --harmony-base-fill: 42%;
@@ -541,7 +540,7 @@ button:active {
 
 .harmony-grid-header {
   display: grid;
-  grid-template-columns: minmax(var(--rn-col-min), 0.8fr) minmax(var(--chord-col-min), 1.6fr) repeat(var(--tone-count, 4), minmax(var(--tone-col-min), 1fr));
+  grid-template-columns: minmax(var(--chord-col-min), 1.6fr) repeat(var(--tone-count, 4), minmax(var(--tone-col-min), 1fr));
   position: sticky;
   top: 0;
   background: linear-gradient(180deg, #fdfdff, #f1f3ff);
@@ -620,7 +619,7 @@ button:active {
 
 .harmony-row {
   display: grid;
-  grid-template-columns: minmax(var(--rn-col-min), 0.8fr) minmax(var(--chord-col-min), 1.6fr) repeat(var(--tone-count, 4), minmax(var(--tone-col-min), 1fr));
+  grid-template-columns: minmax(var(--chord-col-min), 1.6fr) repeat(var(--tone-count, 4), minmax(var(--tone-col-min), 1fr));
   align-items: stretch;
   border-bottom: 1px solid #e8ecff;
   position: relative;
@@ -783,14 +782,9 @@ button:active {
   background: #fff;
 }
 
-.harmony-grid .sticky-col.rn-cell,
-.harmony-grid-header .rn-head {
-  left: 0;
-}
-
 .harmony-grid .sticky-col.chord-cell,
 .harmony-grid-header .chord-head {
-  left: var(--rn-col);
+  left: 0;
 }
 
 .harmony-grid .sticky-col.root-cell {
@@ -1562,11 +1556,18 @@ button:active {
   letter-spacing: 0.2px;
 }
 
-/* Roman numeral column stays plain and tight */
-.harmony-cell.rn-cell {
-  padding: 0 6px !important;
+.harmony-cell.chord-cell .roman-overlay {
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(15, 22, 54, 0.7);
+  text-transform: uppercase;
+  pointer-events: none;
 }
 
+/* Roman numeral column stays plain and tight */
 /* Slightly reduce row height for density */
 .harmony-row .harmony-cell {
   min-height: 40px;
@@ -1674,9 +1675,8 @@ button:active {
   }
 
   .harmony-grid {
-    --rn-col-min: 48px;
-    --chord-col-min: 124px;
-    --tone-col-min: 40px;
+    --chord-col-min: 116px;
+    --tone-col-min: 36px;
   }
 
   .harmony-grid-header .h-cell,
@@ -1834,7 +1834,6 @@ button:active {
 
   /* tighter columns so 13 fits on desktop */
   .harmony-grid {
-    --rn-col-min: 46px;
     --chord-col-min: 150px;
     --tone-col-min: 42px;
     border-radius: 22px;
