@@ -1882,11 +1882,11 @@ button:active {
 
   .inline-actions button {
     width: auto;
-    flex: 1 1 10px;
-    min-width: 10px;
-    padding: 4px 4px;
-    font-size: 11px;
-    white-space: normal;
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 2px 2px;
+    font-size: 10px;
+    white-space: nowrap;
     line-height: 1.1;
     text-align: center;
   }
