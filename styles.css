@@ -345,6 +345,11 @@ button:active {
   padding: 6px 6px;
 }
 
+.inline-actions #fifthUp,
+.inline-actions #fifthDown {
+  padding: 4px 4px;
+}
+
 .output-panel {
   display: flex;
   flex-direction: column;
@@ -1877,8 +1882,8 @@ button:active {
 
   .inline-actions button {
     width: auto;
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 1 1 10px;
+    min-width: 10px;
     padding: 4px 4px;
     font-size: 11px;
     white-space: normal;
@@ -1888,6 +1893,21 @@ button:active {
 
   .scale-tiles {
     gap: 4px;
+  }
+}
+
+@media (min-width: 520px) and (max-width: 640px) {
+  .inline-actions button {
+    flex: 0 1 auto;
+    min-width: 0;
+    padding: 6px 10px;
+    white-space: nowrap;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 900px) {
+  .inline-actions .ghost {
+    padding: 8px 12px;
   }
 }
 
@@ -1981,6 +2001,12 @@ button:active {
 
   .heading-row h2 {
     font-size: 17px;
+  }
+}
+
+@media (min-width: 641px) {
+  .inline-actions .ghost {
+    padding: 8px 12px;
   }
 }
 
