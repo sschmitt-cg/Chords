@@ -618,6 +618,7 @@ button:active {
   display: grid;
   grid-auto-rows: auto;
   position: relative;
+  padding-bottom: 6px;
 }
 
 .harmony-grid-body.is-animating .harmony-row {
@@ -1710,10 +1711,10 @@ button:active {
 .harmony-row-outline {
   grid-row: 1;
   position: absolute;
-  top: 2px;
-  bottom: 2px;
+  top: 4px;
+  bottom: 4px;
   pointer-events: none;
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--row-color, #5568ff) 55%, #2c58ff);
   z-index: 3;
 }
@@ -1893,6 +1894,15 @@ button:active {
 
   .scale-tiles {
     gap: 4px;
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  @media (max-width: 640px) {
+    .inline-actions button {
+      padding: 1px 2px;
+      font-size: 9px;
+    }
   }
 }
 
