@@ -1056,6 +1056,8 @@ button:active {
 }
 
 .fretboard-shell {
+  --nut-offset: 6%;
+  --board-span: calc(100% - var(--nut-offset));
   position: relative;
   width: 100%;
   height: var(--instrument-height);
@@ -1087,7 +1089,8 @@ button:active {
   bottom: 0;
   width: 1px;
   background: rgba(22, 26, 48, 0.2);
-  left: calc(var(--fret-index) * 100% / (var(--fret-count) - 1));
+  left: calc(var(--nut-offset) + (var(--fret-index) * var(--board-span) / (var(--fret-count) - 1)));
+  transform: translateX(-50%);
   z-index: 1;
 }
 
@@ -1102,7 +1105,7 @@ button:active {
   height: 9px;
   border-radius: 999px;
   background: rgba(80, 90, 125, 0.3);
-  left: calc(var(--marker-index) * 100% / (var(--fret-count) - 1));
+  left: calc(var(--nut-offset) + (var(--marker-index) * var(--board-span) / (var(--fret-count) - 1)));
   top: var(--marker-y);
   transform: translate(-50%, -50%);
   z-index: 1;
@@ -1116,7 +1119,7 @@ button:active {
   background: transparent;
   box-shadow: none;
   opacity: 0;
-  left: calc(var(--fret-index) * 100% / (var(--fret-count) - 1));
+  left: calc(var(--nut-offset) + (var(--note-index) * var(--board-span) / (var(--fret-count) - 1)));
   top: calc(var(--string-index) * 100% / (var(--string-count) - 1));
   transform: translate(-50%, -50%);
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, opacity 0.2s ease;
