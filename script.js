@@ -2029,6 +2029,7 @@ function renderFretboardVisualizer() {
       note.dataset.fret = fret;
       note.style.setProperty("--string-index", stringIdx);
       note.style.setProperty("--fret-index", fret);
+      note.style.setProperty("--note-index", fret === 0 ? -0.5 : fret - 0.5);
       noteLayer.appendChild(note);
     }
   });
