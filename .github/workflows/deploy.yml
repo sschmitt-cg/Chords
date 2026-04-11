@@ -36,9 +36,6 @@ jobs:
 
       - name: Build React app
         run: npm run build
-        env:
-          # Tells vite.config.ts to use /Chords/ as the asset base path
-          GITHUB_PAGES: true
 
       - name: Copy legacy app into dist
         # index.html, styles.css, and script.js are not part of the Vite build,
