@@ -1,0 +1,225 @@
+/* HarmonyGrid — chord extension matrix */
+
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1, #1a1a1a);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.empty {
+  padding: 24px;
+  color: var(--text-secondary, #888);
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* ---- Header row ---- */
+
+.header {
+  display: grid;
+  /* Chord cell is fixed width; degree columns share the rest equally */
+  grid-template-columns: minmax(96px, 1.4fr) repeat(var(--col-count, 6), 1fr);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: sticky;
+  top: 0;
+  background: var(--surface-1, #1a1a1a);
+  z-index: 2;
+}
+
+.hChord {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #888);
+  border-right: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Degree toggle buttons in header — min 44px tall */
+.hDegree {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  background: none;
+  border: none;
+  border-right: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary, #888);
+  transition: background 0.12s, color 0.12s;
+}
+
+.hDegree:last-child {
+  border-right: none;
+}
+
+.hDegree:hover {
+  background: var(--surface-2, #242424);
+  color: var(--text-primary, #f0f0f0);
+}
+
+.hDegreeActive {
+  color: var(--text-primary, #f0f0f0);
+  background: var(--surface-3, #2e2e2e);
+  position: relative;
+}
+
+/* Bottom bar on the active degree column */
+.hDegreeActive::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--text-primary, #f0f0f0);
+  border-radius: 1px;
+}
+
+/* ---- Body ---- */
+
+.body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Row ---- */
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(96px, 1.4fr) repeat(6, 1fr);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.1s;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.rowSelected {
+  background: color-mix(in srgb, var(--row-color) 7%, transparent);
+}
+
+/* ---- Chord name cell (sticky-ish left column) ---- */
+
+.chordCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  padding: 10px 12px;
+  min-height: 52px;
+  background: none;
+  border: none;
+  border-right: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+  transition: background 0.12s;
+}
+
+.chordCell:hover {
+  background: color-mix(in srgb, var(--pc-color) 12%, transparent);
+}
+
+.chordCellSelected {
+  background: color-mix(in srgb, var(--pc-color) 18%, transparent);
+}
+
+/* Left accent bar in pc color */
+.chordCell::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  background: var(--pc-color);
+  border-radius: 0 2px 2px 0;
+  opacity: 0.7;
+}
+
+.chordCellSelected::before {
+  opacity: 1;
+  top: 10%;
+  bottom: 10%;
+}
+
+.romanOverlay {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--text-secondary, #888);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.chordName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--pc-color);
+  line-height: 1.1;
+}
+
+/* ---- Note cells ---- */
+
+.noteCell,
+.emptyCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  border-right: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.noteCell:last-child,
+.emptyCell:last-child {
+  border-right: none;
+}
+
+.noteCell {
+  background: none;
+  border-top: none;
+  border-bottom: none;
+  cursor: pointer;
+  color: var(--pc-color);
+  transition: background 0.1s, opacity 0.1s;
+}
+
+.noteCell:hover {
+  background: color-mix(in srgb, var(--pc-color) 12%, transparent);
+}
+
+/* Visible (within the active max degree) */
+.noteCellVisible {
+  opacity: 1;
+}
+
+/* Ghost (outside active max degree — muted but still visible as context) */
+.noteCellGhost {
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+/* Selected note */
+.noteCellSelected {
+  background: color-mix(in srgb, var(--pc-color) 22%, transparent);
+  outline: 1px solid var(--pc-color);
+  outline-offset: -2px;
+  border-radius: 4px;
+  opacity: 1;
+}
+
+.emptyCell {
+  background: none;
+}
