@@ -1,0 +1,88 @@
+/* KeyboardVisualizer — two-octave piano */
+
+.wrapper {
+  background: var(--surface-1, #1a1a1a);
+  border-radius: 12px;
+  padding: 16px;
+  overflow: hidden;
+}
+
+/* Relative container — black keys are absolute children */
+.shell {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100px;
+  gap: 2px;
+}
+
+/* ---- White keys ---- */
+
+.keyWhite {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  border-radius: 0 0 6px 6px;
+  background: #d8d8d8;
+  border: 1px solid #999;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+  transition: background 0.1s;
+}
+
+.keyWhite:active {
+  background: #bbb;
+}
+
+/* Role colors for white keys */
+.keyWhite.role_root  { background: color-mix(in srgb, var(--pc-color) 55%, #d8d8d8); }
+.keyWhite.role_tone  { background: color-mix(in srgb, var(--pc-color) 35%, #d8d8d8); }
+.keyWhite.role_scale { background: color-mix(in srgb, var(--pc-color) 20%, #d8d8d8); }
+.keyWhite.role_off   { background: #d8d8d8; }
+
+/* ---- Black keys ---- */
+
+.keyBlack {
+  position: absolute;
+  top: 0;
+  /* Width is ~60% of one white key slot */
+  width: calc(100% / var(--white-count, 14) * 0.6);
+  /* Transform centers the key over the gap */
+  transform: translateX(-50%);
+  height: 62%;
+  border-radius: 0 0 4px 4px;
+  background: #1a1a1a;
+  border: 1px solid #111;
+  cursor: pointer;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 5px;
+  transition: background 0.1s;
+}
+
+.keyBlack:active {
+  background: #2a2a2a;
+}
+
+/* Role colors for black keys */
+.keyBlack.role_root  { background: color-mix(in srgb, var(--pc-color) 80%, #1a1a1a); }
+.keyBlack.role_tone  { background: color-mix(in srgb, var(--pc-color) 60%, #1a1a1a); }
+.keyBlack.role_scale { background: color-mix(in srgb, var(--pc-color) 40%, #1a1a1a); }
+.keyBlack.role_off   { background: #1a1a1a; }
+
+/* ---- Dot indicator on lit keys ---- */
+
+.dot {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pc-color);
+  opacity: 0.9;
+  flex-shrink: 0;
+}

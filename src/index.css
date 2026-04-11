@@ -1,0 +1,41 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  background: #111;
+  color: #f0f0f0;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh; /* dynamic viewport height — iOS safe */
+}
+
+/* ---- Pitch class color palette ----
+   Matches the original CSS custom properties so components
+   can use var(--pc-0) through var(--pc-11). */
+:root {
+  --pc-0:  hsl(0,   70%, 65%);   /* C  — red */
+  --pc-1:  hsl(25,  80%, 60%);   /* C# — orange-red */
+  --pc-2:  hsl(42,  90%, 58%);   /* D  — orange */
+  --pc-3:  hsl(60,  80%, 55%);   /* D# — yellow */
+  --pc-4:  hsl(88,  65%, 52%);   /* E  — yellow-green */
+  --pc-5:  hsl(140, 60%, 50%);   /* F  — green */
+  --pc-6:  hsl(170, 65%, 50%);   /* F# — cyan-green */
+  --pc-7:  hsl(200, 75%, 58%);   /* G  — sky blue */
+  --pc-8:  hsl(220, 75%, 62%);   /* G# — blue */
+  --pc-9:  hsl(250, 70%, 65%);   /* A  — indigo */
+  --pc-10: hsl(280, 65%, 62%);   /* A# — purple */
+  --pc-11: hsl(330, 70%, 62%);   /* B  — pink */
+
+  /* Surface tokens for dark theme */
+  --surface-1: #1a1a1a;
+  --surface-2: #242424;
+  --surface-3: #2e2e2e;
+  --text-primary: #f0f0f0;
+  --text-secondary: #888;
+}

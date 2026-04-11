@@ -1,0 +1,163 @@
+/* FretboardVisualizer — guitar fretboard, 6 strings × 13 fret positions */
+
+.wrapper {
+  background: var(--surface-1, #1a1a1a);
+  border-radius: 12px;
+  padding: 16px 16px 24px;
+  overflow-x: auto;
+  /* Hide scrollbar but allow horizontal scroll on small screens */
+  scrollbar-width: none;
+}
+
+.wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.shell {
+  position: relative;
+  /* Min width so the fretboard never gets squashed below readability */
+  min-width: 420px;
+  width: 100%;
+}
+
+/* ---- Strings ---- */
+
+.string {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 32px;
+}
+
+/* The actual string line running full width */
+.stringLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.25);
+  /* Strings get slightly thicker toward the low E (higher index = lower pitch) */
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Low E is at the bottom (index 5 in standard tuning) */
+.string:nth-child(6) .stringLine { height: 2px; }
+.string:nth-child(5) .stringLine { height: 2px; }
+
+/* ---- Fret slots ---- */
+
+.fretSlot {
+  position: relative;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Nut (thick left border before fret 1) */
+.nut {
+  position: absolute;
+  left: 0;
+  top: -4px;
+  bottom: -4px;
+  width: 3px;
+  background: rgba(255,255,255,0.5);
+  border-radius: 1px;
+}
+
+/* Standard fret wire */
+.fretWire {
+  position: absolute;
+  left: 0;
+  top: -4px;
+  bottom: -4px;
+  width: 1px;
+  background: rgba(255,255,255,0.15);
+}
+
+/* ---- Note dots ---- */
+
+.dot {
+  position: relative;
+  z-index: 1;
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+
+.dot:active {
+  transform: scale(0.88);
+}
+
+/* Open string dots sit just left of fret 1 */
+.dotOpen {
+  margin-left: -4px;
+}
+
+/* Role colors */
+.role_root {
+  background: var(--pc-color);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--pc-color) 70%, transparent);
+}
+
+.role_tone {
+  background: color-mix(in srgb, var(--pc-color) 65%, #1a1a1a);
+}
+
+.role_scale {
+  background: transparent;
+  border: 2px solid var(--pc-color);
+  width: 18px;
+  height: 18px;
+}
+
+.role_off {
+  display: none;
+}
+
+/* ---- Fret position markers ---- */
+
+.markerLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.marker {
+  position: absolute;
+  /* Horizontal: centered between two fret wires */
+  left: calc(var(--marker-pos, 0) / var(--fret-count, 13) * 100%);
+  top: var(--marker-y, 50%);
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+/* ---- Fret number labels below the board ---- */
+
+.fretLabels {
+  display: flex;
+  position: relative;
+  height: 16px;
+  margin-top: 4px;
+}
+
+.fretLabel {
+  position: absolute;
+  left: calc(var(--fret-index, 0) / var(--fret-count, 13) * 100%);
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--text-secondary, #888);
+  text-align: center;
+}
