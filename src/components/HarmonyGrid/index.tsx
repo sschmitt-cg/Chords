@@ -3,6 +3,7 @@
 // The degree header buttons (3 5 7 9 11 13) control how many extensions are shown.
 
 import { useTonalStore } from '../../store/index'
+import { useAudio } from '../../hooks/useAudio'
 import { chordNameForRow, pcColorVar } from '../../theory/index'
 import type { HarmonyRow, HarmonyNote } from '../../theory/types'
 import styles from './HarmonyGrid.module.css'
@@ -27,6 +28,7 @@ export default function HarmonyGrid() {
     setSelectedNote,
     setGlobalHarmonyMax,
   } = useTonalStore()
+  const { playChord } = useAudio()
 
   if (!harmonyRows.length) {
     return (
@@ -45,6 +47,7 @@ export default function HarmonyGrid() {
       setSelectedChord(null)
     } else {
       setSelectedChord(row.index)
+      playChord(row.index)
     }
   }
 

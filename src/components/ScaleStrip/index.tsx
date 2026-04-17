@@ -2,6 +2,7 @@
 // Tapping a tile selects that note; swiping left/right changes key by semitone.
 
 import { useTonalStore } from '../../store/index'
+import { useAudio } from '../../hooks/useAudio'
 import { computeRomans, pcColorVar, wrap } from '../../theory/index'
 import styles from './ScaleStrip.module.css'
 
@@ -17,17 +18,22 @@ export default function ScaleStrip() {
     setKey,
     setMode,
   } = useTonalStore()
+  const { playScale, playNote } = useAudio()
 
   const { pitchClasses, spelled } = currentScale
   const romans = computeRomans(pitchClasses)
 
-  function handleNoteTap(pc: number, _note: string) {
+  function handleNoteTap(pc: number, isTonic: boolean) {
     if (selectedNotePc === pc) {
-      // Deselect if tapping the already-selected note
       setSelectedNote(null)
     } else {
       setSelectedNote(pc)
       if (selectedChordIndex !== null) setSelectedChord(null)
+      if (isTonic) {
+        playScale()
+      } else {
+        playNote(pc)
+      }
     }
   }
 
@@ -85,7 +91,7 @@ export default function ScaleStrip() {
               } as React.CSSProperties}
               aria-label={`${note}, degree ${romans[idx]}`}
               aria-pressed={isSelected}
-              onClick={() => handleNoteTap(pc, note)}
+              onClick={() => handleNoteTap(pc, isTonic)}
             >
               <span className={styles.roman}>{romans[idx]}</span>
               <span className={styles.note}>{note}</span>
