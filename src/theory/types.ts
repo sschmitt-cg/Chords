@@ -44,6 +44,21 @@ export type ScaleType =
 
 export type ChordFunction = 'tonic' | 'subdominant' | 'dominant'
 
+export interface ScaleMode {
+  name: string
+  brightness: number  // 0–100 global ordering score
+}
+
+export interface ScaleFamily {
+  id: string
+  name: string
+  tension: 0 | 1 | 2  // count of augmented 2nd (3-semitone) steps
+  intervals: [number, number, number, number, number, number, number]  // step sizes, sum = 12
+  modes: [ScaleMode, ScaleMode, ScaleMode, ScaleMode, ScaleMode, ScaleMode, ScaleMode]
+}
+
+export type BrightnessEntry = { familyId: string; modeIndex: number; brightness: number }
+
 // Guitar tuning: 6 MIDI values, index 0 = high E string, index 5 = low E string
 export type GuitarTuning = [number, number, number, number, number, number]
 

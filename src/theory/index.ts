@@ -7,6 +7,8 @@ import type {
   HarmonyNote,
   ChordQuality,
   ScaleType,
+  ScaleFamily,
+  BrightnessEntry,
 } from './types'
 
 // -------------------- CONSTANTS --------------------
@@ -468,3 +470,142 @@ export function chordNotesToPcs(notes: string): number[] {
 }
 
 export const pcColorVar = (pc: number): string => `var(--pc-${wrap(pc, 12)})`
+
+// -------------------- SCALE FAMILIES --------------------
+
+export const SCALE_FAMILIES: ScaleFamily[] = [
+  {
+    id: 'major',
+    name: 'Major',
+    tension: 0,
+    intervals: [2, 2, 1, 2, 2, 2, 1],
+    modes: [
+      { name: 'Ionian',     brightness: 60 },
+      { name: 'Dorian',     brightness: 43 },
+      { name: 'Phrygian',   brightness: 28 },
+      { name: 'Lydian',     brightness: 75 },
+      { name: 'Mixolydian', brightness: 52 },
+      { name: 'Aeolian',    brightness: 36 },
+      { name: 'Locrian',    brightness: 12 },
+    ],
+  },
+  {
+    id: 'melodic-minor',
+    name: 'Melodic Minor',
+    tension: 0,
+    intervals: [2, 1, 2, 2, 2, 2, 1],
+    modes: [
+      { name: 'Melodic Minor',    brightness: 48 },
+      { name: 'Dorian ♭2',       brightness: 33 },
+      { name: 'Lydian Augmented', brightness: 82 },
+      { name: 'Lydian Dominant',  brightness: 68 },
+      { name: 'Mixolydian ♭6',   brightness: 50 },
+      { name: 'Locrian ♯2',      brightness: 22 },
+      { name: 'Altered',          brightness: 6  },
+    ],
+  },
+  {
+    id: 'harmonic-minor',
+    name: 'Harmonic Minor',
+    tension: 1,
+    intervals: [2, 1, 2, 2, 1, 3, 1],
+    modes: [
+      { name: 'Harmonic Minor',     brightness: 40 },
+      { name: 'Locrian ♯6',        brightness: 18 },
+      { name: 'Ionian ♯5',         brightness: 64 },
+      { name: 'Dorian ♯4',         brightness: 46 },
+      { name: 'Phrygian Dominant',  brightness: 34 },
+      { name: 'Lydian ♯2',         brightness: 72 },
+      { name: 'Altered Diminished', brightness: 8  },
+    ],
+  },
+  {
+    id: 'harmonic-major',
+    name: 'Harmonic Major',
+    tension: 1,
+    intervals: [2, 2, 1, 2, 1, 3, 1],
+    modes: [
+      { name: 'Harmonic Major',       brightness: 57 },
+      { name: 'Dorian ♭5',           brightness: 38 },
+      { name: 'Phrygian ♭4',         brightness: 23 },
+      { name: 'Lydian ♭3',           brightness: 66 },
+      { name: 'Mixolydian ♭2',       brightness: 47 },
+      { name: 'Lydian Augmented ♯2', brightness: 80 },
+      { name: 'Locrian ♭♭7',        brightness: 13 },
+    ],
+  },
+  {
+    id: 'double-harmonic',
+    name: 'Double Harmonic',
+    tension: 2,
+    intervals: [1, 3, 1, 2, 1, 3, 1],
+    modes: [
+      { name: 'Double Harmonic',       brightness: 44 },
+      { name: 'Lydian ♯2♯6',         brightness: 78 },
+      { name: 'Ultraphrygian',         brightness: 19 },
+      { name: 'Hungarian Minor',       brightness: 37 },
+      { name: 'Oriental',              brightness: 41 },
+      { name: 'Ionian Augmented ♯2',  brightness: 65 },
+      { name: 'Locrian ♭♭3♭♭7',     brightness: 7  },
+    ],
+  },
+]
+
+// Rotate family interval array by modeIndex and return pitch-class offsets from 0.
+export function getModeIntervals(family: ScaleFamily, modeIndex: number): number[] {
+  const steps = family.intervals
+  const pcs: number[] = [0]
+  let acc = 0
+  for (let i = 0; i < 6; i++) {
+    acc += steps[(modeIndex + i) % 7]
+    pcs.push(acc)
+  }
+  return pcs
+}
+
+// Internal: build ScaleData from pitch-class offsets (same as buildScaleDataForType but pattern-driven).
+function buildScaleDataForPattern(keyName: string, pattern: number[]): ScaleData {
+  const tonicPc = NOTE_TO_INDEX[keyName]
+  const pitchClasses = pattern.map(step => wrap(tonicPc + step, 12))
+  const spelled = spellScale(tonicPc, keyName, pitchClasses)
+  return { pitchClasses, spelled }
+}
+
+// Family-aware analogue of computeDisplayScale.
+export function computeDisplayScaleFromFamily(
+  tonicPc: number,
+  familyId: string,
+  modeIndex: number,
+  forcedPreference: 'sharp' | 'flat' | null = null,
+): { tonicLabel: string; pitchClasses: number[]; spelled: string[]; keyIdx: number; preferenceUsed: 'sharp' | 'flat' | null } {
+  const family = SCALE_FAMILIES.find(f => f.id === familyId) ?? SCALE_FAMILIES[0]
+  const pattern = getModeIntervals(family, modeIndex)
+
+  let preferenceUsed: 'sharp' | 'flat' | null = forcedPreference
+  let tonicLabel: string
+
+  if (isEnharmonicPc(tonicPc)) {
+    const { sharp, flat } = ENHARMONIC_OPTIONS[tonicPc]
+    if (!preferenceUsed) {
+      const sharpData = buildScaleDataForPattern(sharp, pattern)
+      const flatData  = buildScaleDataForPattern(flat, pattern)
+      if (accidentalScore(sharpData.spelled) < accidentalScore(flatData.spelled)) preferenceUsed = 'sharp'
+      else if (accidentalScore(flatData.spelled) < accidentalScore(sharpData.spelled)) preferenceUsed = 'flat'
+      else preferenceUsed = 'flat'
+    }
+    tonicLabel = preferenceUsed === 'sharp' ? sharp : flat
+  } else {
+    preferenceUsed = null
+    const idx = findKeyIndexForPc(tonicPc)
+    tonicLabel = keyValue(idx)
+  }
+
+  const scaleData = buildScaleDataForPattern(tonicLabel, pattern)
+  const keyIdx = findKeyIndexForPc(tonicPc, tonicLabel)
+  return { tonicLabel, pitchClasses: scaleData.pitchClasses, spelled: scaleData.spelled, keyIdx, preferenceUsed }
+}
+
+// All 35 modes sorted by brightness ascending.
+export const GLOBAL_BRIGHTNESS_ORDER: BrightnessEntry[] = SCALE_FAMILIES
+  .flatMap(f => f.modes.map((m, i) => ({ familyId: f.id, modeIndex: i, brightness: m.brightness })))
+  .sort((a, b) => a.brightness - b.brightness)

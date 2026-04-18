@@ -3,42 +3,52 @@
 
 import { create } from 'zustand'
 import {
-  computeDisplayScale,
+  computeDisplayScaleFromFamily,
   buildHarmonyRowsForScale,
+  SCALE_FAMILIES,
+  GLOBAL_BRIGHTNESS_ORDER,
+  wrap,
 } from '../theory/index'
-import type { ScaleData, HarmonyRow, ScaleType, GuitarTuning } from '../theory/types'
+import type { ScaleData, HarmonyRow, GuitarTuning } from '../theory/types'
 
 // Standard tuning: high E → low E (MIDI 64, 59, 55, 50, 45, 40)
 const STANDARD_TUNING: GuitarTuning = [64, 59, 55, 50, 45, 40]
 
-// Compute the initial scale on load (C Ionian)
-function computeScale(
+function computeScaleForFamily(
   keyPc: number,
-  scaleType: ScaleType,
+  familyId: string,
+  modeIndex: number,
   preference: 'sharp' | 'flat' | null = null,
-): { scale: ScaleData; harmonyRows: HarmonyRow[]; keyIdx: number; tonicLabel: string } {
-  const display = computeDisplayScale(keyPc, scaleType, preference)
+): { scale: ScaleData; harmonyRows: HarmonyRow[]; keyIdx: number; tonicLabel: string; preferenceUsed: 'sharp' | 'flat' | null } {
+  const display = computeDisplayScaleFromFamily(keyPc, familyId, modeIndex, preference)
   const scale: ScaleData = { pitchClasses: display.pitchClasses, spelled: display.spelled }
   return {
     scale,
     harmonyRows: buildHarmonyRowsForScale(scale),
     keyIdx: display.keyIdx,
     tonicLabel: display.tonicLabel,
+    preferenceUsed: display.preferenceUsed,
   }
 }
 
-const initialScaleType: ScaleType = 'ionian'
+const initialFamilyId = 'major'
+const initialFamilyModeIndex = 0
 const initialKeyPc = 0
-const { scale: initialScale, harmonyRows: initialHarmonyRows, keyIdx: initialKeyIdx, tonicLabel: initialTonicLabel } =
-  computeScale(initialKeyPc, initialScaleType)
+const {
+  scale: initialScale,
+  harmonyRows: initialHarmonyRows,
+  keyIdx: initialKeyIdx,
+  tonicLabel: initialTonicLabel,
+} = computeScaleForFamily(initialKeyPc, initialFamilyId, initialFamilyModeIndex)
 
 interface TonalStore {
-  // Key & mode
+  // Key
   currentKeyPc: number
   currentKeyIdx: number
   currentTonicLabel: string
-  currentModeIndex: number
-  scaleType: ScaleType
+  // Scale family + mode
+  familyId: string
+  familyModeIndex: number
   // Enharmonic preference per pitch class (user can flip C# ↔ Db, etc.)
   enharmonicPrefs: Record<number, 'sharp' | 'flat'>
 
@@ -66,8 +76,9 @@ interface TonalStore {
 
   // Actions
   setKey: (pc: number) => void
-  setMode: (index: number) => void
-  setScaleType: (type: ScaleType) => void
+  setFamily: (id: string) => void
+  setFamilyModeIndex: (index: number) => void
+  setModeByBrightness: (delta: number) => void
   setEnharmonicPref: (pc: number, pref: 'sharp' | 'flat') => void
   setSelectedChord: (index: number | null) => void
   setSelectedNote: (pc: number | null) => void
@@ -83,8 +94,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   currentKeyPc: initialKeyPc,
   currentKeyIdx: initialKeyIdx,
   currentTonicLabel: initialTonicLabel,
-  currentModeIndex: 0,
-  scaleType: initialScaleType,
+  familyId: initialFamilyId,
+  familyModeIndex: initialFamilyModeIndex,
   enharmonicPrefs: {},
 
   currentScale: initialScale,
@@ -104,9 +115,9 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
 
   // --- Key ---
   setKey: (pc) => {
-    const { scaleType, enharmonicPrefs } = get()
+    const { familyId, familyModeIndex, enharmonicPrefs } = get()
     const pref = enharmonicPrefs[pc] ?? null
-    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScale(pc, scaleType, pref)
+    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(pc, familyId, familyModeIndex, pref)
     set({
       currentKeyPc: pc,
       currentKeyIdx: keyIdx,
@@ -119,16 +130,16 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     })
   },
 
-  // --- Mode (index into the 7 diatonic modes) ---
-  setMode: (index) => {
-    const DIATONIC_TYPES: ScaleType[] = ['ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian']
-    const scaleType = DIATONIC_TYPES[index] ?? 'ionian'
+  // --- Scale family ---
+  setFamily: (id) => {
     const { currentKeyPc, enharmonicPrefs } = get()
     const pref = enharmonicPrefs[currentKeyPc] ?? null
-    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScale(currentKeyPc, scaleType, pref)
+    // Validate family id; fall back to first family
+    const family = SCALE_FAMILIES.find(f => f.id === id) ?? SCALE_FAMILIES[0]
+    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(currentKeyPc, family.id, 0, pref)
     set({
-      currentModeIndex: index,
-      scaleType,
+      familyId: family.id,
+      familyModeIndex: 0,
       currentKeyIdx: keyIdx,
       currentTonicLabel: tonicLabel,
       currentScale: scale,
@@ -139,13 +150,38 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     })
   },
 
-  // --- Scale type (non-diatonic modes) ---
-  setScaleType: (type) => {
-    const { currentKeyPc, enharmonicPrefs } = get()
+  // --- Mode within current family ---
+  setFamilyModeIndex: (index) => {
+    const { currentKeyPc, familyId, enharmonicPrefs } = get()
     const pref = enharmonicPrefs[currentKeyPc] ?? null
-    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScale(currentKeyPc, type, pref)
+    const safeIndex = wrap(index, 7)
+    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(currentKeyPc, familyId, safeIndex, pref)
     set({
-      scaleType: type,
+      familyModeIndex: safeIndex,
+      currentKeyIdx: keyIdx,
+      currentTonicLabel: tonicLabel,
+      currentScale: scale,
+      harmonyRows,
+      selectedChordIndex: null,
+      selectedNotePc: null,
+      rowHarmonyMaxOverrides: new Map(),
+    })
+  },
+
+  // --- Navigate across global brightness order ---
+  setModeByBrightness: (delta) => {
+    const { familyId, familyModeIndex, currentKeyPc, enharmonicPrefs } = get()
+    const currentIdx = GLOBAL_BRIGHTNESS_ORDER.findIndex(
+      e => e.familyId === familyId && e.modeIndex === familyModeIndex
+    )
+    if (currentIdx === -1) return
+    const nextIdx = wrap(currentIdx + delta, GLOBAL_BRIGHTNESS_ORDER.length)
+    const next = GLOBAL_BRIGHTNESS_ORDER[nextIdx]
+    const pref = enharmonicPrefs[currentKeyPc] ?? null
+    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(currentKeyPc, next.familyId, next.modeIndex, pref)
+    set({
+      familyId: next.familyId,
+      familyModeIndex: next.modeIndex,
       currentKeyIdx: keyIdx,
       currentTonicLabel: tonicLabel,
       currentScale: scale,
@@ -158,11 +194,11 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
 
   // --- Enharmonic preference (e.g. user chose Db over C#) ---
   setEnharmonicPref: (pc, pref) => {
-    const { enharmonicPrefs, currentKeyPc, scaleType } = get()
+    const { enharmonicPrefs, currentKeyPc, familyId, familyModeIndex } = get()
     const newPrefs = { ...enharmonicPrefs, [pc]: pref }
     set({ enharmonicPrefs: newPrefs })
     if (pc === currentKeyPc) {
-      const { scale, harmonyRows, keyIdx, tonicLabel } = computeScale(currentKeyPc, scaleType, pref)
+      const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(currentKeyPc, familyId, familyModeIndex, pref)
       set({ currentScale: scale, harmonyRows, currentKeyIdx: keyIdx, currentTonicLabel: tonicLabel })
     }
   },

@@ -1,3 +1,4 @@
+import ScaleNavigator from './components/ScaleNavigator/index'
 import ScaleStrip from './components/ScaleStrip/index'
 import HarmonyGrid from './components/HarmonyGrid/index'
 import KeyboardVisualizer from './components/KeyboardVisualizer/index'
@@ -28,6 +29,7 @@ function App() {
       <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
         <SoundToggle />
       </div>
+      <ScaleNavigator />
       <ScaleStrip />
       <KeyboardVisualizer />
       <FretboardVisualizer />
