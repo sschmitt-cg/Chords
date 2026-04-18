@@ -15,19 +15,24 @@ extensions through interactive visualizers and a built-in Web Audio synth.
 ### Current state
 
 The app is mid-migration to **React 18 + TypeScript + Vite + Zustand**. The
-original app is preserved intact at `index-legacy.html` and remains fully
-functional. The new app lives in `src/` and is served by Vite at `localhost:5173`
-(or the next available port).
+original app is preserved intact at `index.html` and remains fully functional.
+The new app lives in `src/` and is served by Vite at `localhost:5173` (or the
+next available port). It is published at **tonalexplorer.com/v2.html** via
+GitHub Actions → GitHub Pages.
 
 **Completed so far:**
 - Full project scaffold (Vite, TypeScript, Zustand)
 - Pure theory functions migrated to `src/theory/index.ts`
 - Zustand store wired to recompute scale + harmony rows on every state change
 - ScaleStrip, HarmonyGrid, KeyboardVisualizer, FretboardVisualizer components
+- Web Audio engine (`src/audio/index.ts`) + `useAudio` hook — mute toggle,
+  scale playback, chord arpeggio + strum, individual note playback, iOS unlock flow
+- Light card UI theme: white cards on dark blue radial gradient background,
+  original hand-tuned pc color palette, tactile keyboard and fretboard styling
 
-**Still to do:** Web Audio engine, Metronome, Tuner, TuningSelector,
-ProgressionBuilder, WheelModal, shareable URLs, and eventually the iOS app via
-Capacitor. See `BACKLOG.md` for the full phased plan.
+**Still to do:** Metronome, Chromatic Tuner, WheelModal, shareable URLs, scale
+strip drag gesture, and eventually the iOS app via Capacitor. See `BACKLOG.md`
+for the full phased plan.
 
 ### Goal
 
@@ -78,6 +83,20 @@ directly from the store.
 and map each chromatic pitch to a unique hue. Components access them via
 `pcColorVar(pc)` from `src/theory/index.ts`, which returns `var(--pc-N)`.
 Never hard-code colors for notes — always go through this system.
+
+The palette uses the original app's hand-tuned hex values, which were visually
+calibrated for display on **light (white) card backgrounds**. `--pc-3` (D#) and
+`--pc-4` (E) were deepened slightly from the original for better contrast.
+
+### UI theme and visual design
+The design is **light cards on a dark blue radial gradient background** — the same
+visual language as the original app. Key design decisions:
+- `color-mix(in srgb, var(--pc-color) N%, #ffffff)` for tinted card surfaces
+- Keyboard: white keys have 3D depth (gradient + inset shadow); black keys are
+  glossy dark. Key color alone signals role — no dot overlays.
+- Fretboard: warm gray board (`#e3e5eb` gradient), bone nut, three dot styles:
+  **square** = root, **solid circle** = chord tone, **outline circle** = scale tone.
+- Scale strip tiles use `flex: 1` to fill strip width evenly at all screen sizes.
 
 ### Apple HIG compliance (ongoing)
 - All interactive elements must have a minimum **44×44pt touch target**
@@ -163,8 +182,10 @@ Update checkboxes as items ship. Add new items the user mentions during
 conversation — don't lose ideas to chat history.
 
 ### Key upcoming features (summarized)
-- **Web Audio engine** — migrate `ensureAudio`, `playSynthNote`, `playSequence`,
-  metronome scheduler, and tuner autocorrelation into `src/audio/index.ts`
+- **Metronome** — migrate scheduler from `script.js`; BPM, time signature, tap tempo, downbeat accent
+- **Chromatic Tuner** — autocorrelation pitch detection, cents display, per-string guided mode
+- **WheelModal** — picker for key / mode / scale type
+- **Scale strip drag gesture** — horizontal drag = change key, vertical drag = change mode
 - **Scale type expansion** — Harmonic Major, Phrygian Dominant, Lydian Dominant,
   Super Locrian/Altered, Double Harmonic, Hungarian Minor, Neapolitan Major/Minor,
   Chromatic; grouped picker UI
@@ -189,5 +210,6 @@ conversation — don't lose ideas to chat history.
 | `src/theory/types.ts` | TypeScript interfaces for the theory layer |
 | `src/store/index.ts` | Zustand store — single source of truth |
 | `src/index.css` | Global styles + `--pc-0` through `--pc-11` color palette |
-| `src/audio/index.ts` | Web Audio engine (stub — not yet migrated) |
+| `src/audio/index.ts` | Web Audio engine — oscillator synth, iOS unlock, mute, playback |
+| `src/hooks/useAudio.ts` | React hook wrapping the audio engine |
 | `BACKLOG.md` | Phased feature backlog — read at session start |

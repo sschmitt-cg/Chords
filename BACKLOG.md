@@ -20,10 +20,10 @@ parity. Open both side by side during testing.
 - [ ] Harmony Grid — selecting a chord highlights it and updates the visualizers
 - [ ] Piano keyboard — scale tones lit, tonic distinguished, chord tones highlighted
 - [ ] Guitar fretboard — scale tones lit, standard tuning correct across all 12 frets
-- [ ] Audio — synth plays on note/chord/scale selection
-- [ ] Audio — mute/unmute toggle works, iOS unlock flow works
-- [ ] Audio — scale playback (ascending arpeggio)
-- [ ] Audio — chord playback (arpeggiate then strum)
+- [x] Audio — synth plays on note/chord/scale selection
+- [x] Audio — mute/unmute toggle works, iOS unlock flow works
+- [x] Audio — scale playback (ascending arpeggio)
+- [x] Audio — chord playback (arpeggiate then strum)
 - [ ] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
 - [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
 - [ ] Mobile layout — two-panel toggle (key+mode panel / harmony panel)
@@ -40,7 +40,7 @@ parity. Open both side by side during testing.
 - [x] HarmonyGrid component (chord matrix, 7 rows × degree columns)
 - [x] KeyboardVisualizer component (piano keys, highlights scale/chord/note)
 - [x] FretboardVisualizer component (guitar fretboard, reads `guitarTuning` from store)
-- [ ] Migrate Web Audio engine → `src/audio/index.ts` + `useAudio` hook
+- [x] Migrate Web Audio engine → `src/audio/index.ts` + `useAudio` hook
 - [ ] Metronome component (BPM, time signature, tap tempo, downbeat accent)
 - [ ] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
 - [ ] WheelModal (picker for key / mode / scale type selection)
@@ -118,6 +118,9 @@ parity. Open both side by side during testing.
 ## Bugs / Polish
 
 - [ ] Enharmonic preference persistence (user picks C# vs Db — survives navigation)
-- [ ] ScaleStrip swipe gesture (drag left/right to change key, not just tap arrows)
-- [ ] Dark mode / light mode toggle with CSS variable swap
+- [ ] ScaleStrip swipe/drag gesture (horizontal = change key, vertical = change mode)
+- [ ] ScaleStrip — display current mode name below the key label
+- [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
+- [ ] iOS safe-area insets (`env(safe-area-inset-*)`) applied to wrapper padding
+- [ ] SoundToggle button — replace emoji with SVG icons matching original style
