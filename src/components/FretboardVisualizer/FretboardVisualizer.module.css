@@ -1,11 +1,12 @@
 /* FretboardVisualizer — guitar fretboard, 6 strings × 13 fret positions */
 
 .wrapper {
-  background: var(--surface-1, #1a1a1a);
-  border-radius: 12px;
-  padding: 16px 16px 24px;
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--card-border, #d9def2);
+  border-radius: 14px;
+  padding: 12px 16px 16px;
   overflow-x: auto;
-  /* Hide scrollbar but allow horizontal scroll on small screens */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
   scrollbar-width: none;
 }
 
@@ -13,11 +14,19 @@
   display: none;
 }
 
+/* Fretboard body — warm wood-like surface */
 .shell {
   position: relative;
-  /* Min width so the fretboard never gets squashed below readability */
   min-width: 420px;
   width: 100%;
+  background: linear-gradient(180deg, #dddfe6 0%, #e3e5eb 40%, #dddfe6 100%);
+  border-radius: 10px;
+  border: 1px solid #c8ccd8;
+  box-shadow:
+    0 2px 8px rgba(22,26,48,0.25),
+    inset 0 1px 0 rgba(255,255,255,0.6),
+    inset 0 -1px 0 rgba(22,26,48,0.1);
+  padding: 6px 0;
 }
 
 /* ---- Strings ---- */
@@ -26,24 +35,24 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 32px;
+  height: 28px;
 }
 
-/* The actual string line running full width */
+/* String line — thickness varies to suggest gauge */
 .stringLine {
   position: absolute;
   left: 0;
   right: 0;
   height: 1px;
-  background: rgba(255,255,255,0.25);
-  /* Strings get slightly thicker toward the low E (higher index = lower pitch) */
+  background: rgba(22,26,48,0.3);
   top: 50%;
   transform: translateY(-50%);
 }
 
-/* Low E is at the bottom (index 5 in standard tuning) */
-.string:nth-child(6) .stringLine { height: 2px; }
-.string:nth-child(5) .stringLine { height: 2px; }
+/* Lower strings (higher index = lower pitch) get progressively thicker */
+.string:nth-child(4) .stringLine { height: 1.5px; background: rgba(22,26,48,0.28); }
+.string:nth-child(5) .stringLine { height: 2px;   background: rgba(22,26,48,0.32); }
+.string:nth-child(6) .stringLine { height: 2.5px; background: rgba(22,26,48,0.35); }
 
 /* ---- Fret slots ---- */
 
@@ -56,15 +65,16 @@
   justify-content: center;
 }
 
-/* Nut (thick left border before fret 1) */
+/* Nut — thick bone-colored bar before fret 1 */
 .nut {
   position: absolute;
   left: 0;
-  top: -4px;
-  bottom: -4px;
-  width: 3px;
-  background: rgba(255,255,255,0.5);
+  top: -6px;
+  bottom: -6px;
+  width: 5px;
+  background: linear-gradient(90deg, #d4cfc4, #f0ece3, #d4cfc4);
   border-radius: 1px;
+  box-shadow: 1px 0 2px rgba(22,26,48,0.2);
 }
 
 /* Standard fret wire */
@@ -73,8 +83,9 @@
   left: 0;
   top: -4px;
   bottom: -4px;
-  width: 1px;
-  background: rgba(255,255,255,0.15);
+  width: 1.5px;
+  background: linear-gradient(90deg, rgba(180,184,196,0.6), rgba(210,214,224,0.9), rgba(180,184,196,0.6));
+  box-shadow: 0 0 1px rgba(255,255,255,0.5);
 }
 
 /* ---- Note dots ---- */
@@ -103,21 +114,33 @@
   margin-left: -4px;
 }
 
-/* Role colors */
+/* Root — squared off, full pc color, strong presence */
 .role_root {
+  border-radius: 4px;
   background: var(--pc-color);
-  box-shadow: 0 0 6px color-mix(in srgb, var(--pc-color) 70%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--pc-color), #000 30%);
+  outline-offset: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.35),
+    0 0 0 3px color-mix(in srgb, var(--pc-color) 45%, transparent),
+    0 2px 6px rgba(22,26,48,0.25);
 }
 
+/* Chord tone — solid circle, vivid pc color */
 .role_tone {
-  background: color-mix(in srgb, var(--pc-color) 65%, #1a1a1a);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pc-color) 72%, #e3e5eb);
+  box-shadow: 0 1px 4px rgba(22,26,48,0.2);
 }
 
+/* Scale tone — outline only, lighter presence */
 .role_scale {
+  border-radius: 50%;
   background: transparent;
   border: 2px solid var(--pc-color);
   width: 18px;
   height: 18px;
+  opacity: 0.75;
 }
 
 .role_off {
@@ -134,30 +157,12 @@
 
 .marker {
   position: absolute;
-  /* Horizontal: centered between two fret wires */
   left: calc(var(--marker-pos, 0) / var(--fret-count, 13) * 100%);
   top: var(--marker-y, 50%);
   transform: translate(-50%, -50%);
-  width: 8px;
-  height: 8px;
+  width: 9px;
+  height: 9px;
   border-radius: 50%;
-  background: rgba(255,255,255,0.08);
-}
-
-/* ---- Fret number labels below the board ---- */
-
-.fretLabels {
-  display: flex;
-  position: relative;
-  height: 16px;
-  margin-top: 4px;
-}
-
-.fretLabel {
-  position: absolute;
-  left: calc(var(--fret-index, 0) / var(--fret-count, 13) * 100%);
-  transform: translateX(-50%);
-  font-size: 0.6rem;
-  color: var(--text-secondary, #888);
-  text-align: center;
+  background: rgba(80,90,125,0.22);
+  box-shadow: inset 0 1px 2px rgba(22,26,48,0.15);
 }

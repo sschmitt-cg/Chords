@@ -3,14 +3,16 @@
 .wrapper {
   display: flex;
   flex-direction: column;
-  background: var(--surface-1, #1a1a1a);
-  border-radius: 12px;
+  background: var(--surface-1, #fff);
+  border: 1px solid var(--card-border, #d9def2);
+  border-radius: 14px;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
 }
 
 .empty {
   padding: 24px;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, #7c86ac);
   text-align: center;
   font-size: 0.9rem;
 }
@@ -21,10 +23,10 @@
   display: grid;
   /* Chord cell is fixed width; degree columns share the rest equally */
   grid-template-columns: minmax(96px, 1.4fr) repeat(var(--col-count, 6), 1fr);
-  border-bottom: 1px solid rgba(255,255,255,0.06);
+  border-bottom: 1px solid var(--card-border, #e3e7fb);
   position: sticky;
   top: 0;
-  background: var(--surface-1, #1a1a1a);
+  background: linear-gradient(180deg, #fdfdff, #f1f3ff);
   z-index: 2;
 }
 
@@ -36,8 +38,8 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-secondary, #888);
-  border-right: 1px solid rgba(255,255,255,0.06);
+  color: var(--text-secondary, #7c86ac);
+  border-right: 1px solid var(--card-border, #e3e7fb);
 }
 
 /* Degree toggle buttons in header — min 44px tall */
@@ -48,11 +50,11 @@
   min-height: 44px;
   background: none;
   border: none;
-  border-right: 1px solid rgba(255,255,255,0.04);
+  border-right: 1px solid var(--card-border, #e3e7fb);
   cursor: pointer;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--text-secondary, #888);
+  color: var(--text-secondary, #7c86ac);
   transition: background 0.12s, color 0.12s;
 }
 
@@ -61,13 +63,13 @@
 }
 
 .hDegree:hover {
-  background: var(--surface-2, #242424);
-  color: var(--text-primary, #f0f0f0);
+  background: var(--surface-2, #f4f5ff);
+  color: var(--text-primary, #0c1020);
 }
 
 .hDegreeActive {
-  color: var(--text-primary, #f0f0f0);
-  background: var(--surface-3, #2e2e2e);
+  color: #3145ff;
+  background: var(--surface-2, #f4f5ff);
   position: relative;
 }
 
@@ -79,7 +81,7 @@
   left: 20%;
   right: 20%;
   height: 2px;
-  background: var(--text-primary, #f0f0f0);
+  background: #3145ff;
   border-radius: 1px;
 }
 
@@ -95,7 +97,7 @@
 .row {
   display: grid;
   grid-template-columns: minmax(96px, 1.4fr) repeat(6, 1fr);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  border-bottom: 1px solid #e8ecff;
   transition: background 0.1s;
 }
 
@@ -104,7 +106,7 @@
 }
 
 .rowSelected {
-  background: color-mix(in srgb, var(--row-color) 7%, transparent);
+  background: color-mix(in srgb, var(--row-color) 10%, transparent);
 }
 
 /* ---- Chord name cell (sticky-ish left column) ---- */
@@ -117,9 +119,9 @@
   gap: 2px;
   padding: 10px 12px;
   min-height: 52px;
-  background: none;
+  background: color-mix(in srgb, var(--pc-color) 22%, #ffffff);
   border: none;
-  border-right: 1px solid rgba(255,255,255,0.06);
+  border-right: 1px solid #e6e9f5;
   cursor: pointer;
   text-align: left;
   position: relative;
@@ -127,11 +129,11 @@
 }
 
 .chordCell:hover {
-  background: color-mix(in srgb, var(--pc-color) 12%, transparent);
+  background: color-mix(in srgb, var(--pc-color) 32%, #ffffff);
 }
 
 .chordCellSelected {
-  background: color-mix(in srgb, var(--pc-color) 18%, transparent);
+  background: color-mix(in srgb, var(--pc-color) 38%, #ffffff);
 }
 
 /* Left accent bar in pc color */
@@ -155,8 +157,8 @@
 
 .romanOverlay {
   font-size: 0.6rem;
-  font-weight: 600;
-  color: var(--text-secondary, #888);
+  font-weight: 700;
+  color: rgba(15,22,54,0.65);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   line-height: 1;
@@ -165,7 +167,7 @@
 .chordName {
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--pc-color);
+  color: #151b36;
   line-height: 1.1;
 }
 
@@ -177,7 +179,7 @@
   align-items: center;
   justify-content: center;
   min-height: 52px;
-  border-right: 1px solid rgba(255,255,255,0.04);
+  border-right: 1px solid #e6e9f5;
   font-size: 0.78rem;
   font-weight: 600;
 }
@@ -192,29 +194,32 @@
   border-top: none;
   border-bottom: none;
   cursor: pointer;
-  color: var(--pc-color);
+  color: #151b36;
   transition: background 0.1s, opacity 0.1s;
 }
 
 .noteCell:hover {
-  background: color-mix(in srgb, var(--pc-color) 12%, transparent);
+  background: color-mix(in srgb, var(--pc-color) 18%, #ffffff);
 }
 
 /* Visible (within the active max degree) */
 .noteCellVisible {
   opacity: 1;
+  background: color-mix(in srgb, var(--pc-color) 42%, #ffffff);
 }
 
-/* Ghost (outside active max degree — muted but still visible as context) */
+/* Ghost (outside active max degree — eye passes over them naturally) */
 .noteCellGhost {
-  opacity: 0.18;
+  opacity: 1;
+  background: color-mix(in srgb, var(--pc-color) 8%, #ffffff);
+  color: rgba(15,22,54,0.25);
   pointer-events: none;
 }
 
 /* Selected note */
 .noteCellSelected {
-  background: color-mix(in srgb, var(--pc-color) 22%, transparent);
-  outline: 1px solid var(--pc-color);
+  background: color-mix(in srgb, var(--pc-color) 58%, #ffffff);
+  outline: 2px solid color-mix(in srgb, var(--pc-color) 65%, #2c58ff);
   outline-offset: -2px;
   border-radius: 4px;
   opacity: 1;

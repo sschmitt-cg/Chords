@@ -157,18 +157,6 @@ export default function FretboardVisualizer() {
           )
         })}
 
-        {/* ---- Fret number labels ---- */}
-        <div className={styles.fretLabels} aria-hidden="true">
-          {[3, 5, 7, 9, 12].map(f => (
-            <div
-              key={f}
-              className={styles.fretLabel}
-              style={{ '--fret-index': f - 0.5 } as React.CSSProperties}
-            >
-              {f}
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   )

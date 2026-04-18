@@ -110,13 +110,6 @@ export default function KeyboardVisualizer() {
               onClick={() => handleKeyClick(pc)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleKeyClick(pc) }}
             >
-              {/* Dot indicator for lit keys */}
-              {role !== 'off' && (
-                <span
-                  className={styles.dot}
-                  style={{ '--pc-color': pcColorVar(pc) } as React.CSSProperties}
-                />
-              )}
             </div>
           )
         })}
@@ -145,12 +138,6 @@ export default function KeyboardVisualizer() {
               onClick={() => handleKeyClick(pc)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') handleKeyClick(pc) }}
             >
-              {role !== 'off' && (
-                <span
-                  className={styles.dot}
-                  style={{ '--pc-color': pcColorVar(pc) } as React.CSSProperties}
-                />
-              )}
             </div>
           )
         })}

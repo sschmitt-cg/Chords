@@ -5,37 +5,40 @@
 body {
   margin: 0;
   font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
-  background: #111;
-  color: #f0f0f0;
+  background:
+    radial-gradient(circle at 20% 20%, #1f2450, #0e122b),
+    linear-gradient(135deg, #0e122b, #1b1f3a);
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 #root {
   width: 100%;
   min-height: 100vh;
-  min-height: 100dvh; /* dynamic viewport height — iOS safe */
+  min-height: 100dvh;
 }
 
 /* ---- Pitch class color palette ----
-   Matches the original CSS custom properties so components
-   can use var(--pc-0) through var(--pc-11). */
+   Original hand-tuned values — calibrated for display on light card backgrounds. */
 :root {
-  --pc-0:  hsl(0,   70%, 65%);   /* C  — red */
-  --pc-1:  hsl(25,  80%, 60%);   /* C# — orange-red */
-  --pc-2:  hsl(42,  90%, 58%);   /* D  — orange */
-  --pc-3:  hsl(60,  80%, 55%);   /* D# — yellow */
-  --pc-4:  hsl(88,  65%, 52%);   /* E  — yellow-green */
-  --pc-5:  hsl(140, 60%, 50%);   /* F  — green */
-  --pc-6:  hsl(170, 65%, 50%);   /* F# — cyan-green */
-  --pc-7:  hsl(200, 75%, 58%);   /* G  — sky blue */
-  --pc-8:  hsl(220, 75%, 62%);   /* G# — blue */
-  --pc-9:  hsl(250, 70%, 65%);   /* A  — indigo */
-  --pc-10: hsl(280, 65%, 62%);   /* A# — purple */
-  --pc-11: hsl(330, 70%, 62%);   /* B  — pink */
+  --pc-0:  #ff6f6f;   /* C  — red */
+  --pc-1:  #ff8d6f;   /* C# — orange-red */
+  --pc-2:  #ffad6f;   /* D  — orange */
+  --pc-3:  #e8b84b;   /* D# — amber (deeper than original yellow for contrast) */
+  --pc-4:  #a8cc50;   /* E  — yellow-green (deeper for contrast on white) */
+  --pc-5:  #6bcf72;   /* F  — green */
+  --pc-6:  #6fe1c6;   /* F# — cyan-green */
+  --pc-7:  #6fd2f0;   /* G  — sky blue */
+  --pc-8:  #6f9dff;   /* G# — blue */
+  --pc-9:  #8b6dff;   /* A  — indigo */
+  --pc-10: #c26dff;   /* A# — purple */
+  --pc-11: #ff6de2;   /* B  — pink */
 
-  /* Surface tokens for dark theme */
-  --surface-1: #1a1a1a;
-  --surface-2: #242424;
-  --surface-3: #2e2e2e;
-  --text-primary: #f0f0f0;
-  --text-secondary: #888;
+  /* Surface tokens — light card theme */
+  --surface-1: #ffffff;
+  --surface-2: #f4f5ff;
+  --surface-3: #eef0ff;
+  --card-border: #d9def2;
+  --text-primary: #0c1020;
+  --text-secondary: #7c86ac;
 }
