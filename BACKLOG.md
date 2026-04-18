@@ -12,7 +12,7 @@ reference implementation and must remain untouched until the new app reaches ful
 parity. Open both side by side during testing.
 
 - [ ] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db)
-- [ ] Mode selector (all 7 diatonic modes)
+- [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
 - [ ] Scale strip — correct note spelling for every key/mode combination
 - [ ] Scale strip — swipe/drag gesture to change key
 - [ ] Harmony Grid — 7 rows, correct chord names at triads through 13ths
@@ -50,18 +50,13 @@ parity. Open both side by side during testing.
 
 ## Phase 2 — Scale Type Expansion
 
-- [ ] Add remaining scale patterns to `SCALE_PATTERNS`:
-  - [ ] Harmonic Major         [0,2,4,5,7,8,11]
-  - [ ] Melodic Minor (asc)    already included as `melodic-minor`
-  - [ ] Phrygian Dominant      [0,1,4,5,7,8,10]  (5th mode of harmonic minor)
-  - [ ] Lydian Dominant        [0,2,4,6,7,9,10]  (4th mode of melodic minor)
-  - [ ] Super Locrian (Altered)[0,1,3,4,6,8,10]  (7th mode of melodic minor)
-  - [ ] Double Harmonic Major  [0,1,4,5,7,8,11]  (Byzantine)
-  - [ ] Hungarian Minor        [0,2,3,6,7,8,11]
-  - [ ] Neapolitan Major       [0,1,3,5,7,9,11]
-  - [ ] Neapolitan Minor       [0,1,3,5,7,8,11]
-  - [ ] Chromatic              [0,1,2,3,4,5,6,7,8,9,10,11]
-- [ ] Scale type picker UI (grouped: Modes / Pentatonic & Blues / Harmonic & Melodic / Symmetric & Other)
+- [x] 5 scale families × 7 modes (35 total) in `SCALE_FAMILIES` — Major, Melodic Minor,
+  Harmonic Minor, Harmonic Major, Double Harmonic
+- [x] `getModeIntervals`, `computeDisplayScaleFromFamily`, `GLOBAL_BRIGHTNESS_ORDER` in theory layer
+- [x] ScaleNavigator component — key drum, family tabs, mode drum, brightness meter, tension dots
+- [x] Store migrated: `scaleType`/`currentModeIndex` → `familyId`/`familyModeIndex`; new actions
+  `setFamily`, `setFamilyModeIndex`, `setModeByBrightness`
+- [ ] Pentatonic / blues / whole-tone / diminished scale families (non-7-note with HarmonyGrid fallback)
 - [ ] HarmonyGrid graceful fallback for non-7-note scales (show available stacked intervals)
 - [ ] "Compatible scales" panel — show other scale types that share the same pitch classes
 

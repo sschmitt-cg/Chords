@@ -1,22 +1,18 @@
 // Scale strip — horizontal row of note tiles showing scale spelling + roman numerals
-// Tapping a tile selects that note; swiping left/right changes key by semitone.
+// Tapping the tonic plays the scale; tapping any other tile plays that note.
 
 import { useTonalStore } from '../../store/index'
 import { useAudio } from '../../hooks/useAudio'
-import { computeRomans, pcColorVar, wrap } from '../../theory/index'
+import { computeRomans, pcColorVar } from '../../theory/index'
 import styles from './ScaleStrip.module.css'
 
 export default function ScaleStrip() {
   const {
     currentScale,
-    currentTonicLabel,
-    currentModeIndex,
     selectedNotePc,
     selectedChordIndex,
     setSelectedNote,
     setSelectedChord,
-    setKey,
-    setMode,
   } = useTonalStore()
   const { playScale, playNote } = useAudio()
 
@@ -37,41 +33,8 @@ export default function ScaleStrip() {
     }
   }
 
-  function handleKeyShift(delta: number) {
-    const nextPc = wrap(pitchClasses[0] + delta, 12)
-    setKey(nextPc)
-  }
-
-  function handleModeShift(delta: number) {
-    setMode(wrap(currentModeIndex + delta, 7))
-  }
-
   return (
     <div className={styles.strip}>
-      {/* Header: key label + mode nav arrows */}
-      <div className={styles.header}>
-        <button
-          className={styles.navBtn}
-          aria-label="Previous key"
-          onClick={() => handleKeyShift(-1)}
-        >‹</button>
-
-        <div className={styles.keyModeLabel}>
-          <button className={styles.modeBtn} onClick={() => handleModeShift(-1)} aria-label="Previous mode">◂</button>
-          <span className={styles.tonicLabel} style={{ color: pcColorVar(pitchClasses[0] ?? 0) }}>
-            {currentTonicLabel}
-          </span>
-          <button className={styles.modeBtn} onClick={() => handleModeShift(1)} aria-label="Next mode">▸</button>
-        </div>
-
-        <button
-          className={styles.navBtn}
-          aria-label="Next key"
-          onClick={() => handleKeyShift(1)}
-        >›</button>
-      </div>
-
-      {/* Tile row */}
       <div className={styles.tileRow} role="list" aria-label="Scale notes">
         {spelled.map((note, idx) => {
           const pc = pitchClasses[idx]
