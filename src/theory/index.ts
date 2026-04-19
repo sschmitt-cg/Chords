@@ -475,78 +475,68 @@ export const pcColorVar = (pc: number): string => `var(--pc-${wrap(pc, 12)})`
 
 export const SCALE_FAMILIES: ScaleFamily[] = [
   {
-    id: 'major',
-    name: 'Major',
-    tension: 0,
+    id: 'major', name: 'Major', tension: 0,
     intervals: [2, 2, 1, 2, 2, 2, 1],
     modes: [
-      { name: 'Ionian',     brightness: 60 },
-      { name: 'Dorian',     brightness: 43 },
-      { name: 'Phrygian',   brightness: 28 },
-      { name: 'Lydian',     brightness: 75 },
-      { name: 'Mixolydian', brightness: 52 },
-      { name: 'Aeolian',    brightness: 36 },
-      { name: 'Locrian',    brightness: 12 },
+      { name: 'Ionian',      lcdName: 'IONIAN',  brightness: 60 },
+      { name: 'Dorian',      lcdName: 'DORIAN',  brightness: 43 },
+      { name: 'Phrygian',    lcdName: 'PHRYG',   brightness: 28 },
+      { name: 'Lydian',      lcdName: 'LYDIAN',  brightness: 75 },
+      { name: 'Mixolydian',  lcdName: 'MIXOLYD', brightness: 52 },
+      { name: 'Aeolian',     lcdName: 'AEOLIAN', brightness: 36 },
+      { name: 'Locrian',     lcdName: 'LOCRIAN', brightness: 12 },
     ],
   },
   {
-    id: 'melodic-minor',
-    name: 'Melodic Minor',
-    tension: 0,
+    id: 'melodic-minor', name: 'Melodic Minor', tension: 0,
     intervals: [2, 1, 2, 2, 2, 2, 1],
     modes: [
-      { name: 'Melodic Minor',    brightness: 48 },
-      { name: 'Dorian ♭2',       brightness: 33 },
-      { name: 'Lydian Augmented', brightness: 82 },
-      { name: 'Lydian Dominant',  brightness: 68 },
-      { name: 'Mixolydian ♭6',   brightness: 50 },
-      { name: 'Locrian ♯2',      brightness: 22 },
-      { name: 'Altered',          brightness: 6  },
+      { name: 'Melodic Minor',    lcdName: 'MEL MIN', brightness: 48 },
+      { name: 'Dorian \u266d2',   lcdName: 'DOR b2',  brightness: 33 },
+      { name: 'Lydian Aug.',      lcdName: 'LYD AUG', brightness: 82 },
+      { name: 'Lydian Dom.',      lcdName: 'LYD DOM', brightness: 68 },
+      { name: 'Mixolydian \u266d6', lcdName: 'MIX b6', brightness: 50 },
+      { name: 'Locrian \u266f2',  lcdName: 'LOC #2',  brightness: 22 },
+      { name: 'Altered',          lcdName: 'ALTERED', brightness: 6  },
     ],
   },
   {
-    id: 'harmonic-minor',
-    name: 'Harmonic Minor',
-    tension: 1,
+    id: 'harmonic-minor', name: 'Harmonic Minor', tension: 1,
     intervals: [2, 1, 2, 2, 1, 3, 1],
     modes: [
-      { name: 'Harmonic Minor',     brightness: 40 },
-      { name: 'Locrian ♯6',        brightness: 18 },
-      { name: 'Ionian ♯5',         brightness: 64 },
-      { name: 'Dorian ♯4',         brightness: 46 },
-      { name: 'Phrygian Dominant',  brightness: 34 },
-      { name: 'Lydian ♯2',         brightness: 72 },
-      { name: 'Altered Diminished', brightness: 8  },
+      { name: 'Harmonic Minor',   lcdName: 'HRM MIN', brightness: 40 },
+      { name: 'Locrian \u266f6',  lcdName: 'LOC #6',  brightness: 18 },
+      { name: 'Ionian \u266f5',   lcdName: 'ION #5',  brightness: 64 },
+      { name: 'Dorian \u266f4',   lcdName: 'DOR #4',  brightness: 46 },
+      { name: 'Phrygian Dom.',    lcdName: 'PHRYG D', brightness: 34 },
+      { name: 'Lydian \u266f2',   lcdName: 'LYD #2',  brightness: 72 },
+      { name: 'Alt. Diminished',  lcdName: 'ALT DIM', brightness: 8  },
     ],
   },
   {
-    id: 'harmonic-major',
-    name: 'Harmonic Major',
-    tension: 1,
+    id: 'harmonic-major', name: 'Harmonic Major', tension: 1,
     intervals: [2, 2, 1, 2, 1, 3, 1],
     modes: [
-      { name: 'Harmonic Major',       brightness: 57 },
-      { name: 'Dorian ♭5',           brightness: 38 },
-      { name: 'Phrygian ♭4',         brightness: 23 },
-      { name: 'Lydian ♭3',           brightness: 66 },
-      { name: 'Mixolydian ♭2',       brightness: 47 },
-      { name: 'Lydian Augmented ♯2', brightness: 80 },
-      { name: 'Locrian ♭♭7',        brightness: 13 },
+      { name: 'Harmonic Major',        lcdName: 'HRM MAJ', brightness: 57 },
+      { name: 'Dorian \u266d5',        lcdName: 'DOR b5',  brightness: 38 },
+      { name: 'Phrygian \u266d4',      lcdName: 'PHR b4',  brightness: 23 },
+      { name: 'Lydian \u266d3',        lcdName: 'LYD b3',  brightness: 66 },
+      { name: 'Mixolydian \u266d2',    lcdName: 'MIX b2',  brightness: 47 },
+      { name: 'Lydian Aug. \u266f2',   lcdName: 'LA #2',   brightness: 80 },
+      { name: 'Locrian \u266d\u266d7', lcdName: 'LOC bb7', brightness: 13 },
     ],
   },
   {
-    id: 'double-harmonic',
-    name: 'Double Harmonic',
-    tension: 2,
+    id: 'double-harmonic', name: 'Double Harmonic', tension: 2,
     intervals: [1, 3, 1, 2, 1, 3, 1],
     modes: [
-      { name: 'Double Harmonic',       brightness: 44 },
-      { name: 'Lydian ♯2♯6',         brightness: 78 },
-      { name: 'Ultraphrygian',         brightness: 19 },
-      { name: 'Hungarian Minor',       brightness: 37 },
-      { name: 'Oriental',              brightness: 41 },
-      { name: 'Ionian Augmented ♯2',  brightness: 65 },
-      { name: 'Locrian ♭♭3♭♭7',     brightness: 7  },
+      { name: 'Double Harmonic',        lcdName: 'DBL HRM', brightness: 44 },
+      { name: 'Lydian \u266f2 \u266f6', lcdName: 'LY#2#6',  brightness: 78 },
+      { name: 'Ultraphrygian',          lcdName: 'UPHRYG',  brightness: 19 },
+      { name: 'Hungarian Minor',        lcdName: 'HUNG',    brightness: 37 },
+      { name: 'Oriental',               lcdName: 'ORIENT',  brightness: 41 },
+      { name: 'Ionian Aug. \u266f2',    lcdName: 'ION A#2', brightness: 65 },
+      { name: 'Locrian \u266d\u266d3',  lcdName: 'LC bb3',  brightness: 7  },
     ],
   },
 ]
@@ -605,7 +595,30 @@ export function computeDisplayScaleFromFamily(
   return { tonicLabel, pitchClasses: scaleData.pitchClasses, spelled: scaleData.spelled, keyIdx, preferenceUsed }
 }
 
-// All 35 modes sorted by brightness ascending.
+// Returns semitone offset of mode root from family root (e.g. Dorian root is 2 semitones above Ionian root)
+export function getModeRootOffset(family: ScaleFamily, modeIndex: number): number {
+  return family.intervals.slice(0, modeIndex).reduce((s, v) => s + v, 0)
+}
+
+// Returns pitch classes for all 7 notes of the mode, starting from rootPc
+export function getModeNotes(rootPc: number, family: ScaleFamily, modeIndex: number): number[] {
+  const iv = getModeIntervals(family, modeIndex)
+  const notes = [rootPc]
+  let p = rootPc
+  for (let i = 0; i < 6; i++) {
+    p = (p + iv[i]) % 12
+    notes.push(p)
+  }
+  return notes
+}
+
+// All 35 modes sorted by brightness ascending (darkest = index 0), indexed by familyIndex (number)
+export const BRIGHTNESS_ORDER: Array<{ familyIndex: number; modeIndex: number; brightness: number }> =
+  SCALE_FAMILIES.flatMap((f, fi) =>
+    f.modes.map((m, mi) => ({ familyIndex: fi, modeIndex: mi, brightness: m.brightness }))
+  ).sort((a, b) => a.brightness - b.brightness)
+
+// All 35 modes sorted by brightness ascending (legacy: uses familyId string key)
 export const GLOBAL_BRIGHTNESS_ORDER: BrightnessEntry[] = SCALE_FAMILIES
   .flatMap(f => f.modes.map((m, i) => ({ familyId: f.id, modeIndex: i, brightness: m.brightness })))
   .sort((a, b) => a.brightness - b.brightness)
