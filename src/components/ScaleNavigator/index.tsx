@@ -440,7 +440,7 @@ export default function ScaleNavigator() {
       <div className={styles.panel}>
 
         <div className={styles.region}>
-          <span className={styles.regionLabel}>LOGICAL ↺</span>
+          <span className={styles.regionLabel}>LOGICAL</span>
           <div className={styles.knobRow}>
             <KnobUnit label="ROOT"   lcdValue={pcName(currentKeyPc, enharmonicPrefs)} step={currentKeyPc} total={12} pickerType="root"   onOpen={openPicker} onChange={v => handleKnobChange('root', v)} />
             <KnobUnit label="FAMILY" lcdValue={FAMILY_LCD[currentFamily.id] ?? currentFamily.name.toUpperCase()} step={familyIndex} total={5} pickerType="family" onOpen={openPicker} onChange={v => handleKnobChange('family', v)} />

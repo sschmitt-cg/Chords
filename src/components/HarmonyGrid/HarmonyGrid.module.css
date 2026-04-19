@@ -22,7 +22,7 @@
 .header {
   display: grid;
   /* Chord cell is fixed width; degree columns share the rest equally */
-  grid-template-columns: minmax(96px, 1.4fr) repeat(var(--col-count, 6), 1fr);
+  grid-template-columns: minmax(150px, 1.8fr) repeat(var(--col-count, 6), 1fr);
   border-bottom: 1px solid var(--card-border, #e3e7fb);
   position: sticky;
   top: 0;
@@ -67,14 +67,18 @@
   color: var(--text-primary, #0c1020);
 }
 
+/* All degrees ≤ globalHarmonyMax — dimly lit */
 .hDegreeActive {
   color: #3145ff;
   background: var(--surface-2, #f4f5ff);
+}
+
+/* The exact globalHarmonyMax degree — strong indicator */
+.hDegreeCurrent {
   position: relative;
 }
 
-/* Bottom bar on the active degree column */
-.hDegreeActive::after {
+.hDegreeCurrent::after {
   content: '';
   position: absolute;
   bottom: 0;
@@ -96,7 +100,7 @@
 
 .row {
   display: grid;
-  grid-template-columns: minmax(96px, 1.4fr) repeat(6, 1fr);
+  grid-template-columns: minmax(150px, 1.8fr) repeat(6, 1fr);
   border-bottom: 1px solid #e8ecff;
   transition: background 0.1s;
 }
@@ -169,6 +173,7 @@
   font-weight: 700;
   color: #151b36;
   line-height: 1.1;
+  white-space: nowrap;
 }
 
 /* ---- Note cells ---- */
@@ -208,12 +213,17 @@
   background: color-mix(in srgb, var(--pc-color) 42%, #ffffff);
 }
 
-/* Ghost (outside active max degree — eye passes over them naturally) */
+/* Ghost (outside active max degree) — clickable to extend that row */
 .noteCellGhost {
   opacity: 1;
   background: color-mix(in srgb, var(--pc-color) 8%, #ffffff);
   color: rgba(15,22,54,0.25);
-  pointer-events: none;
+  cursor: pointer;
+}
+
+.noteCellGhost:hover {
+  background: color-mix(in srgb, var(--pc-color) 16%, #ffffff);
+  color: rgba(15,22,54,0.5);
 }
 
 /* Selected note */

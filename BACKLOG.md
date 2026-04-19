@@ -13,20 +13,21 @@ parity. Open both side by side during testing.
 
 - [ ] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db)
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
-- [ ] Scale strip — correct note spelling for every key/mode combination
-- [ ] Scale strip — swipe/drag gesture to change key
-- [ ] Harmony Grid — 7 rows, correct chord names at triads through 13ths
-- [ ] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions
-- [ ] Harmony Grid — selecting a chord highlights it and updates the visualizers
-- [ ] Piano keyboard — scale tones lit, tonic distinguished, chord tones highlighted
-- [ ] Guitar fretboard — scale tones lit, standard tuning correct across all 12 frets
+- [x] Scale strip — correct note spelling for every key/mode combination
+- [x] Scale strip — swipe/drag gesture to change key
+- [x] Harmony Grid — 7 rows, correct chord names at triads through 13ths (sus2/sus4/b5 added; exotic fallbacks show root only)
+- [x] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions; header click resets per-row overrides
+- [x] Harmony Grid — per-row extension: clicking ghost note extends that row; clicking active note reduces to that degree
+- [x] Harmony Grid — selecting a chord highlights it and updates the visualizers
+- [x] Piano keyboard — scale tones lit, tonic distinguished, chord tones highlighted
+- [x] Guitar fretboard — scale tones lit, standard tuning correct across all 12 frets
 - [x] Audio — synth plays on note/chord/scale selection
 - [x] Audio — mute/unmute toggle works, iOS unlock flow works
 - [x] Audio — scale playback (ascending arpeggio)
 - [x] Audio — chord playback (arpeggiate then strum)
 - [ ] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
 - [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
-- [ ] Mobile layout — two-panel toggle (key+mode panel / harmony panel)
+- [ ] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
 - [ ] Mobile layout — touch targets all ≥ 44pt, no horizontal overflow
 
 ---
@@ -66,7 +67,8 @@ parity. Open both side by side during testing.
 ## Phase 3 — Harmony & Theory Features
 
 - [ ] Functional harmony labels on HarmonyGrid rows (T / S / D — Tonic / Subdominant / Dominant)
-- [ ] Roman numeral analysis shown in ScaleStrip (already partially done) and HarmonyGrid
+- [x] Roman numeral analysis shown in ScaleStrip (chord quality: uppercase major, lowercase minor, °dim)
+- [ ] Roman numeral analysis in HarmonyGrid row headers
 - [ ] Progression Builder component (4–8 chord slots, drag-to-reorder, loop playback)
 - [ ] Common progressions library (I–V–vi–IV, ii–V–I, 12-bar blues, etc.)
 - [ ] Parallel / relative mode panel (e.g. show C major ↔ A minor side by side)

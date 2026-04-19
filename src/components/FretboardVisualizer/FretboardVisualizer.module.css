@@ -20,7 +20,7 @@
   min-width: 420px;
   width: 100%;
   background: linear-gradient(180deg, #dddfe6 0%, #e3e5eb 40%, #dddfe6 100%);
-  border-radius: 10px;
+  border-radius: 2px;
   border: 1px solid #c8ccd8;
   box-shadow:
     0 2px 8px rgba(22,26,48,0.25),
@@ -38,21 +38,21 @@
   height: 28px;
 }
 
-/* String line — thickness varies to suggest gauge */
+/* String line — thickness varies by gauge (index 0 = high E, index 5 = low E) */
 .stringLine {
   position: absolute;
   left: 0;
   right: 0;
   height: 1px;
-  background: rgba(22,26,48,0.3);
+  background: rgba(22,26,48,0.28);
   top: 50%;
   transform: translateY(-50%);
 }
 
-/* Lower strings (higher index = lower pitch) get progressively thicker */
-.string:nth-child(4) .stringLine { height: 1.5px; background: rgba(22,26,48,0.28); }
-.string:nth-child(5) .stringLine { height: 2px;   background: rgba(22,26,48,0.32); }
-.string:nth-child(6) .stringLine { height: 2.5px; background: rgba(22,26,48,0.35); }
+.string:nth-child(3) .stringLine { height: 1.5px; background: rgba(22,26,48,0.30); }
+.string:nth-child(4) .stringLine { height: 2px;   background: rgba(22,26,48,0.33); }
+.string:nth-child(5) .stringLine { height: 2.5px; background: rgba(22,26,48,0.36); }
+.string:nth-child(6) .stringLine { height: 3px;   background: rgba(22,26,48,0.40); }
 
 /* ---- Fret slots ---- */
 
@@ -65,16 +65,16 @@
   justify-content: center;
 }
 
-/* Nut — thick bone-colored bar before fret 1 */
+/* Nut — solid bone-colored bar before fret 1 */
 .nut {
   position: absolute;
   left: 0;
   top: -6px;
   bottom: -6px;
-  width: 5px;
-  background: linear-gradient(90deg, #d4cfc4, #f0ece3, #d4cfc4);
-  border-radius: 1px;
-  box-shadow: 1px 0 2px rgba(22,26,48,0.2);
+  width: 7px;
+  background: #e8e2d4;
+  border-radius: 0;
+  box-shadow: 2px 0 4px rgba(22,26,48,0.35), inset -1px 0 1px rgba(255,255,255,0.5);
 }
 
 /* Standard fret wire */
@@ -93,9 +93,9 @@
 .dot {
   position: relative;
   z-index: 1;
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
   border-radius: 50%;
   border: none;
   cursor: pointer;
@@ -103,6 +103,7 @@
   align-items: center;
   justify-content: center;
   transition: transform 0.08s, box-shadow 0.08s;
+  flex-shrink: 0;
 }
 
 .dot:active {
@@ -138,8 +139,6 @@
   border-radius: 50%;
   background: transparent;
   border: 2px solid var(--pc-color);
-  width: 18px;
-  height: 18px;
   opacity: 0.75;
 }
 
