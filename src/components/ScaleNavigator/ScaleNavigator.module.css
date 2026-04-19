@@ -1,4 +1,4 @@
-/* ScaleNavigator — dark panel with knobs + exploratory sliders */
+/* ScaleNavigator — dark panel with circular knobs + bounded exploratory wheels */
 
 .outer {
   position: relative;
@@ -88,6 +88,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  user-select: none;
 }
 
 /* ---- Knob label ---- */
@@ -99,11 +100,11 @@
   letter-spacing: 0.1em;
 }
 
-/* ---- Picker popover ---- */
+/* ---- Picker popover — rendered position: fixed to avoid layout shift ---- */
 
 .picker {
-  position: absolute;
-  z-index: 20;
+  position: fixed;
+  z-index: 1000;
   min-width: 150px;
   background: #111a40;
   border: 0.5px solid #2e3870;
@@ -140,130 +141,11 @@
   font-weight: 500;
 }
 
-.pickerBrightnessBar {
+.pickerBrightnessDot {
   display: inline-block;
-  height: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
   background: #6670e8;
-  opacity: 0.6;
-  border-radius: 2px;
   flex-shrink: 0;
-}
-
-/* ---- Exploratory sliders ---- */
-
-.sliderUnit {
-  display: flex;
-  flex-direction: column;
-}
-
-.sliderLabel {
-  font-size: 10px;
-  color: #8090c0;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 7px;
-  display: block;
-}
-
-.slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 3px;
-  border-radius: 2px;
-  outline: none;
-  cursor: pointer;
-  background: linear-gradient(
-    to right,
-    #6670e8 var(--pct, 0%),
-    #1e2858 var(--pct, 0%)
-  );
-}
-
-.slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #6670e8;
-  border: 2px solid #9098f0;
-  cursor: pointer;
-}
-
-.slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: #6670e8;
-  border: 2px solid #9098f0;
-  cursor: pointer;
-  border-style: solid;
-}
-
-.sliderEndLabels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-  font-size: 9px;
-  color: #5060a0;
-}
-
-.tensionHint {
-  font-size: 10px;
-  color: #6070a0;
-  font-style: italic;
-  margin: 2px 0 0;
-  line-height: 1.4;
-}
-
-/* ---- Note display row ---- */
-
-.noteRow {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex-wrap: nowrap;
-  padding: 0 2px;
-}
-
-.noteGroup {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-.notePill {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 500;
-  background: #ffffff;
-  border: 0.5px solid #d9def2;
-  color: #0c1020;
-  flex-shrink: 0;
-}
-
-.notePillRoot {
-  background: #0c1020;
-  color: #ffffff;
-  border-color: #0c1020;
-}
-
-.intervalLabel {
-  font-family: monospace;
-}
-
-/* ---- Annotation line ---- */
-
-.annotation {
-  font-size: 11px;
-  font-style: italic;
-  color: #7c86ac;
-  min-height: 16px;
-  margin: 0;
 }

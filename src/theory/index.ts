@@ -603,13 +603,8 @@ export function getModeRootOffset(family: ScaleFamily, modeIndex: number): numbe
 // Returns pitch classes for all 7 notes of the mode, starting from rootPc
 export function getModeNotes(rootPc: number, family: ScaleFamily, modeIndex: number): number[] {
   const iv = getModeIntervals(family, modeIndex)
-  const notes = [rootPc]
-  let p = rootPc
-  for (let i = 0; i < 6; i++) {
-    p = (p + iv[i]) % 12
-    notes.push(p)
-  }
-  return notes
+  // iv contains cumulative offsets from 0 — just shift them to rootPc
+  return iv.map(offset => wrap(rootPc + offset, 12))
 }
 
 // All 35 modes sorted by brightness ascending (darkest = index 0), indexed by familyIndex (number)

@@ -1,19 +1,22 @@
 /* ScaleStrip — chromatic 12-position proportional layout */
 
 .strip {
-  padding: 12px 16px;
+  padding: 12px 16px 10px;
   background: var(--surface-1, #fff);
   border: 1px solid var(--card-border, #d9def2);
   border-radius: 14px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
   user-select: none;
   touch-action: pan-y;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-/* Proportional container — tiles positioned absolutely */
+/* Proportional container — tiles and labels positioned absolutely */
 .container {
   position: relative;
-  height: 88px;
+  height: 96px;
   overflow: hidden;
   width: 100%;
 }
@@ -24,7 +27,7 @@
   position: absolute;
   width: 52px;
   height: 72px;
-  top: 8px;
+  top: 16px;
   background: #ffffff;
   border: 0.5px solid #d9def2;
   border-radius: 10px;
@@ -80,34 +83,35 @@
   flex-shrink: 0;
 }
 
-/* ---- Inactive tile (chromatic non-scale tone) ---- */
+/* ---- Inactive tile (chromatic non-scale tone) — same size as active, dotted border ---- */
 
 .inactiveTile {
   position: absolute;
-  width: 32px;
-  height: 44px;
-  top: 22px;
+  width: 52px;
+  height: 72px;
+  top: 16px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: transparent;
+  border: 1px dashed #c8d0e8;
+  border-radius: 10px;
 }
 
 .inactiveName {
-  font-size: 11px;
-  color: #7c86ac;
+  font-size: 13px;
+  font-weight: 400;
+  color: #a0a8c8;
   text-align: center;
 }
 
-/* ---- Aug 2nd bracket ---- */
+/* ---- Annotation line ---- */
 
-.augBracket {
-  position: absolute;
-  top: 2px;
-  height: 6px;
-  border-top: 2px solid #c07820;
-  border-left: 2px solid #c07820;
-  border-right: 2px solid #c07820;
-  border-radius: 2px 2px 0 0;
-  pointer-events: none;
+.annotation {
+  font-size: 11px;
+  font-style: italic;
+  color: #7c86ac;
+  margin: 0;
+  min-height: 14px;
 }
