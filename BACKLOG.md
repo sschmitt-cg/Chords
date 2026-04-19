@@ -13,8 +13,8 @@ parity. Open both side by side during testing.
 
 - [ ] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db)
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
-- [ ] Scale strip — correct note spelling for every key/mode combination
-- [ ] Scale strip — swipe/drag gesture to change key
+- [x] Scale strip — correct note spelling for every key/mode combination
+- [x] Scale strip — swipe/drag gesture to change key
 - [ ] Harmony Grid — 7 rows, correct chord names at triads through 13ths
 - [ ] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions
 - [ ] Harmony Grid — selecting a chord highlights it and updates the visualizers
@@ -66,7 +66,8 @@ parity. Open both side by side during testing.
 ## Phase 3 — Harmony & Theory Features
 
 - [ ] Functional harmony labels on HarmonyGrid rows (T / S / D — Tonic / Subdominant / Dominant)
-- [ ] Roman numeral analysis shown in ScaleStrip (already partially done) and HarmonyGrid
+- [x] Roman numeral analysis shown in ScaleStrip (chord quality: uppercase major, lowercase minor, °dim)
+- [ ] Roman numeral analysis in HarmonyGrid row headers
 - [ ] Progression Builder component (4–8 chord slots, drag-to-reorder, loop playback)
 - [ ] Common progressions library (I–V–vi–IV, ii–V–I, 12-bar blues, etc.)
 - [ ] Parallel / relative mode panel (e.g. show C major ↔ A minor side by side)
