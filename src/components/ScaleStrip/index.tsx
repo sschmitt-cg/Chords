@@ -31,6 +31,7 @@ const SWIPE_THRESHOLD_PX = 30
 
 export default function ScaleStrip() {
   const {
+    currentScale,
     currentModeNotes,
     currentModeRootPc,
     currentKeyPc,
@@ -87,7 +88,9 @@ export default function ScaleStrip() {
     const scaleIdx = currentModeNotes.indexOf(pc)
     const isActive = scaleIdx !== -1
     const isRoot = i === 0
-    return { pc, semitone: i, isActive, isRoot, scaleIdx }
+    // Use diatonic spelling for active tiles so Cb shows as Cb, not B, etc.
+    const name = isActive ? currentScale.spelled[scaleIdx] : pcName(pc, enharmonicPrefs)
+    return { pc, semitone: i, isActive, isRoot, scaleIdx, name }
   })
 
   const annotation = modeIndex === 0
@@ -102,8 +105,7 @@ export default function ScaleStrip() {
       onPointerUp={handleStripPointerUp}
     >
       <div className={styles.container}>
-        {positions.map(({ pc, semitone, isActive, isRoot, scaleIdx }) => {
-          const name = pcName(pc, enharmonicPrefs)
+        {positions.map(({ pc, semitone, isActive, isRoot, scaleIdx, name }) => {
           if (isActive) {
             const roman = romans[scaleIdx]
             const isSelected = selectedNotePc === pc

@@ -5,6 +5,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTonalStore } from '../../store/index'
+import { useAudio } from '../../hooks/useAudio'
 import { SCALE_FAMILIES, BRIGHTNESS_ORDER, ENHARMONIC_OPTIONS, wrap } from '../../theory/index'
 import styles from './ScaleNavigator.module.css'
 
@@ -271,6 +272,59 @@ function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, arcMax, o
 }
 
 // ------------------------------------------------------------------
+// Volume KnobUnit — bounded knob, click=toggle mute, drag=set volume
+// step 0-20 → volume 0-100% in 5% increments
+// ------------------------------------------------------------------
+
+interface VolumeKnobUnitProps {
+  volume: number           // 0–100
+  onToggleMute: () => void
+  onVolumeChange: (v: number) => void
+}
+
+function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeKnobUnitProps) {
+  const TOTAL = 21
+  const step = Math.round(volume / 5)
+  const dragStartY = useRef<number | null>(null)
+  const dragStartStep = useRef<number>(step)
+  const dragged = useRef(false)
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    dragStartY.current = e.clientY
+    dragStartStep.current = Math.round(volume / 5)
+    dragged.current = false
+    ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+  }, [volume])
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (dragStartY.current === null) return
+    const delta = dragStartY.current - e.clientY
+    if (Math.abs(delta) > 4) { dragged.current = true; e.preventDefault() }
+    const steps = Math.round(delta / DRAG_THRESHOLD_PX)
+    const newStep = Math.max(0, Math.min(TOTAL - 1, dragStartStep.current + steps))
+    if (newStep * 5 !== volume) onVolumeChange(newStep * 5)
+  }, [volume, onVolumeChange])
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragged.current) onToggleMute()
+    dragStartY.current = null
+    dragged.current = false
+    e.preventDefault()
+  }, [onToggleMute])
+
+  const lcdValue = volume === 0 ? 'MUTED' : `VOL ${volume}%`
+
+  return (
+    <div className={styles.knobUnit}>
+      <BoundedKnob step={step} total={TOTAL} arcMin={-135} arcMax={135}
+        onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+      <LCD value={lcdValue} onClick={onToggleMute} />
+      <span className={styles.knobLabel}>VOLUME</span>
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------
 // Picker — portaled to document.body to avoid layout shift
 // ------------------------------------------------------------------
 
@@ -368,6 +422,8 @@ export default function ScaleNavigator() {
     setModeByTension,
   } = useTonalStore()
 
+  const { volume, toggleMuteVolume, setVolume } = useAudio()
+
   const [picker, setPicker] = useState<PickerState | null>(null)
 
   const openPicker = useCallback((type: PickerType, rect: DOMRect) => {
@@ -456,6 +512,15 @@ export default function ScaleNavigator() {
             <WheelUnit label="BRIGHTNESS" lcdValue={currentMode.lcdName}        step={currentBrightnessPosition} total={BRIGHTNESS_ORDER.length} pickerType="brightness" onOpen={openPicker} onChange={pos => setModeByBrightness(pos)} />
             {/* Tension has 3 steps — use a short arc confined to the upper face of the knob */}
             <WheelUnit label="TENSION"    lcdValue={TENSION_LCD[currentTension]} step={currentTension}            total={3}                        pickerType="tension"    arcMin={-75} arcMax={75} onOpen={openPicker} onChange={t => setModeByTension(t as 0 | 1 | 2)} />
+          </div>
+        </div>
+
+        <div className={styles.divider} />
+
+        <div className={`${styles.region} ${styles.regionVolume}`}>
+          <span className={styles.regionLabel}>VOLUME</span>
+          <div className={styles.knobRow}>
+            <VolumeKnobUnit volume={volume} onToggleMute={toggleMuteVolume} onVolumeChange={setVolume} />
           </div>
         </div>
 

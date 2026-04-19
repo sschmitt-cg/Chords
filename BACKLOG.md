@@ -22,7 +22,7 @@ parity. Open both side by side during testing.
 - [x] Piano keyboard — scale tones lit, tonic distinguished, chord tones highlighted
 - [x] Guitar fretboard — scale tones lit, standard tuning correct across all 12 frets
 - [x] Audio — synth plays on note/chord/scale selection
-- [x] Audio — mute/unmute toggle works, iOS unlock flow works
+- [x] Audio — volume knob (ScaleNavigator, 6th knob) replaces mute toggle; click=toggle mute/unmute, drag=set volume 0–100%; iOS unlock flow works
 - [x] Audio — scale playback (ascending arpeggio)
 - [x] Audio — chord playback (arpeggiate then strum)
 - [ ] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
@@ -118,9 +118,10 @@ parity. Open both side by side during testing.
 - [ ] Enharmonic preference persistence (user picks C# vs Db — survives navigation)
 - [x] ScaleStrip swipe/drag gesture (horizontal drag changes key)
 - [x] ScaleStrip — scale description annotation below strip (mode name + family context)
+- [x] ScaleStrip active tiles now use diatonic spelling (`currentScale.spelled`) so Cb/E#/B# render correctly instead of falling back to chromatic names
+- [x] Fretboard + keyboard visualizers now respect per-row harmony extension overrides (previously only used `globalHarmonyMax`)
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
 - [ ] iOS safe-area insets (`env(safe-area-inset-*)`) applied to wrapper padding
-- [ ] SoundToggle button — replace emoji with SVG icons matching original style
