@@ -71,14 +71,14 @@ export function useAudio() {
     playSequence(notes, ctx.currentTime + 0.05, SCALE_GAP, token)
   }, [isMuted, currentScale])
 
-  const playChord = useCallback((rowIndex: number) => {
+  const playChord = useCallback((rowIndex: number, maxDegree?: number) => {
     if (isMuted) return
     if (!ensureAudio()) return
     const ctx = getAudioContext()
     if (!ctx) return
     const row = harmonyRows.find(r => r.index === rowIndex)
     if (!row) return
-    const filteredNotes = row.notes.filter(n => n.degree <= globalHarmonyMax)
+    const filteredNotes = row.notes.filter(n => n.degree <= (maxDegree ?? globalHarmonyMax))
     if (!filteredNotes.length) return
     const pcs = filteredNotes.map(n => n.pc)
     const midis = buildChordMidis(pcs)

@@ -15,18 +15,19 @@ parity. Open both side by side during testing.
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
 - [x] Scale strip — correct note spelling for every key/mode combination
 - [x] Scale strip — swipe/drag gesture to change key
-- [ ] Harmony Grid — 7 rows, correct chord names at triads through 13ths
-- [ ] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions
-- [ ] Harmony Grid — selecting a chord highlights it and updates the visualizers
-- [ ] Piano keyboard — scale tones lit, tonic distinguished, chord tones highlighted
-- [ ] Guitar fretboard — scale tones lit, standard tuning correct across all 12 frets
+- [x] Harmony Grid — 7 rows, correct chord names at triads through 13ths (sus2/sus4/b5 added; exotic fallbacks show root only)
+- [x] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions; header click resets per-row overrides
+- [x] Harmony Grid — per-row extension: clicking ghost note extends that row; clicking active note reduces to that degree
+- [x] Harmony Grid — selecting a chord highlights it and updates the visualizers
+- [x] Piano keyboard — scale tones lit, tonic distinguished, chord tones highlighted
+- [x] Guitar fretboard — scale tones lit, standard tuning correct across all 12 frets
 - [x] Audio — synth plays on note/chord/scale selection
 - [x] Audio — mute/unmute toggle works, iOS unlock flow works
 - [x] Audio — scale playback (ascending arpeggio)
 - [x] Audio — chord playback (arpeggiate then strum)
 - [ ] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
 - [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
-- [ ] Mobile layout — two-panel toggle (key+mode panel / harmony panel)
+- [ ] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
 - [ ] Mobile layout — touch targets all ≥ 44pt, no horizontal overflow
 
 ---

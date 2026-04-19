@@ -249,31 +249,46 @@ export function computeDisplayScale(
 // -------------------- CHORD ANALYSIS --------------------
 
 export function intervalQuality(int3: number, int5: number): ChordQuality {
-  if (int3 === 4 && int5 === 7) return { name: 'major',      suffix: '',    valid: true }
-  if (int3 === 3 && int5 === 7) return { name: 'minor',      suffix: 'm',   valid: true }
-  if (int3 === 3 && int5 === 6) return { name: 'diminished', suffix: 'dim', valid: true }
-  if (int3 === 4 && int5 === 8) return { name: 'augmented',  suffix: 'aug', valid: true }
-  return { name: 'unknown', suffix: '?', valid: false }
+  if (int3 === 4 && int5 === 7) return { name: 'major',      suffix: '',     valid: true }
+  if (int3 === 3 && int5 === 7) return { name: 'minor',      suffix: 'm',    valid: true }
+  if (int3 === 3 && int5 === 6) return { name: 'diminished', suffix: 'dim',  valid: true }
+  if (int3 === 4 && int5 === 8) return { name: 'augmented',  suffix: 'aug',  valid: true }
+  if (int3 === 2 && int5 === 7) return { name: 'sus2',       suffix: 'sus2', valid: true }
+  if (int3 === 5 && int5 === 7) return { name: 'sus4',       suffix: 'sus4', valid: true }
+  if (int3 === 4 && int5 === 6) return { name: 'flat-five',  suffix: '(b5)', valid: true }
+  return { name: 'unknown', suffix: '', valid: false }
 }
 
 export function seventhQuality(triadQual: ChordQuality, int7: number): { label: string; valid: boolean } {
   if (triadQual.name === 'major') {
-    if (int7 === 11) return { label: 'maj7',     valid: true }
-    if (int7 === 10) return { label: '7',         valid: true }
+    if (int7 === 11) return { label: 'maj7',      valid: true }
+    if (int7 === 10) return { label: '7',          valid: true }
   }
   if (triadQual.name === 'minor') {
-    if (int7 === 10) return { label: 'm7',       valid: true }
-    if (int7 === 11) return { label: 'm(maj7)',  valid: true }
+    if (int7 === 10) return { label: 'm7',         valid: true }
+    if (int7 === 11) return { label: 'm(maj7)',    valid: true }
   }
   if (triadQual.name === 'diminished') {
-    if (int7 === 10) return { label: 'm7b5',     valid: true }
-    if (int7 === 9)  return { label: 'dim7',     valid: true }
+    if (int7 === 10) return { label: 'm7b5',       valid: true }
+    if (int7 === 9)  return { label: 'dim7',       valid: true }
   }
   if (triadQual.name === 'augmented') {
-    if (int7 === 10) return { label: '7#5',      valid: true }
-    if (int7 === 11) return { label: 'maj7#5',   valid: true }
+    if (int7 === 10) return { label: '7#5',        valid: true }
+    if (int7 === 11) return { label: 'maj7#5',     valid: true }
   }
-  return { label: '?7', valid: false }
+  if (triadQual.name === 'sus2') {
+    if (int7 === 10) return { label: '7sus2',      valid: true }
+    if (int7 === 11) return { label: 'maj7sus2',   valid: true }
+  }
+  if (triadQual.name === 'sus4') {
+    if (int7 === 10) return { label: '7sus4',      valid: true }
+    if (int7 === 11) return { label: 'maj7sus4',   valid: true }
+  }
+  if (triadQual.name === 'flat-five') {
+    if (int7 === 10) return { label: '7(b5)',      valid: true }
+    if (int7 === 11) return { label: 'maj7(b5)',   valid: true }
+  }
+  return { label: '', valid: false }
 }
 
 export function ninthQuality(

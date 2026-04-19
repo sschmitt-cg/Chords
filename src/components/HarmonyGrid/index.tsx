@@ -25,8 +25,8 @@ export default function HarmonyGrid() {
     globalHarmonyMax,
     rowHarmonyMaxOverrides,
     setSelectedChord,
-    setSelectedNote,
     setGlobalHarmonyMax,
+    setRowHarmonyMax,
   } = useTonalStore()
   const { playChord } = useAudio()
 
@@ -51,16 +51,17 @@ export default function HarmonyGrid() {
     }
   }
 
-  function handleNoteCell(note: HarmonyNote, row: HarmonyRow) {
-    if (selectedNotePc === note.pc) {
-      setSelectedNote(null)
-    } else {
-      setSelectedNote(note.pc)
-      // Also select the chord row so the full chord context is visible
-      if (selectedChordIndex !== row.index) {
-        setSelectedChord(row.index)
-      }
-    }
+  function handleVisibleNoteCell(row: HarmonyRow, colIdx: number) {
+    const col = DEGREE_COLUMNS[colIdx]
+    setRowHarmonyMax(row.index, col.degree)
+    setSelectedChord(row.index)
+    playChord(row.index, col.degree)
+  }
+
+  function handleGhostCell(_note: HarmonyNote, row: HarmonyRow, degree: number) {
+    setRowHarmonyMax(row.index, degree)
+    setSelectedChord(row.index)
+    playChord(row.index, degree)
   }
 
   return (
@@ -76,10 +77,11 @@ export default function HarmonyGrid() {
             key={col.degree}
             className={[
               styles.hDegree,
-              globalHarmonyMax === col.degree ? styles.hDegreeActive : '',
+              col.degree <= globalHarmonyMax ? styles.hDegreeActive : '',
+              col.degree === globalHarmonyMax ? styles.hDegreeCurrent : '',
             ].join(' ').trim()}
             role="columnheader"
-            aria-pressed={globalHarmonyMax === col.degree}
+            aria-pressed={col.degree <= globalHarmonyMax}
             onClick={() => setGlobalHarmonyMax(col.degree)}
           >
             {col.label}
@@ -120,7 +122,7 @@ export default function HarmonyGrid() {
               </button>
 
               {/* Extension degree cells */}
-              {DEGREE_COLUMNS.map(col => {
+              {DEGREE_COLUMNS.map((col, colIdx) => {
                 const note = row.notes.find(n => n.degree === col.degree)
                 const isVisible = col.degree <= rowMax
                 const isNoteSelected = selectedNotePc === note?.pc
@@ -147,7 +149,7 @@ export default function HarmonyGrid() {
                     role="gridcell"
                     aria-pressed={isNoteSelected}
                     aria-label={`${note.note}, degree ${col.degree}`}
-                    onClick={() => handleNoteCell(note, row)}
+                    onClick={() => isVisible ? handleVisibleNoteCell(row, colIdx) : handleGhostCell(note, row, col.degree)}
                   >
                     {note.note}
                   </button>

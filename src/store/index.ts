@@ -345,7 +345,7 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   setSelectedChord: (index) => set({ selectedChordIndex: index, selectedNotePc: null }),
   setSelectedNote: (pc) => set({ selectedNotePc: pc, selectedChordIndex: null }),
 
-  setGlobalHarmonyMax: (max) => set({ globalHarmonyMax: max }),
+  setGlobalHarmonyMax: (max) => set({ globalHarmonyMax: max, rowHarmonyMaxOverrides: new Map() }),
   setRowHarmonyMax: (rowIndex, max) =>
     set((state) => {
       const overrides = new Map(state.rowHarmonyMaxOverrides)
