@@ -7,7 +7,7 @@ import {
   ensureAudio,
   unlockAudioGestureSync,
   unlockAudioIfNeeded,
-  setAudioMuted,
+  setAudioVolume,
   stopPlayback,
   getPlaybackToken,
   getAudioContext,
@@ -26,33 +26,42 @@ import type { ScheduledNote } from '../audio/index'
 export function useAudio() {
   const {
     isMuted,
-    setMuted,
+    volume,
+    lastVolume,
+    setVolume: storeSetVolume,
     currentScale,
     harmonyRows,
     globalHarmonyMax,
   } = useTonalStore()
 
-  // Must be called directly from an onClick handler (synchronous gesture context).
-  // Handles the iOS audio unlock flow before toggling mute state.
-  const toggleMute = useCallback(() => {
-    if (isMuted) {
+  // Set volume (0–100) and sync audio engine. Must be called in a gesture handler
+  // when going from 0 → non-zero so iOS unlock runs synchronously.
+  const setVolume = useCallback((v: number) => {
+    const clamped = Math.max(0, Math.min(100, v))
+    const wasZero = volume === 0
+    if (wasZero && clamped > 0) {
       unlockAudioGestureSync()
-      setMuted(false)
-      setAudioMuted(false)
       if (!isIOS()) {
-        unlockAudioIfNeeded().then(ok => {
-          if (!ok) {
-            setMuted(true)
-            setAudioMuted(true)
-          }
-        })
+        unlockAudioIfNeeded().then(ok => { if (!ok) storeSetVolume(0) })
       }
-    } else {
+    } else if (clamped === 0 && volume > 0) {
       stopPlayback()
-      setAudioMuted(true)
-      setMuted(true)
     }
-  }, [isMuted, setMuted])
+    storeSetVolume(clamped)
+    setAudioVolume(clamped / 100)
+  }, [volume, storeSetVolume])
+
+  // Click-to-toggle: mute ↔ lastVolume
+  const toggleMuteVolume = useCallback(() => {
+    if (volume === 0) {
+      setVolume(lastVolume)
+    } else {
+      setVolume(0)
+    }
+  }, [volume, lastVolume, setVolume])
+
+  // Legacy toggle kept for any remaining callers
+  const toggleMute = toggleMuteVolume
 
   const playScale = useCallback(() => {
     if (isMuted) return
@@ -101,5 +110,5 @@ export function useAudio() {
     playSynthNote(60 + pc, ctx.currentTime + 0.05, CHORD_TONE_DUR)
   }, [isMuted])
 
-  return { isMuted, toggleMute, playScale, playChord, playNote }
+  return { isMuted, volume, lastVolume, setVolume, toggleMuteVolume, toggleMute, playScale, playChord, playNote }
 }

@@ -39,21 +39,24 @@ export default function KeyboardVisualizer() {
     harmonyRows,
     selectedChordIndex,
     selectedNotePc,
+    globalHarmonyMax,
+    rowHarmonyMaxOverrides,
     setSelectedNote,
     setSelectedChord,
   } = useTonalStore()
 
   const scalePcs = new Set(currentScale.pitchClasses)
 
-  // Determine which pitch classes belong to the selected chord
   const selectedRow = selectedChordIndex !== null
     ? harmonyRows.find(r => r.index === selectedChordIndex) ?? null
     : null
 
-  // Build the active chord pc set from the store's globalHarmonyMax
-  const { globalHarmonyMax } = useTonalStore()
+  const effectiveMax = selectedRow
+    ? (rowHarmonyMaxOverrides.get(selectedRow.index) ?? globalHarmonyMax)
+    : globalHarmonyMax
+
   const chordPcs: Set<number> = selectedRow
-    ? new Set(selectedRow.notes.filter(n => n.degree <= globalHarmonyMax).map(n => n.pc))
+    ? new Set(selectedRow.notes.filter(n => n.degree <= effectiveMax).map(n => n.pc))
     : new Set()
   const chordRootPc = selectedRow?.notes.find(n => n.degree === 1)?.pc ?? null
 

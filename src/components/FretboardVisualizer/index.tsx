@@ -19,6 +19,7 @@ export default function FretboardVisualizer() {
     selectedChordIndex,
     selectedNotePc,
     globalHarmonyMax,
+    rowHarmonyMaxOverrides,
     guitarTuning,
     setSelectedNote,
     setSelectedChord,
@@ -30,8 +31,12 @@ export default function FretboardVisualizer() {
     ? harmonyRows.find(r => r.index === selectedChordIndex) ?? null
     : null
 
+  const effectiveMax = selectedRow
+    ? (rowHarmonyMaxOverrides.get(selectedRow.index) ?? globalHarmonyMax)
+    : globalHarmonyMax
+
   const chordPcs: Set<number> = selectedRow
-    ? new Set(selectedRow.notes.filter(n => n.degree <= globalHarmonyMax).map(n => n.pc))
+    ? new Set(selectedRow.notes.filter(n => n.degree <= effectiveMax).map(n => n.pc))
     : new Set()
   const chordRootPc = selectedRow?.notes.find(n => n.degree === 1)?.pc ?? null
 

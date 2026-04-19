@@ -89,6 +89,8 @@ interface TonalStore {
 
   // Audio
   isMuted: boolean
+  volume: number      // 0–100, 0 = muted
+  lastVolume: number  // restored on unmute
 
   // Guitar tuning
   guitarTuning: GuitarTuning
@@ -107,6 +109,7 @@ interface TonalStore {
   setGlobalHarmonyMax: (max: number) => void
   setRowHarmonyMax: (rowIndex: number, max: number | null) => void
   setMuted: (muted: boolean) => void
+  setVolume: (v: number) => void
   setGuitarTuning: (tuning: GuitarTuning) => void
   setProgressionSlot: (slotIndex: number, chordIndex: number | null) => void
   setLoopPlaying: (playing: boolean) => void
@@ -172,6 +175,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   isLoopPlaying: false,
 
   isMuted: true,
+  volume: 0,
+  lastVolume: 75,
   guitarTuning: STANDARD_TUNING,
 
   // --- Key ---
@@ -355,6 +360,12 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     }),
 
   setMuted: (muted) => set({ isMuted: muted }),
+  setVolume: (v) => {
+    const clamped = Math.max(0, Math.min(100, v))
+    const updates: Partial<TonalStore> = { volume: clamped, isMuted: clamped === 0 }
+    if (clamped > 0) updates.lastVolume = clamped
+    set(updates)
+  },
   setGuitarTuning: (tuning) => set({ guitarTuning: tuning }),
 
   setProgressionSlot: (slotIndex, chordIndex) =>

@@ -31,6 +31,8 @@ let audioWarmupDone = false
 let audioUnlockInFlight: Promise<boolean> | null = null
 let playbackToken = 0
 let activeVoices: Voice[] = []
+// 0 = muted, 1 = full; applied as AUDIO_MASTER_GAIN * currentVolumeFraction
+let currentVolumeFraction = 0
 
 // ---- Platform detection ----
 
@@ -149,15 +151,20 @@ export async function unlockAudioIfNeeded(): Promise<boolean> {
   }
 }
 
-// ---- Mute control ----
+// ---- Volume control ----
 
-export function setAudioMuted(muted: boolean): void {
+export function setAudioVolume(fraction: number): void {
+  currentVolumeFraction = Math.max(0, Math.min(1, fraction))
   if (!masterGain || !audioCtx) return
   const now = audioCtx.currentTime
-  const target = muted ? 0 : AUDIO_MASTER_GAIN
+  const target = AUDIO_MASTER_GAIN * currentVolumeFraction
   masterGain.gain.cancelScheduledValues(now)
   masterGain.gain.setValueAtTime(masterGain.gain.value, now)
-  masterGain.gain.linearRampToValueAtTime(target, now + 0.05)
+  masterGain.gain.linearRampToValueAtTime(Math.max(target, 0.000001), now + 0.05)
+}
+
+export function setAudioMuted(muted: boolean): void {
+  setAudioVolume(muted ? 0 : currentVolumeFraction)
 }
 
 // ---- Playback control ----
@@ -165,11 +172,14 @@ export function setAudioMuted(muted: boolean): void {
 export function stopPlayback(): number {
   playbackToken += 1
   if (masterGain && audioCtx) {
+    const targetGain = AUDIO_MASTER_GAIN * currentVolumeFraction
     const now = audioCtx.currentTime
     masterGain.gain.cancelScheduledValues(now)
     masterGain.gain.setValueAtTime(masterGain.gain.value, now)
     masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03)
-    masterGain.gain.exponentialRampToValueAtTime(AUDIO_MASTER_GAIN, now + 0.08)
+    if (targetGain > 0.0001) {
+      masterGain.gain.exponentialRampToValueAtTime(targetGain, now + 0.08)
+    }
   }
   activeVoices.forEach(v => { try { v.stop() } catch { /* ignore */ } })
   activeVoices = []
