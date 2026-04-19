@@ -53,9 +53,10 @@ parity. Open both side by side during testing.
 - [x] 5 scale families × 7 modes (35 total) in `SCALE_FAMILIES` — Major, Melodic Minor,
   Harmonic Minor, Harmonic Major, Double Harmonic
 - [x] `getModeIntervals`, `computeDisplayScaleFromFamily`, `GLOBAL_BRIGHTNESS_ORDER` in theory layer
-- [x] ScaleNavigator component — key drum, family tabs, mode drum, brightness meter, tension dots
+- [x] ScaleNavigator component — analog knob controls (circular + bounded wheels), LCD displays, tap picker with brightness sun icons, exploratory brightness + tension wheels
 - [x] Store migrated: `scaleType`/`currentModeIndex` → `familyId`/`familyModeIndex`; new actions
-  `setFamily`, `setFamilyModeIndex`, `setModeByBrightness`
+  `setFamily`, `setFamilyModeIndex`, `setModeByBrightness`, `setModeByTension`; derived fields `currentFamily`, `currentMode`, `currentTension`, `currentBrightnessPosition`, `currentModeRootPc`, `currentModeNotes`, `currentModeIntervals`
+- [x] Chromatic ScaleStrip — proportional 12-position layout, active/inactive tiles same size (52×72px), dotted border for excluded notes, swipe-to-change-key, Roman numerals with chord quality, scale description annotation
 - [ ] Pentatonic / blues / whole-tone / diminished scale families (non-7-note with HarmonyGrid fallback)
 - [ ] HarmonyGrid graceful fallback for non-7-note scales (show available stacked intervals)
 - [ ] "Compatible scales" panel — show other scale types that share the same pitch classes
@@ -113,8 +114,10 @@ parity. Open both side by side during testing.
 ## Bugs / Polish
 
 - [ ] Enharmonic preference persistence (user picks C# vs Db — survives navigation)
-- [ ] ScaleStrip swipe/drag gesture (horizontal = change key, vertical = change mode)
-- [ ] ScaleStrip — display current mode name below the key label
+- [x] ScaleStrip swipe/drag gesture (horizontal drag changes key)
+- [x] ScaleStrip — scale description annotation below strip (mode name + family context)
+- [ ] ScaleStrip — animate tile transitions when family or mode changes
+- [ ] ScaleNavigator — haptic feedback on knob step (where supported)
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
 - [ ] iOS safe-area insets (`env(safe-area-inset-*)`) applied to wrapper padding

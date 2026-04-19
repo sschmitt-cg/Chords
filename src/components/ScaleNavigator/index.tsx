@@ -1,134 +1,475 @@
-// ScaleNavigator — key selector, scale family tabs, mode drum, brightness + tension indicators
+// ScaleNavigator — analog knobs + LCD displays + exploratory wheels
+// Logical region: Root / Family / Mode knobs (full 360° circle, step 0 at top)
+// Exploratory region: Brightness / Tension bounded wheels (arc, glow-up)
 
+import { useRef, useState, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTonalStore } from '../../store/index'
-import { SCALE_FAMILIES, GLOBAL_BRIGHTNESS_ORDER, pcColorVar, wrap } from '../../theory/index'
+import { SCALE_FAMILIES, BRIGHTNESS_ORDER, ENHARMONIC_OPTIONS, wrap } from '../../theory/index'
 import styles from './ScaleNavigator.module.css'
+
+const DRAG_THRESHOLD_PX = 22
+
+// ------------------------------------------------------------------
+// Circular SVG Knob — full 360°, step 0 at top
+// ------------------------------------------------------------------
+
+interface KnobProps {
+  step: number
+  total: number
+  onPointerDown: (e: React.PointerEvent) => void
+  onPointerMove: (e: React.PointerEvent) => void
+  onPointerUp: (e: React.PointerEvent) => void
+}
+
+function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }: KnobProps) {
+  const ticks: React.ReactNode[] = []
+  for (let i = 0; i < total; i++) {
+    const angleDeg = (i / total) * 360
+    const rad = (angleDeg * Math.PI) / 180
+    const x1 = 36 + Math.sin(rad) * 26
+    const y1 = 36 - Math.cos(rad) * 26
+    const x2 = 36 + Math.sin(rad) * 32
+    const y2 = 36 - Math.cos(rad) * 32
+    const isCurrent = i === step
+    ticks.push(
+      <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={isCurrent ? '#6670e8' : '#1e2858'}
+        strokeWidth={isCurrent ? 3 : 1.5}
+        strokeLinecap="round"
+      />
+    )
+  }
+  const angleStep = (step / total) * 360
+  const rad = (angleStep * Math.PI) / 180
+  const indX = 36 + Math.sin(rad) * 18
+  const indY = 36 - Math.cos(rad) * 18
+  return (
+    <svg width={72} height={72} style={{ cursor: 'ns-resize', touchAction: 'none', userSelect: 'none' }}
+      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
+    >
+      {ticks}
+      <circle cx={36} cy={36} r={22} fill="#1a2350" />
+      <circle cx={36} cy={36} r={21} fill="none" stroke="#2e3a70" strokeWidth={0.5} />
+      <line x1={36} y1={36} x2={indX} y2={indY} stroke="#6670e8" strokeWidth={2} strokeLinecap="round" />
+      <circle cx={indX} cy={indY} r={2.5} fill="#9098f8" />
+      <circle cx={36} cy={36} r={3} fill="#0e1538" />
+    </svg>
+  )
+}
+
+// ------------------------------------------------------------------
+// Bounded SVG Wheel — configurable arc, ticks glow up to current step
+// ------------------------------------------------------------------
+
+interface BoundedKnobProps extends KnobProps {
+  arcMin?: number  // degrees, default -135
+  arcMax?: number  // degrees, default +135
+}
+
+function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointerDown, onPointerMove, onPointerUp }: BoundedKnobProps) {
+  const ticks: React.ReactNode[] = []
+  for (let i = 0; i < total; i++) {
+    const angleDeg = arcMin + (i / (total - 1)) * (arcMax - arcMin)
+    const rad = (angleDeg * Math.PI) / 180
+    const x1 = 36 + Math.sin(rad) * 26
+    const y1 = 36 - Math.cos(rad) * 26
+    const x2 = 36 + Math.sin(rad) * 32
+    const y2 = 36 - Math.cos(rad) * 32
+    const isCurrent = i === step
+    const isFilled = i <= step
+    ticks.push(
+      <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={isCurrent ? '#9098f8' : isFilled ? '#6670e8' : '#1e2858'}
+        strokeWidth={isCurrent ? 3 : isFilled ? 2 : 1.5}
+        strokeLinecap="round"
+      />
+    )
+  }
+  const angleStep = total > 1 ? arcMin + (step / (total - 1)) * (arcMax - arcMin) : arcMin
+  const rad = (angleStep * Math.PI) / 180
+  const indX = 36 + Math.sin(rad) * 18
+  const indY = 36 - Math.cos(rad) * 18
+  return (
+    <svg width={72} height={72} style={{ cursor: 'ns-resize', touchAction: 'none', userSelect: 'none' }}
+      onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
+    >
+      {ticks}
+      <circle cx={36} cy={36} r={22} fill="#1a2350" />
+      <circle cx={36} cy={36} r={21} fill="none" stroke="#2e3a70" strokeWidth={0.5} />
+      <line x1={36} y1={36} x2={indX} y2={indY} stroke="#6670e8" strokeWidth={2} strokeLinecap="round" />
+      <circle cx={indX} cy={indY} r={2.5} fill="#9098f8" />
+      <circle cx={36} cy={36} r={3} fill="#0e1538" />
+    </svg>
+  )
+}
+
+// ------------------------------------------------------------------
+// LCD display
+// ------------------------------------------------------------------
+
+function LCD({ value, onClick }: { value: string; onClick?: () => void }) {
+  return (
+    <div className={styles.lcd} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
+      {value}
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------
+// Brightness sun icon for picker rows
+// ------------------------------------------------------------------
+
+function BrightnessDot({ brightness }: { brightness: number }) {
+  const t = brightness / 100
+  const r = 255
+  const g = Math.round(170 + t * 85)   // amber → near-white yellow
+  const b = Math.round(30 + t * 170)
+  const alpha = 0.2 + t * 0.8
+  const color = `rgba(${r},${g},${b},${alpha})`
+  const numRays = 8
+  const innerR = 3.5
+  const outerR = innerR + 1.5 + t * 3.5
+  const rays: React.ReactNode[] = []
+  for (let i = 0; i < numRays; i++) {
+    const angle = (i / numRays) * Math.PI * 2
+    rays.push(
+      <line key={i}
+        x1={8 + Math.cos(angle) * innerR} y1={8 + Math.sin(angle) * innerR}
+        x2={8 + Math.cos(angle) * outerR} y2={8 + Math.sin(angle) * outerR}
+        stroke={color} strokeWidth={0.7 + t * 0.8} strokeLinecap="round"
+      />
+    )
+  }
+  return (
+    <svg width={16} height={16} viewBox="0 0 16 16" style={{ flexShrink: 0 }}>
+      {rays}
+      <circle cx={8} cy={8} r={2.5} fill={color} />
+    </svg>
+  )
+}
+
+// ------------------------------------------------------------------
+// Unified picker type
+// ------------------------------------------------------------------
+
+type PickerType = 'root' | 'family' | 'mode' | 'brightness' | 'tension'
+
+// ------------------------------------------------------------------
+// Circular KnobUnit (Root / Family / Mode)
+// ------------------------------------------------------------------
+
+interface KnobUnitProps {
+  label: string
+  lcdValue: string
+  step: number
+  total: number
+  pickerType: PickerType
+  onOpen: (type: PickerType, rect: DOMRect) => void
+  onChange: (newValue: number) => void
+}
+
+function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onChange }: KnobUnitProps) {
+  const dragStartY = useRef<number | null>(null)
+  const dragStartValue = useRef<number>(step)
+  const dragged = useRef(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  const openPicker = useCallback(() => {
+    if (wrapperRef.current) onOpen(pickerType, wrapperRef.current.getBoundingClientRect())
+  }, [pickerType, onOpen])
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    dragStartY.current = e.clientY
+    dragStartValue.current = step
+    dragged.current = false
+    ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+  }, [step])
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (dragStartY.current === null) return
+    const delta = dragStartY.current - e.clientY
+    if (Math.abs(delta) > 4) { dragged.current = true; e.preventDefault() }
+    const steps = Math.round(delta / DRAG_THRESHOLD_PX)
+    const newValue = ((dragStartValue.current + steps) % total + total) % total
+    if (newValue !== step) onChange(newValue)
+  }, [step, total, onChange])
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragged.current) openPicker()
+    dragStartY.current = null
+    dragged.current = false
+    e.preventDefault()
+  }, [openPicker])
+
+  return (
+    <div ref={wrapperRef} className={styles.knobUnit}>
+      <Knob step={step} total={total} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+      <LCD value={lcdValue} onClick={openPicker} />
+      <span className={styles.knobLabel}>{label}</span>
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------
+// Bounded WheelUnit (Brightness / Tension)
+// ------------------------------------------------------------------
+
+interface WheelUnitProps {
+  label: string
+  lcdValue: string
+  step: number
+  total: number
+  pickerType: PickerType
+  arcMin?: number
+  arcMax?: number
+  onOpen: (type: PickerType, rect: DOMRect) => void
+  onChange: (newValue: number) => void
+}
+
+function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, arcMax, onOpen, onChange }: WheelUnitProps) {
+  const dragStartY = useRef<number | null>(null)
+  const dragStartValue = useRef<number>(step)
+  const dragged = useRef(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  const openPicker = useCallback(() => {
+    if (wrapperRef.current) onOpen(pickerType, wrapperRef.current.getBoundingClientRect())
+  }, [pickerType, onOpen])
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    dragStartY.current = e.clientY
+    dragStartValue.current = step
+    dragged.current = false
+    ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+  }, [step])
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (dragStartY.current === null) return
+    const delta = dragStartY.current - e.clientY
+    if (Math.abs(delta) > 4) { dragged.current = true; e.preventDefault() }
+    const steps = Math.round(delta / DRAG_THRESHOLD_PX)
+    const newValue = Math.max(0, Math.min(total - 1, dragStartValue.current + steps))
+    if (newValue !== step) onChange(newValue)
+  }, [step, total, onChange])
+
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragged.current) openPicker()
+    dragStartY.current = null
+    dragged.current = false
+    e.preventDefault()
+  }, [openPicker])
+
+  return (
+    <div ref={wrapperRef} className={styles.knobUnit}>
+      <BoundedKnob step={step} total={total} arcMin={arcMin} arcMax={arcMax}
+        onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+      <LCD value={lcdValue} onClick={openPicker} />
+      <span className={styles.knobLabel}>{label}</span>
+    </div>
+  )
+}
+
+// ------------------------------------------------------------------
+// Picker — portaled to document.body to avoid layout shift
+// ------------------------------------------------------------------
+
+interface PickerOption {
+  label: string
+  value: number
+  brightnessDot?: number
+}
+
+interface PickerProps {
+  options: PickerOption[]
+  currentValue: number
+  anchorRect: DOMRect
+  onSelect: (value: number) => void
+  onClose: () => void
+}
+
+function Picker({ options, currentValue, anchorRect, onSelect, onClose }: PickerProps) {
+  useEffect(() => {
+    function handler(e: MouseEvent) {
+      const target = e.target as Element
+      if (!target.closest('[data-picker]')) onClose()
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [onClose])
+
+  return createPortal(
+    <div data-picker className={styles.picker} style={{ left: anchorRect.left, top: anchorRect.bottom + 6 }}>
+      {options.map(opt => (
+        <button
+          key={opt.value}
+          className={[styles.pickerRow, opt.value === currentValue ? styles.pickerRowCurrent : ''].join(' ')}
+          onClick={() => { onSelect(opt.value); onClose() }}
+        >
+          <span>{opt.label}</span>
+          {opt.brightnessDot !== undefined && <BrightnessDot brightness={opt.brightnessDot} />}
+        </button>
+      ))}
+    </div>,
+    document.body
+  )
+}
+
+// ------------------------------------------------------------------
+// Note name helper
+// ------------------------------------------------------------------
+
+const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+const FLAT_NAMES  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+
+function pcName(pc: number, enharmonicPrefs: Record<number, 'sharp' | 'flat'>): string {
+  const norm = wrap(pc, 12)
+  const opt = ENHARMONIC_OPTIONS[norm]
+  if (!opt) return SHARP_NAMES[norm]
+  const pref = enharmonicPrefs[norm]
+  if (pref === 'flat') return FLAT_NAMES[norm]
+  if (pref === 'sharp') return SHARP_NAMES[norm]
+  return FLAT_NAMES[norm]
+}
+
+const FAMILY_LCD: Record<string, string> = {
+  'major':           'MAJOR',
+  'melodic-minor':   'MEL MIN',
+  'harmonic-minor':  'HRM MIN',
+  'harmonic-major':  'HRM MAJ',
+  'double-harmonic': 'DBL HRM',
+}
+
+const TENSION_LCD = ['DIA', '1 AUG', '2 AUG']
+
+// ------------------------------------------------------------------
+// Main component
+// ------------------------------------------------------------------
+
+interface PickerState {
+  type: PickerType
+  anchorRect: DOMRect
+}
 
 export default function ScaleNavigator() {
   const {
     currentKeyPc,
-    currentTonicLabel,
-    familyId,
-    familyModeIndex,
+    familyIndex,
+    modeIndex,
+    currentFamily,
+    currentMode,
+    currentTension,
+    currentBrightnessPosition,
+    enharmonicPrefs,
     setKey,
     setFamily,
-    setFamilyModeIndex,
+    setModeIndex,
     setModeByBrightness,
+    setModeByTension,
   } = useTonalStore()
 
-  const family = SCALE_FAMILIES.find(f => f.id === familyId) ?? SCALE_FAMILIES[0]
-  const mode = family.modes[familyModeIndex]
-  const prevModeIdx = wrap(familyModeIndex - 1, 7)
-  const nextModeIdx = wrap(familyModeIndex + 1, 7)
-  const prevMode = family.modes[prevModeIdx]
-  const nextMode = family.modes[nextModeIdx]
+  const [picker, setPicker] = useState<PickerState | null>(null)
 
-  const brightnessScore = mode.brightness
-  const brightnessGlobalIdx = GLOBAL_BRIGHTNESS_ORDER.findIndex(
-    e => e.familyId === familyId && e.modeIndex === familyModeIndex
-  )
+  const openPicker = useCallback((type: PickerType, rect: DOMRect) => {
+    setPicker({ type, anchorRect: rect })
+  }, [])
+
+  const closePicker = useCallback(() => setPicker(null), [])
+
+  const rootOptions: PickerOption[] = Array.from({ length: 12 }, (_, i) => ({
+    label: pcName(i, enharmonicPrefs),
+    value: i,
+  }))
+
+  const familyOptions: PickerOption[] = SCALE_FAMILIES.map((f, i) => ({
+    label: f.name,
+    value: i,
+  }))
+
+  const modeOptions: PickerOption[] = currentFamily.modes.map((m, i) => ({
+    label: m.name,
+    value: i,
+    brightnessDot: m.brightness,
+  }))
+
+  const brightnessOptions: PickerOption[] = BRIGHTNESS_ORDER.map((entry, pos) => {
+    const f = SCALE_FAMILIES[entry.familyIndex]
+    const m = f.modes[entry.modeIndex]
+    return { label: `${m.name} (${f.name})`, value: pos, brightnessDot: m.brightness }
+  })
+
+  const tensionOptions: PickerOption[] = [
+    { label: 'Diatonic — no augmented 2nds', value: 0 },
+    { label: '1 Augmented 2nd', value: 1 },
+    { label: '2 Augmented 2nds', value: 2 },
+  ]
+
+  function handlePickerSelect(value: number) {
+    if (!picker) return
+    switch (picker.type) {
+      case 'root':       setKey(value); break
+      case 'family':     setFamily(value); break
+      case 'mode':       setModeIndex(value); break
+      case 'brightness': setModeByBrightness(value); break
+      case 'tension':    setModeByTension(value as 0 | 1 | 2); break
+    }
+  }
+
+  function handleKnobChange(type: 'root' | 'family' | 'mode', newValue: number) {
+    if (type === 'root') setKey(newValue)
+    else if (type === 'family') setFamily(newValue)
+    else setModeIndex(newValue)
+  }
+
+  const pickerOptions: PickerOption[] =
+    picker?.type === 'root'         ? rootOptions
+    : picker?.type === 'family'     ? familyOptions
+    : picker?.type === 'mode'       ? modeOptions
+    : picker?.type === 'brightness' ? brightnessOptions
+    : tensionOptions
+
+  const pickerValue =
+    picker?.type === 'root'         ? currentKeyPc
+    : picker?.type === 'family'     ? familyIndex
+    : picker?.type === 'mode'       ? modeIndex
+    : picker?.type === 'brightness' ? currentBrightnessPosition
+    : currentTension
 
   return (
-    <div className={styles.navigator}>
+    <div className={styles.outer}>
+      <div className={styles.panel}>
 
-      {/* ---- Row 1: key navigation + tension + brightness ---- */}
-      <div className={styles.topRow}>
-
-        <div className={styles.keyControl}>
-          <button
-            className={styles.navBtn}
-            aria-label="Previous key"
-            onClick={() => setKey(wrap(currentKeyPc - 1, 12))}
-          >‹</button>
-          <span
-            className={styles.keyLabel}
-            style={{ '--pc-color': pcColorVar(currentKeyPc) } as React.CSSProperties}
-          >
-            {currentTonicLabel}
-          </span>
-          <button
-            className={styles.navBtn}
-            aria-label="Next key"
-            onClick={() => setKey(wrap(currentKeyPc + 1, 12))}
-          >›</button>
-        </div>
-
-        <div className={styles.tensionDots} aria-label={`Tension level ${family.tension}`}>
-          {([0, 1, 2] as const).map(i => (
-            <span
-              key={i}
-              className={[styles.tensionDot, i < family.tension ? styles.tensionDotActive : ''].join(' ')}
-              aria-hidden="true"
-            />
-          ))}
-        </div>
-
-        <div className={styles.brightnessControl}>
-          <button
-            className={styles.brightBtn}
-            aria-label="Darker mode"
-            onClick={() => setModeByBrightness(-1)}
-          >◂</button>
-          <div
-            className={styles.brightnessBar}
-            aria-label={`Brightness ${brightnessScore}`}
-            title={`Brightness: ${brightnessScore} / 100  (${brightnessGlobalIdx + 1} of ${GLOBAL_BRIGHTNESS_ORDER.length})`}
-          >
-            <div
-              className={styles.brightnessFill}
-              style={{ width: `${brightnessScore}%` }}
-            />
+        <div className={styles.region}>
+          <span className={styles.regionLabel}>LOGICAL ↺</span>
+          <div className={styles.knobRow}>
+            <KnobUnit label="ROOT"   lcdValue={pcName(currentKeyPc, enharmonicPrefs)} step={currentKeyPc} total={12} pickerType="root"   onOpen={openPicker} onChange={v => handleKnobChange('root', v)} />
+            <KnobUnit label="FAMILY" lcdValue={FAMILY_LCD[currentFamily.id] ?? currentFamily.name.toUpperCase()} step={familyIndex} total={5} pickerType="family" onOpen={openPicker} onChange={v => handleKnobChange('family', v)} />
+            <KnobUnit label="MODE"   lcdValue={currentMode.lcdName} step={modeIndex} total={7} pickerType="mode" onOpen={openPicker} onChange={v => handleKnobChange('mode', v)} />
           </div>
-          <button
-            className={styles.brightBtn}
-            aria-label="Brighter mode"
-            onClick={() => setModeByBrightness(1)}
-          >▸</button>
+        </div>
+
+        <div className={styles.divider} />
+
+        <div className={styles.region}>
+          <span className={styles.regionLabel}>EXPLORATORY</span>
+          <div className={styles.knobRow}>
+            <WheelUnit label="BRIGHTNESS" lcdValue={currentMode.lcdName}        step={currentBrightnessPosition} total={BRIGHTNESS_ORDER.length} pickerType="brightness" onOpen={openPicker} onChange={pos => setModeByBrightness(pos)} />
+            {/* Tension has 3 steps — use a short arc confined to the upper face of the knob */}
+            <WheelUnit label="TENSION"    lcdValue={TENSION_LCD[currentTension]} step={currentTension}            total={3}                        pickerType="tension"    arcMin={-75} arcMax={75} onOpen={openPicker} onChange={t => setModeByTension(t as 0 | 1 | 2)} />
+          </div>
         </div>
 
       </div>
 
-      {/* ---- Row 2: family tabs ---- */}
-      <div className={styles.familyTabs} role="tablist" aria-label="Scale families">
-        {SCALE_FAMILIES.map(f => (
-          <button
-            key={f.id}
-            role="tab"
-            aria-selected={f.id === familyId}
-            className={[styles.familyTab, f.id === familyId ? styles.familyTabActive : ''].join(' ')}
-            onClick={() => setFamily(f.id)}
-          >
-            {f.name}
-          </button>
-        ))}
-      </div>
-
-      {/* ---- Row 3: mode drum ---- */}
-      <div className={styles.modeDrum} aria-label="Mode selector">
-        <button
-          className={[styles.drumRow, styles.drumRowAdj].join(' ')}
-          aria-label={`Go to ${prevMode.name}`}
-          onClick={() => setFamilyModeIndex(prevModeIdx)}
-        >
-          <span className={styles.drumAdjName}>{prevMode.name}</span>
-          <span className={styles.drumBrightness}>{prevMode.brightness}</span>
-        </button>
-
-        <div className={[styles.drumRow, styles.drumRowCurrent].join(' ')} aria-current="true">
-          <span className={styles.drumCurrentName}>{mode.name}</span>
-          <span className={styles.drumBrightness}>{brightnessScore}</span>
-        </div>
-
-        <button
-          className={[styles.drumRow, styles.drumRowAdj].join(' ')}
-          aria-label={`Go to ${nextMode.name}`}
-          onClick={() => setFamilyModeIndex(nextModeIdx)}
-        >
-          <span className={styles.drumAdjName}>{nextMode.name}</span>
-          <span className={styles.drumBrightness}>{nextMode.brightness}</span>
-        </button>
-      </div>
-
+      {picker && (
+        <Picker
+          options={pickerOptions}
+          currentValue={pickerValue}
+          anchorRect={picker.anchorRect}
+          onSelect={handlePickerSelect}
+          onClose={closePicker}
+        />
+      )}
     </div>
   )
 }

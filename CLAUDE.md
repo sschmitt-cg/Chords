@@ -29,10 +29,16 @@ GitHub Actions → GitHub Pages.
   scale playback, chord arpeggio + strum, individual note playback, iOS unlock flow
 - Light card UI theme: white cards on dark blue radial gradient background,
   original hand-tuned pc color palette, tactile keyboard and fretboard styling
+- 5 scale families × 7 modes (35 total) in `SCALE_FAMILIES` — Major, Melodic Minor,
+  Harmonic Minor, Harmonic Major, Double Harmonic; family-based scale computation
+- ScaleNavigator v1 — drum UI, family tabs, brightness bar (to be redesigned, see `TASK.md`)
 
-**Still to do:** Metronome, Chromatic Tuner, WheelModal, shareable URLs, scale
-strip drag gesture, and eventually the iOS app via Capacitor. See `BACKLOG.md`
-for the full phased plan.
+**In progress (branch `feature/scale-navigator`):** Full ScaleNavigator redesign
+(analog knobs + LCD displays + exploratory sliders) and chromatic ScaleStrip
+(12-position proportional layout). Full spec in `TASK.md`.
+
+**Still to do:** Metronome, Chromatic Tuner, WheelModal, shareable URLs, and the
+iOS app via Capacitor. See `BACKLOG.md` for the full phased plan.
 
 ### Goal
 
@@ -213,3 +219,4 @@ conversation — don't lose ideas to chat history.
 | `src/audio/index.ts` | Web Audio engine — oscillator synth, iOS unlock, mute, playback |
 | `src/hooks/useAudio.ts` | React hook wrapping the audio engine |
 | `BACKLOG.md` | Phased feature backlog — read at session start |
+| `TASK.md` | Current in-progress task spec (delete after PR merges) |

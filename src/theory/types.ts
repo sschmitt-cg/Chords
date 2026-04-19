@@ -46,6 +46,7 @@ export type ChordFunction = 'tonic' | 'subdominant' | 'dominant'
 
 export interface ScaleMode {
   name: string
+  lcdName: string     // max 7 chars, uppercase, for the LCD display
   brightness: number  // 0–100 global ordering score
 }
 
