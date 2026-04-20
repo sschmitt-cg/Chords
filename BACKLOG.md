@@ -120,6 +120,11 @@ parity. Open both side by side during testing.
 - [x] ScaleStrip — scale description annotation below strip (mode name + family context)
 - [x] ScaleStrip active tiles now use diatonic spelling (`currentScale.spelled`) so Cb/E#/B# render correctly instead of falling back to chromatic names
 - [x] Fretboard + keyboard visualizers now respect per-row harmony extension overrides (previously only used `globalHarmonyMax`)
+- [x] Visual theme — unified blue-tinted color language: `--surface-1` shifted to `#eef0ff`, ScaleNavigator panel lightened to `#1a2660`; all components share same blue palette family
+- [x] ScaleStrip active tiles — white background lifts clearly off tinted card surface
+- [x] HarmonyGrid — chord cells and note cells use more vivid `color-mix` percentages for clearer pitch-class coloring
+- [x] Keyboard — lighter key surface, scale tones 42% and chord tones 68% color-mix; black keys also more vivid
+- [x] Fretboard — lighter board surface, nut rendered as distinct 4px dark bar (separate class, no conflict with fretWire), uniform 1px string weight, fret position markers corrected (were off by one fret)
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar

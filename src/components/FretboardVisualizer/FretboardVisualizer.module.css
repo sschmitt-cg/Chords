@@ -14,18 +14,18 @@
   display: none;
 }
 
-/* Fretboard body — warm wood-like surface */
+/* Fretboard body — warm light surface, sits above card bg */
 .shell {
   position: relative;
   min-width: 420px;
   width: 100%;
-  background: linear-gradient(180deg, #dddfe6 0%, #e3e5eb 40%, #dddfe6 100%);
+  background: linear-gradient(180deg, #f6f7fa 0%, #fbfcfe 40%, #f6f7fa 100%);
   border-radius: 2px;
   border: 1px solid #c8ccd8;
   box-shadow:
-    0 2px 8px rgba(22,26,48,0.25),
-    inset 0 1px 0 rgba(255,255,255,0.6),
-    inset 0 -1px 0 rgba(22,26,48,0.1);
+    0 3px 10px rgba(22,26,48,0.22),
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    inset 0 -1px 0 rgba(22,26,48,0.08);
   padding: 6px 0;
 }
 
@@ -38,21 +38,16 @@
   height: 28px;
 }
 
-/* String line — thickness varies by gauge (index 0 = high E, index 5 = low E) */
+/* String line — uniform weight, full width across the nut and open area */
 .stringLine {
   position: absolute;
   left: 0;
   right: 0;
   height: 1px;
-  background: rgba(22,26,48,0.28);
+  background: rgba(22,26,48,0.32);
   top: 50%;
   transform: translateY(-50%);
 }
-
-.string:nth-child(3) .stringLine { height: 1.5px; background: rgba(22,26,48,0.30); }
-.string:nth-child(4) .stringLine { height: 2px;   background: rgba(22,26,48,0.33); }
-.string:nth-child(5) .stringLine { height: 2.5px; background: rgba(22,26,48,0.36); }
-.string:nth-child(6) .stringLine { height: 3px;   background: rgba(22,26,48,0.40); }
 
 /* ---- Fret slots ---- */
 
@@ -65,16 +60,16 @@
   justify-content: center;
 }
 
-/* Nut — solid bone-colored bar before fret 1 */
+/* Nut — 3× the width of a fret wire, dark but not heavy */
 .nut {
   position: absolute;
   left: 0;
   top: -6px;
   bottom: -6px;
-  width: 7px;
-  background: #e8e2d4;
-  border-radius: 0;
-  box-shadow: 2px 0 4px rgba(22,26,48,0.35), inset -1px 0 1px rgba(255,255,255,0.5);
+  width: 4px;
+  background: #3a3d4e;
+  border-radius: 1px;
+  box-shadow: 1px 0 2px rgba(22,26,48,0.25);
 }
 
 /* Standard fret wire */
@@ -110,9 +105,9 @@
   transform: scale(0.88);
 }
 
-/* Open string dots sit just left of fret 1 */
+/* Open string dots center in the open slot, left of the nut */
 .dotOpen {
-  margin-left: -4px;
+  margin-left: 0;
 }
 
 /* Root — squared off, full pc color, strong presence */
@@ -130,16 +125,16 @@
 /* Chord tone — solid circle, vivid pc color */
 .role_tone {
   border-radius: 50%;
-  background: color-mix(in srgb, var(--pc-color) 72%, #e3e5eb);
+  background: color-mix(in srgb, var(--pc-color) 90%, #f6f7fa);
   box-shadow: 0 1px 4px rgba(22,26,48,0.2);
 }
 
-/* Scale tone — outline only, lighter presence */
+/* Scale tone — filled + border for visible presence without competing with root/chord */
 .role_scale {
   border-radius: 50%;
-  background: transparent;
-  border: 2px solid var(--pc-color);
-  opacity: 0.75;
+  background: color-mix(in srgb, var(--pc-color) 38%, #f6f7fa);
+  border: 2px solid color-mix(in srgb, var(--pc-color) 70%, #f6f7fa);
+  opacity: 1;
 }
 
 .role_off {

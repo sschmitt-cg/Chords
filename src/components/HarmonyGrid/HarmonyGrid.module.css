@@ -26,7 +26,7 @@
   border-bottom: 1px solid var(--card-border, #e3e7fb);
   position: sticky;
   top: 0;
-  background: linear-gradient(180deg, #fdfdff, #f1f3ff);
+  background: linear-gradient(180deg, #f4f5ff, #e4e8ff);
   z-index: 2;
 }
 
@@ -123,7 +123,7 @@
   gap: 2px;
   padding: 10px 12px;
   min-height: 52px;
-  background: color-mix(in srgb, var(--pc-color) 22%, #ffffff);
+  background: color-mix(in srgb, var(--pc-color) 30%, #ffffff);
   border: none;
   border-right: 1px solid #e6e9f5;
   cursor: pointer;
@@ -133,11 +133,11 @@
 }
 
 .chordCell:hover {
-  background: color-mix(in srgb, var(--pc-color) 32%, #ffffff);
+  background: color-mix(in srgb, var(--pc-color) 42%, #ffffff);
 }
 
 .chordCellSelected {
-  background: color-mix(in srgb, var(--pc-color) 38%, #ffffff);
+  background: color-mix(in srgb, var(--pc-color) 50%, #ffffff);
 }
 
 /* Left accent bar in pc color */
@@ -210,7 +210,7 @@
 /* Visible (within the active max degree) */
 .noteCellVisible {
   opacity: 1;
-  background: color-mix(in srgb, var(--pc-color) 42%, #ffffff);
+  background: color-mix(in srgb, var(--pc-color) 58%, #ffffff);
 }
 
 /* Ghost (outside active max degree) — clickable to extend that row */
@@ -228,8 +228,8 @@
 
 /* Selected note */
 .noteCellSelected {
-  background: color-mix(in srgb, var(--pc-color) 58%, #ffffff);
-  outline: 2px solid color-mix(in srgb, var(--pc-color) 65%, #2c58ff);
+  background: color-mix(in srgb, var(--pc-color) 72%, #ffffff);
+  outline: 2px solid color-mix(in srgb, var(--pc-color) 75%, #2c58ff);
   outline-offset: -2px;
   border-radius: 4px;
   opacity: 1;

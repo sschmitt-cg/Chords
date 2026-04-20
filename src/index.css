@@ -34,11 +34,11 @@ body {
   --pc-10: #c26dff;   /* A# — purple */
   --pc-11: #ff6de2;   /* B  — pink */
 
-  /* Surface tokens — light card theme */
-  --surface-1: #ffffff;
-  --surface-2: #f4f5ff;
-  --surface-3: #eef0ff;
-  --card-border: #d9def2;
+  /* Surface tokens — blue-tinted card theme */
+  --surface-1: #eef0ff;
+  --surface-2: #e4e7ff;
+  --surface-3: #d8dcff;
+  --card-border: #c8cef0;
   --text-primary: #0c1020;
   --text-secondary: #7c86ac;
 }

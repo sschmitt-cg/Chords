@@ -25,20 +25,20 @@
   flex: 1;
   height: 100%;
   border-radius: 0 0 8px 8px;
-  background: linear-gradient(180deg, #dde0e8 0%, #eceef3 30%, #e4e7ee 100%);
-  border: 1px solid #a6aab6;
+  background: linear-gradient(180deg, #f0f2f9 0%, #fafbfe 30%, #f4f6fc 100%);
+  border: 1px solid #b0b4c8;
   box-shadow:
     0 4px 10px rgba(16,20,32,0.18),
     inset 0 1px 0 rgba(255,255,255,0.95),
-    inset 0 0 0 1px #c6cad6;
+    inset 0 0 0 1px #d0d4e4;
   cursor: pointer;
   transition: background 0.08s, box-shadow 0.08s;
   overflow: hidden;
 }
 
 .keyWhite:active {
-  background: linear-gradient(180deg, #c8ccd4 0%, #d8dbe3 100%);
-  box-shadow: 0 1px 4px rgba(16,20,32,0.18), inset 0 0 0 1px #b0b4be;
+  background: linear-gradient(180deg, #dde0ee 0%, #eaecf6 100%);
+  box-shadow: 0 1px 4px rgba(16,20,32,0.18), inset 0 0 0 1px #b8bcd0;
 }
 
 /* Role colors for white keys — key itself IS the color indicator */
@@ -51,12 +51,12 @@
     0 0 0 2px color-mix(in srgb, var(--pc-color), transparent 55%);
 }
 .keyWhite.role_tone  {
-  background: color-mix(in srgb, var(--pc-color) 52%, #dde0e8);
-  border-color: color-mix(in srgb, var(--pc-color), #a6aab6 60%);
+  background: color-mix(in srgb, var(--pc-color) 68%, #f0f2f9);
+  border-color: color-mix(in srgb, var(--pc-color), #b0b4c8 50%);
 }
 .keyWhite.role_scale {
-  background: color-mix(in srgb, var(--pc-color) 22%, #dde0e8);
-  border-color: #a6aab6;
+  background: color-mix(in srgb, var(--pc-color) 42%, #f0f2f9);
+  border-color: color-mix(in srgb, var(--pc-color), #b0b4c8 75%);
 }
 
 /* ---- Black keys ---- */
@@ -94,10 +94,10 @@
     0 0 0 2px color-mix(in srgb, var(--pc-color), transparent 50%);
 }
 .keyBlack.role_tone {
-  background: color-mix(in srgb, var(--pc-color) 75%, #1e2028);
-  border-color: color-mix(in srgb, var(--pc-color), #000 45%);
+  background: color-mix(in srgb, var(--pc-color) 88%, #1e2028);
+  border-color: color-mix(in srgb, var(--pc-color), #000 35%);
 }
 .keyBlack.role_scale {
-  background: color-mix(in srgb, var(--pc-color) 42%, #1e2028);
-  border-color: color-mix(in srgb, var(--pc-color), #000 55%);
+  background: color-mix(in srgb, var(--pc-color) 62%, #1e2028);
+  border-color: color-mix(in srgb, var(--pc-color), #000 50%);
 }
