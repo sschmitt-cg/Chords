@@ -343,6 +343,17 @@ interface PickerProps {
 }
 
 function Picker({ options, currentValue, anchorRect, onSelect, onClose }: PickerProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const selectedRef = useRef<HTMLButtonElement>(null)
+
+  // Scroll selected item to vertical center after both refs are attached
+  useEffect(() => {
+    const container = containerRef.current
+    const selected = selectedRef.current
+    if (!container || !selected) return
+    container.scrollTop = selected.offsetTop - container.clientHeight / 2 + selected.clientHeight / 2
+  }, [])
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       const target = e.target as Element
@@ -353,10 +364,11 @@ function Picker({ options, currentValue, anchorRect, onSelect, onClose }: Picker
   }, [onClose])
 
   return createPortal(
-    <div data-picker className={styles.picker} style={{ left: anchorRect.left, top: anchorRect.bottom + 6 }}>
+    <div ref={containerRef} data-picker className={styles.picker} style={{ left: anchorRect.left, top: anchorRect.bottom + 6 }}>
       {options.map(opt => (
         <button
           key={opt.value}
+          ref={opt.value === currentValue ? selectedRef : undefined}
           className={[styles.pickerRow, opt.value === currentValue ? styles.pickerRowCurrent : ''].join(' ')}
           onClick={() => { onSelect(opt.value); onClose() }}
         >
@@ -407,7 +419,7 @@ interface PickerState {
 
 export default function ScaleNavigator() {
   const {
-    currentKeyPc,
+    currentModeRootPc,
     familyIndex,
     modeIndex,
     currentFamily,
@@ -418,6 +430,7 @@ export default function ScaleNavigator() {
     setKey,
     setFamily,
     setModeIndex,
+    setModeIndexPreservingTonic,
     setModeByBrightness,
     setModeByTension,
   } = useTonalStore()
@@ -465,7 +478,7 @@ export default function ScaleNavigator() {
     switch (picker.type) {
       case 'root':       setKey(value); break
       case 'family':     setFamily(value); break
-      case 'mode':       setModeIndex(value); break
+      case 'mode':       setModeIndexPreservingTonic(value); break
       case 'brightness': setModeByBrightness(value); break
       case 'tension':    setModeByTension(value as 0 | 1 | 2); break
     }
@@ -485,7 +498,7 @@ export default function ScaleNavigator() {
     : tensionOptions
 
   const pickerValue =
-    picker?.type === 'root'         ? currentKeyPc
+    picker?.type === 'root'         ? currentModeRootPc
     : picker?.type === 'family'     ? familyIndex
     : picker?.type === 'mode'       ? modeIndex
     : picker?.type === 'brightness' ? currentBrightnessPosition
@@ -498,7 +511,7 @@ export default function ScaleNavigator() {
         <div className={styles.region}>
           <span className={styles.regionLabel}>LOGICAL</span>
           <div className={styles.knobRow}>
-            <KnobUnit label="ROOT"   lcdValue={pcName(currentKeyPc, enharmonicPrefs)} step={currentKeyPc} total={12} pickerType="root"   onOpen={openPicker} onChange={v => handleKnobChange('root', v)} />
+            <KnobUnit label="ROOT"   lcdValue={pcName(currentModeRootPc, enharmonicPrefs)} step={currentModeRootPc} total={12} pickerType="root"   onOpen={openPicker} onChange={v => handleKnobChange('root', v)} />
             <KnobUnit label="FAMILY" lcdValue={FAMILY_LCD[currentFamily.id] ?? currentFamily.name.toUpperCase()} step={familyIndex} total={5} pickerType="family" onOpen={openPicker} onChange={v => handleKnobChange('family', v)} />
             <KnobUnit label="MODE"   lcdValue={currentMode.lcdName} step={modeIndex} total={7} pickerType="mode" onOpen={openPicker} onChange={v => handleKnobChange('mode', v)} />
           </div>

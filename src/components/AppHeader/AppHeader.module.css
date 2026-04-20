@@ -1,0 +1,63 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background:
+    radial-gradient(circle at 20% 20%, #1f2450, #0e122b),
+    linear-gradient(135deg, #0e122b, #1b1f3a);
+  padding-top: env(safe-area-inset-top);
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.07);
+}
+
+.inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  padding: 0 16px;
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #c8d0f0;
+  letter-spacing: 0.03em;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: none;
+  border-radius: 10px;
+  color: #8090c0;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.12s, color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iconBtn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  color: #c8d0f0;
+}
+
+.iconBtn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.iconBtnActive {
+  color: #c8d0f0;
+  background: rgba(255, 255, 255, 0.07);
+}
