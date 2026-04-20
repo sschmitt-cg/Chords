@@ -23,7 +23,11 @@ function computeScaleForFamily(
   modeIndex: number,
   preference: 'sharp' | 'flat' | null = null,
 ): { scale: ScaleData; harmonyRows: HarmonyRow[]; keyIdx: number; tonicLabel: string; preferenceUsed: 'sharp' | 'flat' | null } {
-  const display = computeDisplayScaleFromFamily(keyPc, familyId, modeIndex, preference)
+  // Scale must be rooted at the MODE root, not the family root.
+  // keyPc is the family root; add the mode's offset to get the actual tonal center.
+  const family = SCALE_FAMILIES.find(f => f.id === familyId) ?? SCALE_FAMILIES[0]
+  const modeRootPc = wrap(keyPc + getModeRootOffset(family, modeIndex), 12)
+  const display = computeDisplayScaleFromFamily(modeRootPc, familyId, modeIndex, preference)
   const scale: ScaleData = { pitchClasses: display.pitchClasses, spelled: display.spelled }
   return {
     scale,
@@ -183,7 +187,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   setKey: (pc) => {
     const { familyIndex, modeIndex, enharmonicPrefs } = get()
     const family = SCALE_FAMILIES[familyIndex]
-    const pref = enharmonicPrefs[pc] ?? null
+    const modeRootPc = wrap(pc + getModeRootOffset(family, modeIndex), 12)
+    const pref = enharmonicPrefs[modeRootPc] ?? null
     const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(pc, family.id, modeIndex, pref)
     set({
       currentKeyPc: pc,
@@ -234,7 +239,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     const { currentKeyPc, familyIndex, enharmonicPrefs } = get()
     const family = SCALE_FAMILIES[familyIndex]
     const safeIndex = wrap(newModeIndex, 7)
-    const pref = enharmonicPrefs[currentKeyPc] ?? null
+    const modeRootPc = wrap(currentKeyPc + getModeRootOffset(family, safeIndex), 12)
+    const pref = enharmonicPrefs[modeRootPc] ?? null
     const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(currentKeyPc, family.id, safeIndex, pref)
     set({
       modeIndex: safeIndex,
@@ -263,7 +269,7 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     const newOffset = getModeRootOffset(newFamily, entry.modeIndex)
     const newKeyPc = wrap(modeRootPc - newOffset, 12)
 
-    const pref = enharmonicPrefs[newKeyPc] ?? null
+    const pref = enharmonicPrefs[modeRootPc] ?? null
     const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(newKeyPc, newFamily.id, entry.modeIndex, pref)
     set({
       familyIndex: entry.familyIndex,
@@ -306,7 +312,7 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     const newOffset = getModeRootOffset(newFamily, best.modeIndex)
     const newKeyPc = wrap(modeRootPc - newOffset, 12)
 
-    const pref = enharmonicPrefs[newKeyPc] ?? null
+    const pref = enharmonicPrefs[modeRootPc] ?? null
     const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(newKeyPc, newFamily.id, best.modeIndex, pref)
     set({
       familyIndex: best.familyIndex,
