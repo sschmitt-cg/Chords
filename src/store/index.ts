@@ -105,6 +105,8 @@ interface TonalStore {
   setModeIndex: (modeIndex: number) => void
   setModeByBrightness: (position: number) => void
   setModeByTension: (tension: 0 | 1 | 2) => void
+  // Mode change that preserves tonal center (used by picker; knob drag uses setModeIndex)
+  setModeIndexPreservingTonic: (modeIndex: number) => void
   // Deprecated action aliases (HarmonyGrid/old callers still use these)
   setFamilyModeIndex: (index: number) => void
   setEnharmonicPref: (pc: number, pref: 'sharp' | 'flat') => void
@@ -184,14 +186,15 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   guitarTuning: STANDARD_TUNING,
 
   // --- Key ---
+  // pc is the desired tonal center (mode root); back-compute family root
   setKey: (pc) => {
     const { familyIndex, modeIndex, enharmonicPrefs } = get()
     const family = SCALE_FAMILIES[familyIndex]
-    const modeRootPc = wrap(pc + getModeRootOffset(family, modeIndex), 12)
-    const pref = enharmonicPrefs[modeRootPc] ?? null
-    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(pc, family.id, modeIndex, pref)
+    const newKeyPc = wrap(pc - getModeRootOffset(family, modeIndex), 12)
+    const pref = enharmonicPrefs[pc] ?? null
+    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(newKeyPc, family.id, modeIndex, pref)
     set({
-      currentKeyPc: pc,
+      currentKeyPc: newKeyPc,
       currentKeyIdx: keyIdx,
       currentTonicLabel: tonicLabel,
       currentScale: scale,
@@ -199,7 +202,7 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
       selectedChordIndex: null,
       selectedNotePc: null,
       rowHarmonyMaxOverrides: new Map(),
-      ...derivedFields(pc, familyIndex, modeIndex),
+      ...derivedFields(newKeyPc, familyIndex, modeIndex),
     })
   },
 
@@ -331,6 +334,29 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     })
   },
 
+  // Mode picker: change mode within family, keep tonal center (modeRootPc) fixed
+  setModeIndexPreservingTonic: (newModeIndex) => {
+    const { familyIndex, enharmonicPrefs, currentModeRootPc } = get()
+    const family = SCALE_FAMILIES[familyIndex]
+    const safeIndex = wrap(newModeIndex, 7)
+    const newKeyPc = wrap(currentModeRootPc - getModeRootOffset(family, safeIndex), 12)
+    const pref = enharmonicPrefs[currentModeRootPc] ?? null
+    const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(newKeyPc, family.id, safeIndex, pref)
+    set({
+      modeIndex: safeIndex,
+      familyModeIndex: safeIndex,
+      currentKeyPc: newKeyPc,
+      currentKeyIdx: keyIdx,
+      currentTonicLabel: tonicLabel,
+      currentScale: scale,
+      harmonyRows,
+      selectedChordIndex: null,
+      selectedNotePc: null,
+      rowHarmonyMaxOverrides: new Map(),
+      ...derivedFields(newKeyPc, familyIndex, safeIndex),
+    })
+  },
+
   // deprecated alias — kept so any old callers (HarmonyGrid tests etc) don't break
   setFamilyModeIndex: (index) => {
     get().setModeIndex(index)
@@ -345,9 +371,10 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   setEnharmonicPref: (pc, pref) => {
     const { enharmonicPrefs, currentKeyPc, familyIndex, modeIndex } = get()
     const family = SCALE_FAMILIES[familyIndex]
+    const modeRootPc = wrap(currentKeyPc + getModeRootOffset(family, modeIndex), 12)
     const newPrefs = { ...enharmonicPrefs, [pc]: pref }
     set({ enharmonicPrefs: newPrefs })
-    if (pc === currentKeyPc) {
+    if (pc === modeRootPc) {
       const { scale, harmonyRows, keyIdx, tonicLabel } = computeScaleForFamily(currentKeyPc, family.id, modeIndex, pref)
       set({ currentScale: scale, harmonyRows, currentKeyIdx: keyIdx, currentTonicLabel: tonicLabel })
     }

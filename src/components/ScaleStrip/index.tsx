@@ -2,7 +2,6 @@
 // Active and inactive tiles share the same width; inactive uses a dotted border.
 // Scale description annotation appears below the strip.
 
-import { useRef, useCallback } from 'react'
 import { useTonalStore } from '../../store/index'
 import { useAudio } from '../../hooks/useAudio'
 import { computeRomans, pcColorVar, wrap, ENHARMONIC_OPTIONS } from '../../theory/index'
@@ -27,14 +26,11 @@ function tileLeft(semitone: number): string {
   return `calc(${semitone / 11} * (100% - ${TILE_W}px))`
 }
 
-const SWIPE_THRESHOLD_PX = 30
-
 export default function ScaleStrip() {
   const {
     currentScale,
     currentModeNotes,
     currentModeRootPc,
-    currentKeyPc,
     modeIndex,
     currentMode,
     currentFamily,
@@ -43,36 +39,12 @@ export default function ScaleStrip() {
     selectedChordIndex,
     setSelectedNote,
     setSelectedChord,
-    setKey,
   } = useTonalStore()
   const { playScale, playNote } = useAudio()
 
   const romans = computeRomans(currentModeNotes)
 
-  const swipeStartX = useRef<number | null>(null)
-  const swipeMoved = useRef(false)
-
-  const handleStripPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    swipeStartX.current = e.clientX
-    swipeMoved.current = false
-  }, [])
-
-  const handleStripPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (swipeStartX.current === null) return
-    const delta = e.clientX - swipeStartX.current
-    if (Math.abs(delta) > SWIPE_THRESHOLD_PX) {
-      swipeMoved.current = true
-      setKey(wrap(currentKeyPc + (delta > 0 ? -1 : 1), 12))
-      swipeStartX.current = e.clientX
-    }
-  }, [currentKeyPc, setKey])
-
-  const handleStripPointerUp = useCallback(() => {
-    swipeStartX.current = null
-  }, [])
-
   function handleTileTap(pc: number, isRoot: boolean) {
-    if (swipeMoved.current) return
     if (selectedNotePc === pc) {
       setSelectedNote(null)
     } else {
@@ -98,12 +70,7 @@ export default function ScaleStrip() {
     : `Mode ${modeIndex + 1}: ${currentMode.name}. Same ${currentFamily.name} notes — tonal center shifts.`
 
   return (
-    <div
-      className={styles.strip}
-      onPointerDown={handleStripPointerDown}
-      onPointerMove={handleStripPointerMove}
-      onPointerUp={handleStripPointerUp}
-    >
+    <div className={styles.strip}>
       <div className={styles.container}>
         {positions.map(({ pc, semitone, isActive, isRoot, scaleIdx, name }) => {
           if (isActive) {
