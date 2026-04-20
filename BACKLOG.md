@@ -28,7 +28,7 @@ parity. Open both side by side during testing.
 - [ ] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
 - [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
 - [x] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
-- [ ] Mobile layout — touch targets all ≥ 44pt, no horizontal overflow (audit pending)
+- [x] Mobile layout — touch targets all ≥ 44pt (PR #89): HarmonyGrid columns, picker rows, reset button; LCD displays non-interactive; layout compacted (portrait 12px gaps, landscape 8px, max-width 1100px); keyboard/fretboard equal height in landscape; ScaleStrip flex layout in portrait eliminates tile overlap
 
 ---
 
@@ -128,7 +128,7 @@ parity. Open both side by side during testing.
 - [x] ScaleNavigator ROOT knob/LCD — now tracks tonal center (modeRootPc) rather than family root; all navigation actions preserve the audible tonic
 - [x] ScaleNavigator MODE picker — selecting from popup preserves tonal center; knob drag still shifts root chromatically
 - [x] ScaleNavigator pickers — all popups scroll to center the current selection on open
-- [ ] Scale strip — swipe/drag gesture redesign (horizontal drag to change key)
+- [ ] Scale strip — swipe/drag gesture redesign (horizontal drag to change key; deferred — 3 options proposed in session, user chose to defer)
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar

@@ -206,7 +206,7 @@ function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onChange }
   return (
     <div ref={wrapperRef} className={styles.knobUnit}>
       <Knob step={step} total={total} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
-      <LCD value={lcdValue} onClick={openPicker} />
+      <LCD value={lcdValue} />
       <span className={styles.knobLabel}>{label}</span>
     </div>
   )
@@ -265,7 +265,7 @@ function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, arcMax, o
     <div ref={wrapperRef} className={styles.knobUnit}>
       <BoundedKnob step={step} total={total} arcMin={arcMin} arcMax={arcMax}
         onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
-      <LCD value={lcdValue} onClick={openPicker} />
+      <LCD value={lcdValue} />
       <span className={styles.knobLabel}>{label}</span>
     </div>
   )
@@ -318,7 +318,7 @@ function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeKnobUnit
     <div className={styles.knobUnit}>
       <BoundedKnob step={step} total={TOTAL} arcMin={-135} arcMax={135}
         onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
-      <LCD value={lcdValue} onClick={onToggleMute} />
+      <LCD value={lcdValue} />
       <span className={styles.knobLabel}>VOLUME</span>
     </div>
   )
@@ -440,7 +440,7 @@ export default function ScaleNavigator() {
   const [picker, setPicker] = useState<PickerState | null>(null)
 
   const openPicker = useCallback((type: PickerType, rect: DOMRect) => {
-    setPicker({ type, anchorRect: rect })
+    setPicker(prev => prev?.type === type ? null : { type, anchorRect: rect })
   }, [])
 
   const closePicker = useCallback(() => setPicker(null), [])
