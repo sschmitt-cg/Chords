@@ -1,0 +1,95 @@
+.menu {
+  position: fixed;
+  z-index: 300;
+  min-width: 220px;
+  background: #1a2858;
+  border: 0.5px solid #3a4888;
+  border-radius: 12px;
+  padding: 6px 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 16, 0.5);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px 4px 4px;
+  min-height: 44px;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.dragHandle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 44px;
+  background: none;
+  border: none;
+  cursor: grab;
+  color: #4a5898;
+  font-size: 16px;
+  flex-shrink: 0;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+  color: #8090c0;
+}
+
+/* Hide drag handles in landscape — layout is fixed there */
+@media (orientation: landscape) {
+  .dragHandle {
+    display: none;
+  }
+}
+
+.label {
+  flex: 1;
+  font-size: 13px;
+  color: #a0b0d8;
+  user-select: none;
+}
+
+.checkbox {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #6670e8;
+  flex-shrink: 0;
+}
+
+.dragging {
+  opacity: 0.5;
+  background: rgba(102, 112, 232, 0.1);
+}
+
+.footer {
+  border-top: 0.5px solid #2c3c78;
+  margin-top: 4px;
+  padding: 6px 12px;
+}
+
+.resetBtn {
+  width: 100%;
+  padding: 8px 12px;
+  min-height: 36px;
+  background: none;
+  border: 0.5px solid #3a4888;
+  border-radius: 8px;
+  color: #8090c0;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.12s, color 0.12s;
+}
+
+.resetBtn:hover {
+  background: #283870;
+  color: #c0cce8;
+}

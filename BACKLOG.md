@@ -14,7 +14,7 @@ parity. Open both side by side during testing.
 - [ ] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db)
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
 - [x] Scale strip — correct note spelling for every key/mode combination
-- [x] Scale strip — swipe/drag gesture to change key
+- [ ] Scale strip — swipe/drag gesture to change key (removed as buggy; needs redesign)
 - [x] Harmony Grid — 7 rows, correct chord names at triads through 13ths (sus2/sus4/b5 added; exotic fallbacks show root only)
 - [x] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions; header click resets per-row overrides
 - [x] Harmony Grid — per-row extension: clicking ghost note extends that row; clicking active note reduces to that degree
@@ -27,8 +27,8 @@ parity. Open both side by side during testing.
 - [x] Audio — chord playback (arpeggiate then strum)
 - [ ] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
 - [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
-- [ ] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
-- [ ] Mobile layout — touch targets all ≥ 44pt, no horizontal overflow
+- [x] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
+- [ ] Mobile layout — touch targets all ≥ 44pt, no horizontal overflow (audit pending)
 
 ---
 
@@ -125,8 +125,12 @@ parity. Open both side by side during testing.
 - [x] HarmonyGrid — chord cells and note cells use more vivid `color-mix` percentages for clearer pitch-class coloring
 - [x] Keyboard — lighter key surface, scale tones 42% and chord tones 68% color-mix; black keys also more vivid
 - [x] Fretboard — lighter board surface, nut rendered as distinct 4px dark bar (separate class, no conflict with fretWire), uniform 1px string weight, fret position markers corrected (were off by one fret)
+- [x] ScaleNavigator ROOT knob/LCD — now tracks tonal center (modeRootPc) rather than family root; all navigation actions preserve the audible tonic
+- [x] ScaleNavigator MODE picker — selecting from popup preserves tonal center; knob drag still shifts root chromatically
+- [x] ScaleNavigator pickers — all popups scroll to center the current selection on open
+- [ ] Scale strip — swipe/drag gesture redesign (horizontal drag to change key)
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
-- [ ] iOS safe-area insets (`env(safe-area-inset-*)`) applied to wrapper padding
+- [x] iOS safe-area insets (`env(safe-area-inset-*)`) applied to header and all layout panels
