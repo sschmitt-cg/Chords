@@ -82,8 +82,8 @@ export default function FretboardVisualizer() {
         {/* ---- Fret markers (dots between frets) ---- */}
         <div className={styles.markerLayer} aria-hidden="true">
           {MARKER_FRETS.map(fret => {
-            // Position marker in the middle of the fret span (between fret-1 and fret lines)
-            const markerPos = fret === 12 ? fret - 0.5 : fret - 0.5
+            // Midpoint of slot N = (N + 0.5) / fretCount. Slot 0 is the open-string area.
+            const markerPos = fret + 0.5
             if (fret === 12) {
               return (
                 <React.Fragment key={fret}>
@@ -135,9 +135,9 @@ export default function FretboardVisualizer() {
                     className={styles.fretSlot}
                     style={{ '--fret-index': fret } as React.CSSProperties}
                   >
-                    {/* Fret wire */}
+                    {/* Fret wire — nut rendered as its own class so styles don't conflict */}
                     {!isOpen && (
-                      <div className={[styles.fretWire, fret === 1 ? styles.nut : ''].join(' ')} aria-hidden="true" />
+                      <div className={fret === 1 ? styles.nut : styles.fretWire} aria-hidden="true" />
                     )}
 
                     {/* Note dot — only rendered when role is not 'off' */}

@@ -35,7 +35,7 @@ function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }: KnobPr
     const isCurrent = i === step
     ticks.push(
       <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke={isCurrent ? '#6670e8' : '#1e2858'}
+        stroke={isCurrent ? '#6670e8' : '#2a3878'}
         strokeWidth={isCurrent ? 3 : 1.5}
         strokeLinecap="round"
       />
@@ -50,11 +50,11 @@ function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }: KnobPr
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
     >
       {ticks}
-      <circle cx={36} cy={36} r={22} fill="#1a2350" />
-      <circle cx={36} cy={36} r={21} fill="none" stroke="#2e3a70" strokeWidth={0.5} />
+      <circle cx={36} cy={36} r={22} fill="#223070" />
+      <circle cx={36} cy={36} r={21} fill="none" stroke="#384888" strokeWidth={0.5} />
       <line x1={36} y1={36} x2={indX} y2={indY} stroke="#6670e8" strokeWidth={2} strokeLinecap="round" />
       <circle cx={indX} cy={indY} r={2.5} fill="#9098f8" />
-      <circle cx={36} cy={36} r={3} fill="#0e1538" />
+      <circle cx={36} cy={36} r={3} fill="#1a2660" />
     </svg>
   )
 }
@@ -81,7 +81,7 @@ function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointerDown, 
     const isFilled = i <= step
     ticks.push(
       <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke={isCurrent ? '#9098f8' : isFilled ? '#6670e8' : '#1e2858'}
+        stroke={isCurrent ? '#9098f8' : isFilled ? '#6670e8' : '#2a3878'}
         strokeWidth={isCurrent ? 3 : isFilled ? 2 : 1.5}
         strokeLinecap="round"
       />
@@ -96,11 +96,11 @@ function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointerDown, 
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
     >
       {ticks}
-      <circle cx={36} cy={36} r={22} fill="#1a2350" />
-      <circle cx={36} cy={36} r={21} fill="none" stroke="#2e3a70" strokeWidth={0.5} />
+      <circle cx={36} cy={36} r={22} fill="#223070" />
+      <circle cx={36} cy={36} r={21} fill="none" stroke="#384888" strokeWidth={0.5} />
       <line x1={36} y1={36} x2={indX} y2={indY} stroke="#6670e8" strokeWidth={2} strokeLinecap="round" />
       <circle cx={indX} cy={indY} r={2.5} fill="#9098f8" />
-      <circle cx={36} cy={36} r={3} fill="#0e1538" />
+      <circle cx={36} cy={36} r={3} fill="#1a2660" />
     </svg>
   )
 }

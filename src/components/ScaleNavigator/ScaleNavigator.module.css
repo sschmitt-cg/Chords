@@ -10,9 +10,9 @@
 /* ---- Dark panel ---- */
 
 .panel {
-  background: #0e1538;
+  background: #1a2660;
   border-radius: 14px;
-  border: 0.5px solid #1e2a58;
+  border: 0.5px solid #2c3c78;
   padding: 18px 20px 20px;
   display: flex;
   gap: 16px;
@@ -43,7 +43,7 @@
 
 .regionLabel {
   font-size: 9px;
-  color: #6070a0;
+  color: #8090c0;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 600;
@@ -51,7 +51,7 @@
 
 .divider {
   width: 0.5px;
-  background: #1e2a58;
+  background: #2c3c78;
   align-self: stretch;
 }
 
@@ -77,8 +77,8 @@
 /* ---- LCD display ---- */
 
 .lcd {
-  background: #080e28;
-  border: 1px solid #1e2a58;
+  background: #111c50;
+  border: 1px solid #2c3c78;
   border-radius: 4px;
   padding: 5px 6px;
   width: 100%;
@@ -111,8 +111,8 @@
   position: fixed;
   z-index: 1000;
   min-width: 150px;
-  background: #111a40;
-  border: 0.5px solid #2e3870;
+  background: #1a2858;
+  border: 0.5px solid #3a4888;
   border-radius: 10px;
   padding: 4px 0;
   box-shadow: 0 8px 24px rgba(0, 0, 16, 0.5);
@@ -127,7 +127,7 @@
   width: 100%;
   padding: 9px 14px;
   font-size: 12px;
-  color: #7080b8;
+  color: #8090c8;
   background: none;
   border: none;
   cursor: pointer;
@@ -137,7 +137,7 @@
 }
 
 .pickerRow:hover {
-  background: #1a2450;
+  background: #283870;
   color: #c0cce8;
 }
 
