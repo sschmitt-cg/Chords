@@ -123,6 +123,7 @@
   gap: 2px;
   padding: 10px 12px;
   min-height: 52px;
+  overflow: hidden;
   background: color-mix(in srgb, var(--pc-color) 30%, #ffffff);
   border: none;
   border-right: 1px solid #e6e9f5;
@@ -174,6 +175,9 @@
   color: #151b36;
   line-height: 1.1;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* ---- Note cells ---- */
@@ -237,4 +241,16 @@
 
 .emptyCell {
   background: none;
+}
+
+/* ---- Responsive: narrow portrait — shrink chord column so note columns hit 44px ---- */
+
+@media (max-width: 720px) {
+  .header {
+    grid-template-columns: minmax(80px, 1.8fr) repeat(var(--col-count, 6), minmax(44px, 1fr));
+  }
+
+  .row {
+    grid-template-columns: minmax(80px, 1.8fr) repeat(6, minmax(44px, 1fr));
+  }
 }
