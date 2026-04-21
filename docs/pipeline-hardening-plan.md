@@ -337,9 +337,9 @@ Phases A → D cover ~90% of the value in under two hours of total work.
 
 - **CI minute budget**: Public repos on GitHub-hosted runners are free.
   Stays relevant only if the repo goes private.
-- **Node version drift between local dev and CI**: document the LTS
-  version (Node 22) in `README.md` and optionally add a `.nvmrc` / `engines`
-  field to `package.json`.
+- **Node version drift between local dev and CI**: the LTS version (Node
+  22) is documented in `README.md`, and `.nvmrc` + `package.json` `engines`
+  are in place. Keep them aligned with whatever Node version CI uses.
 - **Flaky tests**: the theory layer is pure, so zero flakiness expected.
   If store or audio tests get flaky later, quarantine with `.skip` + an
   issue; don't disable the CI gate.

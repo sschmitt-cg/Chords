@@ -23,8 +23,9 @@ legacy files into `dist/` so both are served from the same GitHub Pages site.
 
 ## Quick start
 
-**Requires Node.js `^20.19.0` or `>=22.12.0`** (per Vite 8's engine
-requirements). Node 22 LTS is recommended — a `.nvmrc` is included, so
+**Requires Node.js `^20.19.0` or `>=22.13.0`** (ESLint 10's engine floor
+for Node 22 is stricter than Vite 8's, so the combined minimum is 22.13).
+Node 22 LTS is recommended — a `.nvmrc` is pinned to `22.13.0`, so
 `nvm use` picks the right version automatically.
 
 ```bash

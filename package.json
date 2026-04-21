@@ -13,7 +13,7 @@
     "test:watch": "vitest"
   },
   "engines": {
-    "node": "^20.19.0 || >=22.12.0"
+    "node": "^20.19.0 || >=22.13.0"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
