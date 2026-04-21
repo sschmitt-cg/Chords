@@ -23,8 +23,8 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      // Enforced at the TS level (noUnusedParameters in tsconfig) — keep ESLint off
-      // it to avoid duplicate reports on the same lines.
+      // Matches tsconfig's `noUnusedParameters` / `noUnusedLocals` with a
+      // `_`-prefix escape hatch so intentionally unused params (`_event`) pass.
       '@typescript-eslint/no-unused-vars': [
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },

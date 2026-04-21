@@ -23,6 +23,10 @@ legacy files into `dist/` so both are served from the same GitHub Pages site.
 
 ## Quick start
 
+**Requires Node.js `^20.19.0` or `>=22.12.0`** (per Vite 8's engine
+requirements). Node 22 LTS is recommended — a `.nvmrc` is included, so
+`nvm use` picks the right version automatically.
+
 ```bash
 npm install
 npm run dev        # React app on http://localhost:5173
