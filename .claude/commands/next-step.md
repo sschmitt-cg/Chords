@@ -2,7 +2,7 @@ Take a look at the documentation to familiarize yourself with the project. Then,
 
 Once you have a good idea of what the correct next step should be, I would like to create a new branch, and do the necessary work.
 
-When you have completed that, create a pull request targeted to merge into the dev branch. Make sure the PR description accurately reflects the work. If you are addressing a GitHub issue, make sure to link the GitHub issue to the PR, so when the PR merges, the issue closes.
+When you have completed that, create a pull request targeted to merge into the `main` branch. Make sure the PR description accurately reflects the work. If you are addressing a GitHub issue, make sure to link the GitHub issue to the PR, so when the PR merges, the issue closes.
 
 If it hasn't already been requested automatically, request a review from GitHub Copilot.
 
