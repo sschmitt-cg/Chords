@@ -1,4 +1,4 @@
-Take a look at the specifications documents in the specs directory to familiarize yourself with the project. Then, take a look at any currently open GitHub issues. Think about where we are in terms of the implementation plan document and the GitHub issues, and think about what the next logical step we should take.
+Take a look at the documentation to familiarize yourself with the project. Then, take a look at any currently open GitHub issues. Think about where we are in terms of the implementation plan and the GitHub issues, and think about what the next logical step we should take.
 
 Once you have a good idea of what the correct next step should be, I would like to create a new branch, and do the necessary work.
 
