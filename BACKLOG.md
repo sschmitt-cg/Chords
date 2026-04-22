@@ -113,6 +113,13 @@ parity. Open both side by side during testing.
 
 ---
 
+## CI / Tooling (follow-ups from PR #90)
+
+- [ ] Vitest config uses `/// <reference types="vitest" />` triple-slash pattern (older); migrate to `import type { UserConfig } from 'vitest/config'` when upgrading Vitest
+- [ ] `computeRomans` test for non-7-note input tests an undocumented fallback — if the fallback behavior ever changes, this test will give a false signal; revisit when expanding theory test coverage
+
+---
+
 ## Bugs / Polish
 
 - [ ] Enharmonic preference persistence (user picks C# vs Db — survives navigation)
