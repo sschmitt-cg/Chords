@@ -3,4 +3,5 @@ dist/
 .vite/
 .DS_Store
 *.local
+*.local.json
 .claude/
