@@ -1,5 +1,6 @@
 // CircleOfFifths — interactive SVG circle with major (outer) and minor (inner) rings.
-// Clicking any wedge sets the tonal center to that pitch class via setKey.
+// Clicking a major wedge switches to major/Ionian at that root.
+// Clicking a minor wedge switches to major/Aeolian at that root.
 
 import { useTonalStore } from '../../store/index'
 import { CIRCLE_OF_FIFTHS_MAJOR, CIRCLE_OF_FIFTHS_MINOR, SCALE_FAMILIES, pcColorVar, wrap } from '../../theory/index'
@@ -8,6 +9,11 @@ import styles from './CircleOfFifths.module.css'
 // Families whose root mode is major-flavoured — outer ring gets the active highlight.
 // Anything not in this set is treated as minor-type (inner ring gets the highlight).
 const MAJOR_FAMILY_IDS = new Set(['major', 'harmonic-major', 'double-harmonic'])
+
+// Index of the Major family in SCALE_FAMILIES (Ionian=0 through Locrian=6)
+const MAJOR_FAMILY_INDEX = SCALE_FAMILIES.findIndex(f => f.id === 'major')
+// Aeolian is mode index 5 within the Major family
+const AEOLIAN_MODE_INDEX = 5
 
 const WEDGE_COUNT = 12
 const ANGLE_STEP = (2 * Math.PI) / WEDGE_COUNT
@@ -52,12 +58,25 @@ function labelPosition(r: number, index: number): { x: number; y: number } {
 }
 
 export default function CircleOfFifths(): React.ReactElement {
-  const { currentModeRootPc, familyIndex, setKey } = useTonalStore()
+  const { currentModeRootPc, familyIndex, setKey, setFamily, setModeIndex } = useTonalStore()
   const tonicPc = wrap(currentModeRootPc, 12)
   // Only highlight the outer (major) ring when the current family is major-typed,
   // and the inner (minor) ring when it is minor-typed, so clicking Am doesn't
   // also light up the A Major wedge sharing the same pitch class.
   const isMajorFamily = MAJOR_FAMILY_IDS.has(SCALE_FAMILIES[familyIndex].id)
+
+  // Switch to Major/Ionian then set the tonal center to the clicked pitch class.
+  function handleMajorClick(pc: number): void {
+    setFamily(MAJOR_FAMILY_INDEX)
+    setKey(pc)
+  }
+
+  // Switch to Major/Aeolian (natural minor) then set the tonal center.
+  function handleMinorClick(pc: number): void {
+    setFamily(MAJOR_FAMILY_INDEX)
+    setModeIndex(AEOLIAN_MODE_INDEX)
+    setKey(pc)
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -78,12 +97,12 @@ export default function CircleOfFifths(): React.ReactElement {
                 d={wedgePath(R_OUTER_OUTER, R_OUTER_INNER, i)}
                 className={[styles.wedge, isActive ? styles.wedgeActive : styles.wedgeMuted].join(' ')}
                 style={{ '--pc-color': colorVar } as React.CSSProperties}
-                onClick={() => setKey(key.pc)}
+                onClick={() => handleMajorClick(key.pc)}
                 role="button"
                 aria-label={`${key.label} major`}
                 aria-pressed={isActive}
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setKey(key.pc) } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMajorClick(key.pc) } }}
               />
               <text
                 x={pos.x}
@@ -111,12 +130,12 @@ export default function CircleOfFifths(): React.ReactElement {
                 d={wedgePath(R_OUTER_INNER, R_INNER_INNER, i)}
                 className={[styles.wedge, isActive ? styles.wedgeActive : styles.wedgeMuted].join(' ')}
                 style={{ '--pc-color': colorVar } as React.CSSProperties}
-                onClick={() => setKey(key.pc)}
+                onClick={() => handleMinorClick(key.pc)}
                 role="button"
                 aria-label={`${key.label}`}
                 aria-pressed={isActive}
                 tabIndex={0}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setKey(key.pc) } }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleMinorClick(key.pc) } }}
               />
               <text
                 x={pos.x}
