@@ -4,4 +4,6 @@ dist/
 .DS_Store
 *.local
 *.local.json
+.claude/settings.json
+.claude/settings.local.json
 

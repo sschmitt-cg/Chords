@@ -5,52 +5,27 @@ These rules apply to all work unless a prompt explicitly overrides them.
 
 ---
 
-## Project Overview
+## Project orientation
 
-**Tonal Explorer** is a browser-based music theory tool originally written as a
-single-file vanilla HTML/CSS/JS app (`index-legacy.html` + `script.js`). It lets
-musicians and students explore scales, modes, diatonic chords, and chord
-extensions through interactive visualizers and a built-in Web Audio synth.
+**Tonal Explorer** is a browser-based music theory tool for exploring scales,
+modes, diatonic chords, and chord extensions through interactive visualizers
+and a built-in Web Audio synth.
 
-### Current state
+Read **`docs/product-vision.md`** for the full product goals, target audiences,
+and design principles. Read **`BACKLOG.md`** for current development status and
+upcoming work. Both files should be read at the start of any session.
 
-The app is mid-migration to **React 18 + TypeScript + Vite + Zustand**. The
-original app is preserved intact at `index.html` and remains fully functional.
-The new app lives in `src/` and is served by Vite at `localhost:5173` (or the
-next available port). It is published at **tonalexplorer.com/v2.html** via
-GitHub Actions → GitHub Pages.
+### Delivery targets
 
-**Completed so far:**
-- Full project scaffold (Vite, TypeScript, Zustand)
-- Pure theory functions migrated to `src/theory/index.ts`
-- Zustand store wired to recompute scale + harmony rows on every state change
-- ScaleStrip, HarmonyGrid, KeyboardVisualizer, FretboardVisualizer components
-- Web Audio engine (`src/audio/index.ts`) + `useAudio` hook — mute toggle,
-  scale playback, chord arpeggio + strum, individual note playback, iOS unlock flow
-- Light card UI theme: white cards on dark blue radial gradient background,
-  original hand-tuned pc color palette, tactile keyboard and fretboard styling
-- 5 scale families × 7 modes (35 total) in `SCALE_FAMILIES` — Major, Melodic Minor,
-  Harmonic Minor, Harmonic Major, Double Harmonic; family-based scale computation
-- ScaleNavigator v1 — drum UI, family tabs, brightness bar (to be redesigned, see `TASK.md`)
-
-**In progress (branch `feature/scale-navigator`):** Full ScaleNavigator redesign
-(analog knobs + LCD displays + exploratory sliders) and chromatic ScaleStrip
-(12-position proportional layout). Full spec in `TASK.md`.
-
-**Still to do:** Metronome, Chromatic Tuner, WheelModal, shareable URLs, and the
-iOS app via Capacitor. See `BACKLOG.md` for the full phased plan.
-
-### Goal
-
-Ship the same codebase as:
+The same codebase ships as:
 1. A **progressive web app** (desktop + mobile browser)
 2. A **native iOS app** via Capacitor wrapping WKWebView — chosen specifically
-   because Web Audio API (oscillators, autocorrelation, gain graph) runs natively
-   in WKWebView. React Native was ruled out because it cannot use the Web Audio API.
+   because the Web Audio API (oscillators, autocorrelation, gain graph) runs
+   natively in WKWebView. React Native cannot do this.
 
 ---
 
-## Tech Stack
+## Tech stack
 
 | Layer | Choice | Why |
 |---|---|---|
@@ -63,84 +38,64 @@ Ship the same codebase as:
 
 ---
 
-## Architecture Decisions
+## Architectural rules
 
-### State management
-All app state lives in `src/store/index.ts`. Calling `setKey(pc)`, `setMode(index)`,
-or `setScaleType(type)` immediately recomputes `currentScale` and `harmonyRows` —
-components never compute these themselves. Enharmonic preferences (C# vs Db) are
-also stored so the user's choice persists across navigation.
+These are constraints that are not derivable from reading the code. Violating
+them will cause hard-to-detect bugs or architectural drift.
 
-### Theory layer
-`src/theory/index.ts` contains only pure functions with no DOM or React
-dependencies. It can be tested independently with plain `console.log` calls.
-`src/theory/types.ts` holds all TypeScript interfaces. Nothing outside `theory/`
-should reimplement music theory logic.
+### State — components never compute, always read
+All derived state (`currentScale`, `harmonyRows`, etc.) is computed inside the
+Zustand store in `src/store/index.ts` and recomputed automatically on every
+state change. Components read from the store; they never recompute theory
+results themselves.
 
-### Guitar tuning
-`GuitarTuning` is a 6-tuple of MIDI values `[number,number,number,number,number,number]`,
-index 0 = high E, index 5 = low E. This is the canonical representation throughout
-the app. The hard-coded `openStrings`/`openMidis` arrays in `script.js` line 2020
-were the specific pain point this solves. FretboardVisualizer reads `guitarTuning`
-directly from the store.
+### Theory — one layer, no reimplementation
+All music theory logic lives in `src/theory/index.ts` as pure functions with no
+DOM or React dependencies. Nothing outside `theory/` should reimplement theory
+logic — not components, not the store, not the audio engine.
 
-### Pitch class colors
-12 CSS custom properties `--pc-0` through `--pc-11` are defined in `src/index.css`
-and map each chromatic pitch to a unique hue. Components access them via
-`pcColorVar(pc)` from `src/theory/index.ts`, which returns `var(--pc-N)`.
-Never hard-code colors for notes — always go through this system.
+### Colors — always via the pitch class system
+12 CSS custom properties `--pc-0` through `--pc-11` are defined in
+`src/index.css`. Use `pcColorVar(pc)` from `src/theory/index.ts` to reference
+them. Never hard-code colors for notes or pitch classes.
 
-The palette uses the original app's hand-tuned hex values, which were visually
-calibrated for display on **light (white) card backgrounds**. `--pc-3` (D#) and
-`--pc-4` (E) were deepened slightly from the original for better contrast.
+### CSS — Modules with color-mix for tinted surfaces
+Each component has a co-located `ComponentName.module.css`. Use
+`color-mix(in srgb, var(--pc-color) N%, #ffffff)` for surfaces tinted by pitch
+class color — never hard-code opacity variants.
 
-### UI theme and visual design
-The design is **light cards on a dark blue radial gradient background** — the same
-visual language as the original app. Key design decisions:
-- `color-mix(in srgb, var(--pc-color) N%, #ffffff)` for tinted card surfaces
-- Keyboard: white keys have 3D depth (gradient + inset shadow); black keys are
-  glossy dark. Key color alone signals role — no dot overlays.
-- Fretboard: warm gray board (`#e3e5eb` gradient), bone nut, three dot styles:
-  **square** = root, **solid circle** = chord tone, **outline circle** = scale tone.
-- Scale strip tiles use `flex: 1` to fill strip width evenly at all screen sizes.
-
-### Apple HIG compliance (ongoing)
-- All interactive elements must have a minimum **44×44pt touch target**
-- Use `env(safe-area-inset-*)` for bottom/top padding on iOS
-- Use `rem` units and avoid fixed `px` font sizes to support Dynamic Type
-- Bottom tab bar navigation pattern (not hamburger menus) for the iOS app
-
-### CSS Modules pattern
-Each component has a co-located `ComponentName.module.css` file. Import as
-`styles` and compose class names inline. Use `color-mix()` for tinted surfaces
-derived from pitch class colors — it keeps the palette consistent without
-hard-coding opacity variants.
+### Mobile — Apple HIG compliance is non-negotiable
+Every interactive element must meet these requirements, always:
+- Minimum **44×44pt touch target**
+- `env(safe-area-inset-*)` for bottom/top padding
+- `rem` units — no fixed `px` font sizes (supports Dynamic Type)
+- Test in both portrait and landscape at phone-sized viewport
 
 ---
 
-## Behavior Rules
+## Behavior rules
 
 ### Before writing any code
-For any **significant design or architectural decision** (new component structure,
-state shape change, audio API design, iOS navigation pattern, etc.), propose
-**3 distinct options with tradeoffs** and wait for a choice before writing code.
-For small, unambiguous tasks this step can be skipped.
+For any **significant design or architectural decision** (new component
+structure, state shape change, audio API design, iOS navigation pattern, etc.),
+propose **3 distinct options with tradeoffs** and wait for a choice before
+writing code. For small, unambiguous tasks this step can be skipped.
 
 ### When requirements are unclear
-Ask rather than assume. One short clarifying question is better than building the
-wrong thing.
+Ask rather than assume. One short clarifying question is better than building
+the wrong thing.
 
 ### TypeScript
-- Never use `any` without a comment on the same line explaining why it's necessary.
+- Never use `any` without a comment on the same line explaining why.
 - Prefer explicit return types on exported functions.
 - Prefix intentionally unused parameters with `_` (e.g., `_event`) to satisfy
   `noUnusedParameters` — do not disable the rule.
 
 ### Code style
-- Code comments should be short, purposeful, and explain *why* not *what*.
+- Comments explain *why*, never *what*.
 - No boilerplate or generated comments.
 - Favor naming clarity over inline documentation.
-- Do not add docstrings, comments, or type annotations to code you didn't change.
+- Do not add comments or type annotations to code you didn't change.
 
 ### Scope discipline
 - Only modify files relevant to the current task.
@@ -149,7 +104,7 @@ wrong thing.
 
 ---
 
-## Git Workflow
+## Git workflow
 
 ### Branching
 - All work happens on a feature or fix branch: `feature/<name>` or `fix/<name>`.
@@ -158,20 +113,23 @@ wrong thing.
 - Never force-push.
 
 ### Commits
-- Make **small, focused commits** with clear, present-tense messages
+- Small, focused commits with present-tense messages
   (e.g., `feat: add HarmonyGrid component`, `fix: enharmonic pref not persisting`).
-- Commit message body is optional but encouraged for non-obvious changes.
 - One logical change per commit — don't batch unrelated edits.
 
 ### Pull requests
-- After pushing a feature branch, open an actual PR with `gh pr create`.
-- The PR description must include: what changed, why, and how to test it.
-- Do not create a PR for exploratory, conceptual, or review-only work.
+- Open PRs with `gh pr create` targeting `main`.
+- PR description must include: what changed, why, and how to test it.
+- Link any related GitHub issue in the body so it closes on merge.
+- Do not create a PR for exploratory or review-only work.
 
-### Validation before committing
-Run `npx tsc --noEmit` and confirm zero errors before every commit.
-If the project gains a lint script (`npm run lint`) or test script (`npm test`),
-run those too. Report anything that cannot be verified.
+### Validation before every commit
+Run all three gates and confirm zero errors:
+```
+npm run typecheck
+npm run lint
+npm test
+```
 
 ### Git safety
 - If a git operation fails (conflict, missing remote, permissions), stop, report
@@ -180,43 +138,19 @@ run those too. Report anything that cannot be verified.
 
 ---
 
-## Feature Backlog
-
-All planned work is tracked in `BACKLOG.md` at the project root.
-Read it at the start of each session to understand current status.
-Update checkboxes as items ship. Add new items the user mentions during
-conversation — don't lose ideas to chat history.
-
-### Key upcoming features (summarized)
-- **Metronome** — migrate scheduler from `script.js`; BPM, time signature, tap tempo, downbeat accent
-- **Chromatic Tuner** — autocorrelation pitch detection, cents display, per-string guided mode
-- **WheelModal** — picker for key / mode / scale type
-- **Scale strip drag gesture** — horizontal drag = change key, vertical drag = change mode
-- **Scale type expansion** — Harmonic Major, Phrygian Dominant, Lydian Dominant,
-  Super Locrian/Altered, Double Harmonic, Hungarian Minor, Neapolitan Major/Minor,
-  Chromatic; grouped picker UI
-- **Alternative guitar tunings** — preset library (Open G/D/E/A, Drop D, DADGAD,
-  half/full-step down, etc.), custom tuning editor, string tension warnings using
-  `ratio = 2^(n/6)` (+2 semi = caution, +3 = warning, +4+ = danger)
-- **Progression Builder** — chord slot sequencer with loop playback
-- **Ear training modes** — interval, chord quality, scale/mode identification
-- **iOS app** — Capacitor setup, bottom tab bar, safe area insets, App Store prep
-
----
-
-## Key Files Reference
+## Key files
 
 | Path | Purpose |
 |---|---|
-| `index.html` | Legacy app — do not modify (served at root URL) |
-| `styles.css` | Stylesheet for the legacy app — do not modify |
-| `script.js` | Original source — reference only during migration |
+| `docs/product-vision.md` | Product goals, audiences, design principles — read first |
+| `BACKLOG.md` | Phased feature backlog and current status — read at session start |
+| `.claude/commands/next-step.md` | Slash command for picking and executing the next task |
 | `v2.html` | Vite entry point for the React app |
 | `src/theory/index.ts` | All music theory pure functions |
 | `src/theory/types.ts` | TypeScript interfaces for the theory layer |
 | `src/store/index.ts` | Zustand store — single source of truth |
-| `src/index.css` | Global styles + `--pc-0` through `--pc-11` color palette |
+| `src/index.css` | Global styles + `--pc-0` through `--pc-11` pitch class colors |
 | `src/audio/index.ts` | Web Audio engine — oscillator synth, iOS unlock, mute, playback |
 | `src/hooks/useAudio.ts` | React hook wrapping the audio engine |
-| `BACKLOG.md` | Phased feature backlog — read at session start |
-| `TASK.md` | Current in-progress task spec (delete after PR merges) |
+| `index.html` | Legacy app — do not modify |
+| `script.js` | Original source — reference only during migration |

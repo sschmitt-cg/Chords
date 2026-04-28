@@ -14,7 +14,7 @@ parity. Open both side by side during testing.
 - [ ] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db)
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
 - [x] Scale strip — correct note spelling for every key/mode combination
-- [ ] Scale strip — swipe/drag gesture to change key (removed as buggy; needs redesign)
+- [ ] Scale strip — swipe/drag gestures (horizontal = mode shift, vertical = chromatic transposition; see Bugs/Polish for design notes)
 - [x] Harmony Grid — 7 rows, correct chord names at triads through 13ths (sus2/sus4/b5 added; exotic fallbacks show root only)
 - [x] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions; header click resets per-row overrides
 - [x] Harmony Grid — per-row extension: clicking ghost note extends that row; clicking active note reduces to that degree
@@ -44,8 +44,9 @@ parity. Open both side by side during testing.
 - [x] Migrate Web Audio engine → `src/audio/index.ts` + `useAudio` hook
 - [ ] Metronome component (BPM, time signature, tap tempo, downbeat accent)
 - [ ] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
-- [ ] WheelModal (picker for key / mode / scale type selection)
+- [ ] WheelModal (picker for key / mode / scale type selection) — deprioritized; may be superseded by swipe gestures on ScaleStrip; retain as accessibility fallback candidate
 - [ ] Shareable URLs (encode key + mode + scale type in query params)
+- [ ] Circle of Fifths visualizer — interactive; clicking a wedge drives the full app state (key, relative mode); integrated with the unified store
 
 ---
 
@@ -113,6 +114,19 @@ parity. Open both side by side during testing.
 
 ---
 
+## Phase 7 — Input Modalities
+
+- [ ] **Web MIDI input** — detect connected MIDI controllers; incoming notes light up
+  keyboard, fretboard, and scale strip; simultaneous notes trigger chord detection
+- [ ] **Audio pitch detection** — listen via microphone; detect the pitch being played
+  and highlight it across visualizers; detect key/scale from a phrase (autocorrelation
+  or ML-based); complements the Chromatic Tuner's per-string mode
+- [ ] **Chord identifier** — reverse lookup: user places notes on keyboard or fretboard,
+  app names the chord and shows its harmonic context in the current key; needs design
+  exploration before committing to implementation
+
+---
+
 ## CI / Tooling (follow-ups from PR #90)
 
 - [ ] Vitest config uses `/// <reference types="vitest" />` triple-slash pattern (older); migrate to `import type { UserConfig } from 'vitest/config'` when upgrading Vitest
@@ -123,7 +137,6 @@ parity. Open both side by side during testing.
 ## Bugs / Polish
 
 - [ ] Enharmonic preference persistence (user picks C# vs Db — survives navigation)
-- [x] ScaleStrip swipe/drag gesture (horizontal drag changes key)
 - [x] ScaleStrip — scale description annotation below strip (mode name + family context)
 - [x] ScaleStrip active tiles now use diatonic spelling (`currentScale.spelled`) so Cb/E#/B# render correctly instead of falling back to chromatic names
 - [x] Fretboard + keyboard visualizers now respect per-row harmony extension overrides (previously only used `globalHarmonyMax`)
@@ -135,7 +148,8 @@ parity. Open both side by side during testing.
 - [x] ScaleNavigator ROOT knob/LCD — now tracks tonal center (modeRootPc) rather than family root; all navigation actions preserve the audible tonic
 - [x] ScaleNavigator MODE picker — selecting from popup preserves tonal center; knob drag still shifts root chromatically
 - [x] ScaleNavigator pickers — all popups scroll to center the current selection on open
-- [ ] Scale strip — swipe/drag gesture redesign (horizontal drag to change key; deferred — 3 options proposed in session, user chose to defer)
+- [ ] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile)
+- [ ] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile; scroll-conflict is the engineering challenge to solve, e.g. long-press to enter drag mode or a dedicated drag handle)
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
