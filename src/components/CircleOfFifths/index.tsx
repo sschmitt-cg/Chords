@@ -2,8 +2,12 @@
 // Clicking any wedge sets the tonal center to that pitch class via setKey.
 
 import { useTonalStore } from '../../store/index'
-import { CIRCLE_OF_FIFTHS_MAJOR, CIRCLE_OF_FIFTHS_MINOR, pcColorVar, wrap } from '../../theory/index'
+import { CIRCLE_OF_FIFTHS_MAJOR, CIRCLE_OF_FIFTHS_MINOR, SCALE_FAMILIES, pcColorVar, wrap } from '../../theory/index'
 import styles from './CircleOfFifths.module.css'
+
+// Families whose root mode is major-flavoured — outer ring gets the active highlight.
+// Anything not in this set is treated as minor-type (inner ring gets the highlight).
+const MAJOR_FAMILY_IDS = new Set(['major', 'harmonic-major', 'double-harmonic'])
 
 const WEDGE_COUNT = 12
 const ANGLE_STEP = (2 * Math.PI) / WEDGE_COUNT
@@ -48,8 +52,12 @@ function labelPosition(r: number, index: number): { x: number; y: number } {
 }
 
 export default function CircleOfFifths(): React.ReactElement {
-  const { currentModeRootPc, setKey } = useTonalStore()
+  const { currentModeRootPc, familyIndex, setKey } = useTonalStore()
   const tonicPc = wrap(currentModeRootPc, 12)
+  // Only highlight the outer (major) ring when the current family is major-typed,
+  // and the inner (minor) ring when it is minor-typed, so clicking Am doesn't
+  // also light up the A Major wedge sharing the same pitch class.
+  const isMajorFamily = MAJOR_FAMILY_IDS.has(SCALE_FAMILIES[familyIndex].id)
 
   return (
     <div className={styles.wrapper}>
@@ -61,7 +69,7 @@ export default function CircleOfFifths(): React.ReactElement {
       >
         {/* Major (outer) ring wedges */}
         {CIRCLE_OF_FIFTHS_MAJOR.map((key, i) => {
-          const isActive = key.pc === tonicPc
+          const isActive = isMajorFamily && key.pc === tonicPc
           const colorVar = pcColorVar(key.pc)
           const pos = labelPosition(R_MAJOR_TEXT, i)
           return (
@@ -94,7 +102,7 @@ export default function CircleOfFifths(): React.ReactElement {
 
         {/* Minor (inner) ring wedges */}
         {CIRCLE_OF_FIFTHS_MINOR.map((key, i) => {
-          const isActive = key.pc === tonicPc
+          const isActive = !isMajorFamily && key.pc === tonicPc
           const colorVar = pcColorVar(key.pc)
           const pos = labelPosition(R_MINOR_TEXT, i)
           return (

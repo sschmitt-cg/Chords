@@ -52,10 +52,30 @@
   .panelTop {
     grid-column: 1 / -1;
     display: flex;
+    flex-direction: row;
+    gap: 8px;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* Left sub-column: navigator + strip stacked vertically */
+  .panelTopLeft {
+    flex: 1;
+    display: flex;
     flex-direction: column;
     gap: 8px;
     overflow: hidden;
     min-height: 0;
+  }
+
+  /* Right sub-column: circle, square, height = combined height of left column */
+  .panelTopCircle {
+    aspect-ratio: 1 / 1;
+    align-self: stretch;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   .panelLeft {
