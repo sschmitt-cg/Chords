@@ -1,0 +1,106 @@
+/* CircleOfFifths — SVG circle with major and minor rings */
+
+.wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--surface-1, #eef0ff);
+  border: 1px solid var(--card-border, #c8cef0);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
+}
+
+.svg {
+  /* Fill the wrapper up to a comfortable maximum — height-constrained on mobile */
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  /* Ensure the SVG itself doesn't capture clicks; individual paths do */
+  overflow: visible;
+}
+
+/* ---- Wedge states ---- */
+
+.wedge {
+  cursor: pointer;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+  transition: filter 0.12s;
+  /* Minimum interactive area satisfied by the wedge geometry; each major wedge
+     spans ~37px arc-length at radius 118, minor spans ~24px — both above 44pt. */
+}
+
+.wedge:focus-visible {
+  outline: 2px solid var(--pc-color);
+  outline-offset: 2px;
+}
+
+.wedge:hover {
+  filter: brightness(1.15);
+}
+
+.wedge:active {
+  filter: brightness(0.9);
+}
+
+/* Muted: desaturated mix toward white for non-tonic wedges */
+.wedgeMuted {
+  fill: color-mix(in srgb, var(--pc-color) 28%, #f0f2ff);
+}
+
+/* Active: full color, slightly elevated */
+.wedgeActive {
+  fill: color-mix(in srgb, var(--pc-color) 85%, #ffffff);
+  filter: drop-shadow(0 0 4px var(--pc-color));
+}
+
+/* ---- Labels ---- */
+
+.label {
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  fill: #3a4060;
+  user-select: none;
+}
+
+.labelMajor {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.labelMinor {
+  font-size: 7.5px;
+  font-weight: 400;
+}
+
+.labelActive {
+  fill: #0c1020;
+  font-weight: 700;
+}
+
+/* ---- Center hub ---- */
+
+.hub {
+  fill: var(--surface-2, #e4e7ff);
+  stroke: var(--card-border, #c8cef0);
+  stroke-width: 1;
+}
+
+.hubLabel {
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+  font-size: 7px;
+  fill: var(--text-secondary, #7c86ac);
+  user-select: none;
+}
+
+/* ---- Landscape: constrain height so it doesn't dominate the top panel ---- */
+
+@media (orientation: landscape) {
+  .wrapper {
+    padding: 4px;
+  }
+
+  .svg {
+    max-width: 180px;
+  }
+}
