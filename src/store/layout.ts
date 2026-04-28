@@ -1,17 +1,18 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type SectionId = 'navigator' | 'strip' | 'keyboard' | 'fretboard' | 'harmony'
+export type SectionId = 'navigator' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony'
 
 export const SECTION_LABELS: Record<SectionId, string> = {
   navigator: 'Scale Controls',
+  circle: 'Circle of Fifths',
   strip: 'Scale Strip',
   keyboard: 'Keyboard',
   fretboard: 'Fretboard',
   harmony: 'Harmony Grid',
 }
 
-export const DEFAULT_ORDER: SectionId[] = ['navigator', 'strip', 'keyboard', 'fretboard', 'harmony']
+export const DEFAULT_ORDER: SectionId[] = ['navigator', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony']
 
 interface LayoutStore {
   sectionOrder: SectionId[]
@@ -27,6 +28,7 @@ export const useLayoutStore = create<LayoutStore>()(
       sectionOrder: [...DEFAULT_ORDER],
       sectionVisible: {
         navigator: true,
+        circle: true,
         strip: true,
         keyboard: true,
         fretboard: true,
@@ -37,7 +39,7 @@ export const useLayoutStore = create<LayoutStore>()(
         set((state) => ({ sectionVisible: { ...state.sectionVisible, [id]: visible } })),
       resetLayout: () => set({
         sectionOrder: [...DEFAULT_ORDER],
-        sectionVisible: { navigator: true, strip: true, keyboard: true, fretboard: true, harmony: true },
+        sectionVisible: { navigator: true, circle: true, strip: true, keyboard: true, fretboard: true, harmony: true },
       }),
     }),
     {

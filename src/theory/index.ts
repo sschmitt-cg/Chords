@@ -486,6 +486,40 @@ export function chordNotesToPcs(notes: string): number[] {
 
 export const pcColorVar = (pc: number): string => `var(--pc-${wrap(pc, 12)})`
 
+// -------------------- CIRCLE OF FIFTHS --------------------
+
+// Major key labels and their pitch classes in circle-of-fifths order (C at top, clockwise by fifths)
+export const CIRCLE_OF_FIFTHS_MAJOR: Array<{ label: string; pc: number }> = [
+  { label: 'C',     pc: 0  },
+  { label: 'G',     pc: 7  },
+  { label: 'D',     pc: 2  },
+  { label: 'A',     pc: 9  },
+  { label: 'E',     pc: 4  },
+  { label: 'B',     pc: 11 },
+  { label: 'F#/Gb', pc: 6  },
+  { label: 'Db',    pc: 1  },
+  { label: 'Ab',    pc: 8  },
+  { label: 'Eb',    pc: 3  },
+  { label: 'Bb',    pc: 10 },
+  { label: 'F',     pc: 5  },
+]
+
+// Relative minor labels in the same circle-of-fifths positions
+export const CIRCLE_OF_FIFTHS_MINOR: Array<{ label: string; pc: number }> = [
+  { label: 'Am',    pc: 9  },
+  { label: 'Em',    pc: 4  },
+  { label: 'Bm',    pc: 11 },
+  { label: 'F#m',   pc: 6  },
+  { label: 'C#m',   pc: 1  },
+  { label: 'G#m',   pc: 8  },
+  { label: 'Ebm',   pc: 3  },
+  { label: 'Bbm',   pc: 10 },
+  { label: 'Fm',    pc: 5  },
+  { label: 'Cm',    pc: 0  },
+  { label: 'Gm',    pc: 7  },
+  { label: 'Dm',    pc: 2  },
+]
+
 // -------------------- SCALE FAMILIES --------------------
 
 export const SCALE_FAMILIES: ScaleFamily[] = [
