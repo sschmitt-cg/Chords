@@ -6,16 +6,18 @@ import ScaleStrip from './components/ScaleStrip/index'
 import HarmonyGrid from './components/HarmonyGrid/index'
 import KeyboardVisualizer from './components/KeyboardVisualizer/index'
 import FretboardVisualizer from './components/FretboardVisualizer/index'
+import CircleOfFifths from './components/CircleOfFifths/index'
 import styles from './App.module.css'
 
 // Landscape panel assignments — fixed regardless of portrait section order
-const LANDSCAPE_TOP: SectionId[]   = ['navigator', 'strip']
+const LANDSCAPE_TOP: SectionId[]   = ['navigator', 'circle', 'strip']
 const LANDSCAPE_LEFT: SectionId[]  = ['keyboard', 'fretboard']
 const LANDSCAPE_RIGHT: SectionId[] = ['harmony']
 
 function renderSection(id: SectionId) {
   switch (id) {
     case 'navigator': return <ScaleNavigator />
+    case 'circle':    return <CircleOfFifths />
     case 'strip':     return <ScaleStrip />
     case 'keyboard':  return <KeyboardVisualizer />
     case 'fretboard': return <FretboardVisualizer />
