@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import type React from 'react'
 import { useLayoutStore, type SectionId } from './store/layout'
 import AppHeader from './components/AppHeader/AppHeader'
 import ScaleNavigator from './components/ScaleNavigator/index'
@@ -39,7 +40,7 @@ function useIsLandscape() {
   return isLandscape
 }
 
-function App() {
+function App(): React.ReactElement {
   const { sectionOrder, sectionVisible } = useLayoutStore()
   const isLandscape = useIsLandscape()
 
