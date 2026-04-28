@@ -10,7 +10,8 @@ import CircleOfFifths from './components/CircleOfFifths/index'
 import styles from './App.module.css'
 
 // Landscape panel assignments — fixed regardless of portrait section order
-const LANDSCAPE_TOP: SectionId[]   = ['navigator', 'circle', 'strip']
+// circle is rendered separately to the right of the navigator+strip column
+const LANDSCAPE_TOP: SectionId[]   = ['navigator', 'strip']
 const LANDSCAPE_LEFT: SectionId[]  = ['keyboard', 'fretboard']
 const LANDSCAPE_RIGHT: SectionId[] = ['harmony']
 
@@ -55,9 +56,16 @@ function App() {
       {isLandscape ? (
         <div className={styles.landscapeBody}>
           <div className={styles.panelTop}>
-            {LANDSCAPE_TOP.filter(id => sectionVisible[id]).map(id => (
-              <div key={id}>{renderSection(id)}</div>
-            ))}
+            <div className={styles.panelTopLeft}>
+              {LANDSCAPE_TOP.filter(id => sectionVisible[id]).map(id => (
+                <div key={id}>{renderSection(id)}</div>
+              ))}
+            </div>
+            {sectionVisible['circle'] && (
+              <div className={styles.panelTopCircle}>
+                <CircleOfFifths />
+              </div>
+            )}
           </div>
           <div className={[
             styles.panelLeft,
