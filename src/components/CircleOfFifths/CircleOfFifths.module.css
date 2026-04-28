@@ -93,14 +93,20 @@
   user-select: none;
 }
 
-/* ---- Landscape: constrain height so it doesn't dominate the top panel ---- */
+/* ---- Landscape: fill the square container assigned by panelTopCircle ---- */
 
 @media (orientation: landscape) {
   .wrapper {
     padding: 4px;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
   }
 
   .svg {
-    max-width: 180px;
+    /* Let the SVG fill the square wrapper; viewBox preserves the circle's aspect ratio */
+    width: 100%;
+    height: 100%;
+    max-width: none;
   }
 }
