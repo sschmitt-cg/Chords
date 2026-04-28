@@ -1,8 +1,10 @@
 # /next-step
 
 You are an orchestrator. Your job is to identify the single best next piece of
-work for this project, confirm it with the user, hand off to a focused
-implementation agent, and then monitor the resulting PR through CI and review.
+work for this project, confirm it with the user, then run the full pipeline
+autonomously: implement → review → open PR → monitor CI. The only gate that
+requires user input is the initial task confirmation (Step 3). Everything after
+that runs straight through unless a decision is needed that you cannot resolve.
 
 ---
 
@@ -20,8 +22,8 @@ If no task was agreed in conversation, determine the best next step by checking
 these sources in priority order:
 
 1. **Open PRs** — run `gh pr list --state open` and review. If any PR exists
-   that is mid-review or has unresolved CI, that takes priority over all new
-   work. Resume from Step 6 with that PR rather than starting something new.
+   with unresolved CI failures, that takes priority over all new work. Resume
+   from Step 8 with that PR rather than starting something new.
 2. **Open GitHub issues** — run `gh issue list --state open` and review. A
    bug report or explicitly filed issue takes priority over backlog items.
 3. **`BACKLOG.md`** — scan for unchecked items across all phases. Prefer items
@@ -66,47 +68,81 @@ The implementation agent should:
 2. Run `npx tsc --noEmit`, `npm run lint`, and `npm test` before making changes
    to establish a clean baseline, then again after all changes are complete
 3. Make small, focused commits (`feat:` / `fix:` / `refactor:` prefix)
-4. Open a PR with `gh pr create` targeting `main`; link any related GitHub
-   issue in the PR body so it closes on merge
-5. Request a GitHub Copilot review if not requested automatically
-6. Report back with the PR URL and stop — do not begin monitoring
+4. **Do not open a PR** — report back with the branch name and a summary of
+   all changed files when done
 
 ---
 
-## Step 5 — Confirm monitoring before proceeding
+## Step 5 — Review sub-agent (up to 5 rounds)
 
-After the implementation agent reports back, present the PR URL to the user and
-**pause**:
+Spawn a focused review sub-agent. Give it:
+- The branch name and list of changed files
+- The full text of `CLAUDE.md` (copy it into the prompt)
 
-> "Implementation is complete. PR is open at [URL] and CI is running. Do you
-> want me to monitor for failures and review feedback, or are you taking it from
-> here?"
+The review sub-agent should read every changed file and check for violations of
+the constraints in `CLAUDE.md`:
+- **Architecture** — components must not compute theory; all theory logic must
+  live in `src/theory/index.ts`; components read from the store, never maintain
+  parallel state
+- **Colors** — pitch class colors must use `pcColorVar(pc)`; no hard-coded hex
+  colors for notes; tinted surfaces use `color-mix`
+- **CSS** — co-located CSS Modules; no inline styles for colors
+- **Mobile** — every interactive element ≥ 44×44pt touch target; safe area
+  insets applied; `rem` units, no fixed `px` font sizes
+- **TypeScript** — no `any` without a same-line comment; exported functions have
+  explicit return types; unused params prefixed with `_`
+- **Scope** — only files relevant to the task are modified; no opportunistic
+  refactors
 
-This is the right moment to assess usage before committing to potentially
-multiple more rounds of autonomous work. There is no automated way to check
-API usage percentage from within this command — the user should check manually
-if budget is a concern.
+The review sub-agent reports findings. For each finding, apply these rules:
 
-Proceed to Step 6 only if the user confirms.
+**Fix autonomously (send back to implementation agent):**
+- Clear rule violation: wrong pattern, missing `pcColorVar`, hard-coded color,
+  missing touch target size, `any` without comment, missing return type
+- Mechanical style issue: formatting, naming inconsistency
+
+**Stop, summarize, and ask the user:**
+- Uncertainty about whether a pattern is intentional or a violation
+- A finding that requires a design decision to resolve
+- Any situation where you are not confident what the correct fix is
+
+After each autonomous fix round: re-run the review sub-agent. Repeat up to
+**5 rounds total**. If issues remain after 5 rounds, report to the user with a
+summary of what is unresolved.
 
 ---
 
-## Step 6 — Monitor and iterate (up to 5 rounds)
+## Step 6 — Open the PR
 
-Poll for CI results using `gh pr checks` and watch for Copilot review comments
-using `gh pr view --comments`. For each issue found, apply the following rules:
+Once the review sub-agent gives a clean pass (no findings), open a PR:
+
+```
+gh pr create --base main
+```
+
+PR description must include:
+- What changed and why
+- How to test it
+- Link to any related GitHub issue in the body so it closes on merge
+
+Report the PR URL to the user and proceed to Step 8 automatically (no pause
+needed — CI monitoring is low cost and expected).
+
+---
+
+## Step 7 — Monitor CI and iterate (up to 5 rounds)
+
+Poll for CI results using `gh pr checks`. For each failure, apply these rules:
 
 **Fix autonomously:**
-- CI failure due to a type error, lint violation, or broken import
-- CI failure due to a failing test caused by the implementation changes
-- Copilot suggestion that is clearly mechanical (rename, formatting, minor style)
+- Type error, lint violation, or broken import caused by the implementation
+- Failing test caused by the implementation changes
 
 **Stop, summarize, and ask the user:**
 - CI failure whose root cause is unclear or requires a design decision
-- Copilot feedback on architecture, component structure, or product behavior
 - Any situation where you are not confident what the correct fix is
 
-After each autonomous fix: commit, push, and re-request a Copilot review.
+After each autonomous fix: commit, push, and wait for CI to re-run.
 
 **After 5 rounds**, regardless of status, stop and report to the user:
 - What was resolved
