@@ -29,6 +29,7 @@ parity. Open both side by side during testing.
 - [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
 - [x] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
 - [x] Mobile layout — touch targets all ≥ 44pt (PR #89): HarmonyGrid columns, picker rows, reset button; LCD displays non-interactive; layout compacted (portrait 12px gaps, landscape 8px, max-width 1100px); keyboard/fretboard equal height in landscape; ScaleStrip flex layout in portrait eliminates tile overlap
+- [x] ScaleNavigator — two hideable knob groups (LOGICAL: ROOT/FAMILY/MODE; EXPLORATORY: BRIGHTNESS/TENSION/VOLUME); toggle buttons in panel header; LOGICAL hidden by default on mobile portrait (3-knob row fits comfortably vs. 6-knob overflow); group visibility stored in useLayoutStore and persisted across page loads
 
 ---
 
@@ -152,6 +153,7 @@ parity. Open both side by side during testing.
 - [ ] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile; scroll-conflict is the engineering challenge to solve, e.g. long-press to enter drag mode or a dedicated drag handle)
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
+- [ ] ScaleNavigator — persist navigator group visibility independently of orientation changes (currently resets to orientation default on each page load rather than remembering the user's last manual choice)
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
 - [x] iOS safe-area insets (`env(safe-area-inset-*)`) applied to header and all layout panels
