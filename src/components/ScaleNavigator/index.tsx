@@ -2,9 +2,10 @@
 // Logical region: Root / Family / Mode knobs (full 360° circle, step 0 at top)
 // Exploratory region: Brightness / Tension bounded wheels (arc, glow-up)
 
-import { useRef, useState, useCallback, useEffect } from 'react'
+import React, { useRef, useState, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useTonalStore } from '../../store/index'
+import { useLayoutStore } from '../../store/layout'
 import { useAudio } from '../../hooks/useAudio'
 import { SCALE_FAMILIES, BRIGHTNESS_ORDER, ENHARMONIC_OPTIONS, wrap } from '../../theory/index'
 import styles from './ScaleNavigator.module.css'
@@ -417,7 +418,7 @@ interface PickerState {
   anchorRect: DOMRect
 }
 
-export default function ScaleNavigator() {
+export default function ScaleNavigator(): React.ReactElement {
   const {
     currentModeRootPc,
     familyIndex,
@@ -436,6 +437,7 @@ export default function ScaleNavigator() {
   } = useTonalStore()
 
   const { volume, toggleMuteVolume, setVolume } = useAudio()
+  const { navigatorGroups, setNavigatorGroup } = useLayoutStore()
 
   const [picker, setPicker] = useState<PickerState | null>(null)
 
@@ -506,36 +508,58 @@ export default function ScaleNavigator() {
 
   return (
     <div className={styles.outer}>
+      <div className={styles.toggleBar}>
+        <button
+          className={[styles.groupToggle, navigatorGroups.logical ? styles.groupToggleActive : ''].join(' ')}
+          onClick={() => setNavigatorGroup('logical', !navigatorGroups.logical)}
+          aria-pressed={navigatorGroups.logical}
+          aria-label="Toggle logical knobs"
+        >
+          LOGICAL
+        </button>
+        <button
+          className={[styles.groupToggle, navigatorGroups.exploratory ? styles.groupToggleActive : ''].join(' ')}
+          onClick={() => setNavigatorGroup('exploratory', !navigatorGroups.exploratory)}
+          aria-pressed={navigatorGroups.exploratory}
+          aria-label="Toggle exploratory knobs"
+        >
+          EXPLORATORY
+        </button>
+      </div>
+
       <div className={styles.panel}>
 
-        <div className={styles.region}>
-          <span className={styles.regionLabel}>LOGICAL</span>
-          <div className={styles.knobRow}>
-            <KnobUnit label="ROOT"   lcdValue={pcName(currentModeRootPc, enharmonicPrefs)} step={currentModeRootPc} total={12} pickerType="root"   onOpen={openPicker} onChange={v => handleKnobChange('root', v)} />
-            <KnobUnit label="FAMILY" lcdValue={FAMILY_LCD[currentFamily.id] ?? currentFamily.name.toUpperCase()} step={familyIndex} total={5} pickerType="family" onOpen={openPicker} onChange={v => handleKnobChange('family', v)} />
-            <KnobUnit label="MODE"   lcdValue={currentMode.lcdName} step={modeIndex} total={7} pickerType="mode" onOpen={openPicker} onChange={v => handleKnobChange('mode', v)} />
+        {navigatorGroups.logical && (
+          <>
+            <div className={styles.region}>
+              <span className={styles.regionLabel}>LOGICAL</span>
+              <div className={styles.knobRow}>
+                <KnobUnit label="ROOT"   lcdValue={pcName(currentModeRootPc, enharmonicPrefs)} step={currentModeRootPc} total={12} pickerType="root"   onOpen={openPicker} onChange={v => handleKnobChange('root', v)} />
+                <KnobUnit label="FAMILY" lcdValue={FAMILY_LCD[currentFamily.id] ?? currentFamily.name.toUpperCase()} step={familyIndex} total={5} pickerType="family" onOpen={openPicker} onChange={v => handleKnobChange('family', v)} />
+                <KnobUnit label="MODE"   lcdValue={currentMode.lcdName} step={modeIndex} total={7} pickerType="mode" onOpen={openPicker} onChange={v => handleKnobChange('mode', v)} />
+              </div>
+            </div>
+            {navigatorGroups.exploratory && <div className={styles.divider} />}
+          </>
+        )}
+
+        {navigatorGroups.exploratory && (
+          <div className={styles.region}>
+            <span className={styles.regionLabel}>EXPLORATORY</span>
+            <div className={styles.knobRow}>
+              <WheelUnit label="BRIGHTNESS" lcdValue={currentMode.lcdName}        step={currentBrightnessPosition} total={BRIGHTNESS_ORDER.length} pickerType="brightness" onOpen={openPicker} onChange={pos => setModeByBrightness(pos)} />
+              {/* Tension has 3 steps — use a short arc confined to the upper face of the knob */}
+              <WheelUnit label="TENSION"    lcdValue={TENSION_LCD[currentTension]} step={currentTension}            total={3}                        pickerType="tension"    arcMin={-75} arcMax={75} onOpen={openPicker} onChange={t => setModeByTension(t as 0 | 1 | 2)} />
+              <VolumeKnobUnit volume={volume} onToggleMute={toggleMuteVolume} onVolumeChange={setVolume} />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className={styles.divider} />
-
-        <div className={styles.region}>
-          <span className={styles.regionLabel}>EXPLORATORY</span>
-          <div className={styles.knobRow}>
-            <WheelUnit label="BRIGHTNESS" lcdValue={currentMode.lcdName}        step={currentBrightnessPosition} total={BRIGHTNESS_ORDER.length} pickerType="brightness" onOpen={openPicker} onChange={pos => setModeByBrightness(pos)} />
-            {/* Tension has 3 steps — use a short arc confined to the upper face of the knob */}
-            <WheelUnit label="TENSION"    lcdValue={TENSION_LCD[currentTension]} step={currentTension}            total={3}                        pickerType="tension"    arcMin={-75} arcMax={75} onOpen={openPicker} onChange={t => setModeByTension(t as 0 | 1 | 2)} />
+        {!navigatorGroups.logical && !navigatorGroups.exploratory && (
+          <div className={styles.allHidden}>
+            <span className={styles.regionLabel}>All groups hidden</span>
           </div>
-        </div>
-
-        <div className={styles.divider} />
-
-        <div className={`${styles.region} ${styles.regionVolume}`}>
-          <span className={styles.regionLabel}>VOLUME</span>
-          <div className={styles.knobRow}>
-            <VolumeKnobUnit volume={volume} onToggleMute={toggleMuteVolume} onVolumeChange={setVolume} />
-          </div>
-        </div>
+        )}
 
       </div>
 

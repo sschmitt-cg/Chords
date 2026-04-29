@@ -4,7 +4,54 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
+}
+
+/* ---- Group toggle bar ---- */
+
+.toggleBar {
+  display: flex;
+  gap: 6px;
+}
+
+.groupToggle {
+  /* Minimum 44pt touch target — height via min-height, width grows with content */
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0 0.75rem;
+  background: #1a2660;
+  border: 0.5px solid #2c3c78;
+  border-radius: 8px;
+  color: #8090c0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.groupToggle::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2c3c78;
+  flex-shrink: 0;
+}
+
+.groupToggleActive {
+  color: #c0cce8;
+  border-color: #6670e8;
+}
+
+.groupToggleActive::before {
+  background: #6670e8;
 }
 
 /* ---- Dark panel ---- */
@@ -36,9 +83,10 @@
   flex: 2;
 }
 
-.regionVolume {
-  flex: 1;
-  min-width: 80px;
+.allHidden {
+  padding: 8px 4px;
+  color: #8090c0;
+  font-size: 0.6875rem;
 }
 
 .regionLabel {
