@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import type React from 'react'
 import { useLayoutStore, type SectionId } from './store/layout'
 import AppHeader from './components/AppHeader/AppHeader'
-import ScaleNavigator from './components/ScaleNavigator/index'
+import ScaleLogical from './components/ScaleNavigator/ScaleLogical'
+import ScaleExploratory from './components/ScaleNavigator/ScaleExploratory'
 import ScaleStrip from './components/ScaleStrip/index'
 import HarmonyGrid from './components/HarmonyGrid/index'
 import KeyboardVisualizer from './components/KeyboardVisualizer/index'
@@ -12,18 +13,19 @@ import styles from './App.module.css'
 
 // Landscape panel assignments — fixed regardless of portrait section order
 // circle is rendered separately to the right of the navigator+strip column
-const LANDSCAPE_TOP: SectionId[]   = ['navigator', 'strip']
+const LANDSCAPE_TOP: SectionId[]   = ['scale-logical', 'scale-exploratory', 'strip']
 const LANDSCAPE_LEFT: SectionId[]  = ['keyboard', 'fretboard']
 const LANDSCAPE_RIGHT: SectionId[] = ['harmony']
 
 function renderSection(id: SectionId) {
   switch (id) {
-    case 'navigator': return <ScaleNavigator />
-    case 'circle':    return <CircleOfFifths />
-    case 'strip':     return <ScaleStrip />
-    case 'keyboard':  return <KeyboardVisualizer />
-    case 'fretboard': return <FretboardVisualizer />
-    case 'harmony':   return <HarmonyGrid />
+    case 'scale-logical':     return <ScaleLogical />
+    case 'scale-exploratory': return <ScaleExploratory />
+    case 'circle':            return <CircleOfFifths />
+    case 'strip':             return <ScaleStrip />
+    case 'keyboard':          return <KeyboardVisualizer />
+    case 'fretboard':         return <FretboardVisualizer />
+    case 'harmony':           return <HarmonyGrid />
   }
 }
 

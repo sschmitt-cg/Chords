@@ -4,21 +4,8 @@
 
 import { useTonalStore } from '../../store/index'
 import { useAudio } from '../../hooks/useAudio'
-import { computeRomans, pcColorVar, wrap, ENHARMONIC_OPTIONS } from '../../theory/index'
+import { computeRomans, pcColorVar, wrap, pcName } from '../../theory/index'
 import styles from './ScaleStrip.module.css'
-
-const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-const FLAT_NAMES  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
-
-function pcName(pc: number, enharmonicPrefs: Record<number, 'sharp' | 'flat'>): string {
-  const norm = wrap(pc, 12)
-  const opt = ENHARMONIC_OPTIONS[norm]
-  if (!opt) return SHARP_NAMES[norm]
-  const pref = enharmonicPrefs[norm]
-  if (pref === 'flat') return FLAT_NAMES[norm]
-  if (pref === 'sharp') return SHARP_NAMES[norm]
-  return FLAT_NAMES[norm]
-}
 
 const TILE_W = 52  // both active and inactive tiles share this width
 

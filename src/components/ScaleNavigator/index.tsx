@@ -1,22 +1,16 @@
-// ScaleNavigator — analog knobs + LCD displays + exploratory wheels
-// Logical region: Root / Family / Mode knobs (full 360° circle, step 0 at top)
-// Exploratory region: Brightness / Tension bounded wheels (arc, glow-up)
+// ScaleNavigator — shared React components used by ScaleLogical and ScaleExploratory
 
-import React, { useRef, useState, useCallback, useEffect } from 'react'
+import React, { useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { useTonalStore } from '../../store/index'
-import { useLayoutStore } from '../../store/layout'
-import { useAudio } from '../../hooks/useAudio'
-import { SCALE_FAMILIES, BRIGHTNESS_ORDER, ENHARMONIC_OPTIONS, wrap } from '../../theory/index'
 import styles from './ScaleNavigator.module.css'
 
-const DRAG_THRESHOLD_PX = 22
+export const DRAG_THRESHOLD_PX = 22
 
 // ------------------------------------------------------------------
 // Circular SVG Knob — full 360°, step 0 at top
 // ------------------------------------------------------------------
 
-interface KnobProps {
+export interface KnobProps {
   step: number
   total: number
   onPointerDown: (e: React.PointerEvent) => void
@@ -24,7 +18,7 @@ interface KnobProps {
   onPointerUp: (e: React.PointerEvent) => void
 }
 
-function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }: KnobProps) {
+export function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }: KnobProps): React.ReactElement {
   const ticks: React.ReactNode[] = []
   for (let i = 0; i < total; i++) {
     const angleDeg = (i / total) * 360
@@ -64,12 +58,12 @@ function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }: KnobPr
 // Bounded SVG Wheel — configurable arc, ticks glow up to current step
 // ------------------------------------------------------------------
 
-interface BoundedKnobProps extends KnobProps {
+export interface BoundedKnobProps extends KnobProps {
   arcMin?: number  // degrees, default -135
   arcMax?: number  // degrees, default +135
 }
 
-function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointerDown, onPointerMove, onPointerUp }: BoundedKnobProps) {
+export function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointerDown, onPointerMove, onPointerUp }: BoundedKnobProps): React.ReactElement {
   const ticks: React.ReactNode[] = []
   for (let i = 0; i < total; i++) {
     const angleDeg = arcMin + (i / (total - 1)) * (arcMax - arcMin)
@@ -110,7 +104,7 @@ function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointerDown, 
 // LCD display
 // ------------------------------------------------------------------
 
-function LCD({ value, onClick }: { value: string; onClick?: () => void }) {
+export function LCD({ value, onClick }: { value: string; onClick?: () => void }): React.ReactElement {
   return (
     <div className={styles.lcd} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
       {value}
@@ -122,7 +116,7 @@ function LCD({ value, onClick }: { value: string; onClick?: () => void }) {
 // Brightness sun icon for picker rows
 // ------------------------------------------------------------------
 
-function BrightnessDot({ brightness }: { brightness: number }) {
+export function BrightnessDot({ brightness }: { brightness: number }): React.ReactElement {
   const t = brightness / 100
   const r = 255
   const g = Math.round(170 + t * 85)   // amber → near-white yellow
@@ -155,13 +149,13 @@ function BrightnessDot({ brightness }: { brightness: number }) {
 // Unified picker type
 // ------------------------------------------------------------------
 
-type PickerType = 'root' | 'family' | 'mode' | 'brightness' | 'tension'
+export type PickerType = 'root' | 'family' | 'mode' | 'brightness' | 'tension'
 
 // ------------------------------------------------------------------
 // Circular KnobUnit (Root / Family / Mode)
 // ------------------------------------------------------------------
 
-interface KnobUnitProps {
+export interface KnobUnitProps {
   label: string
   lcdValue: string
   step: number
@@ -171,7 +165,7 @@ interface KnobUnitProps {
   onChange: (newValue: number) => void
 }
 
-function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onChange }: KnobUnitProps) {
+export function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onChange }: KnobUnitProps): React.ReactElement {
   const dragStartY = useRef<number | null>(null)
   const dragStartValue = useRef<number>(step)
   const dragged = useRef(false)
@@ -217,7 +211,7 @@ function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onChange }
 // Bounded WheelUnit (Brightness / Tension)
 // ------------------------------------------------------------------
 
-interface WheelUnitProps {
+export interface WheelUnitProps {
   label: string
   lcdValue: string
   step: number
@@ -229,7 +223,7 @@ interface WheelUnitProps {
   onChange: (newValue: number) => void
 }
 
-function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, arcMax, onOpen, onChange }: WheelUnitProps) {
+export function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, arcMax, onOpen, onChange }: WheelUnitProps): React.ReactElement {
   const dragStartY = useRef<number | null>(null)
   const dragStartValue = useRef<number>(step)
   const dragged = useRef(false)
@@ -277,13 +271,13 @@ function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, arcMax, o
 // step 0-20 → volume 0-100% in 5% increments
 // ------------------------------------------------------------------
 
-interface VolumeKnobUnitProps {
+export interface VolumeKnobUnitProps {
   volume: number           // 0–100
   onToggleMute: () => void
   onVolumeChange: (v: number) => void
 }
 
-function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeKnobUnitProps) {
+export function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeKnobUnitProps): React.ReactElement {
   const TOTAL = 21
   const step = Math.round(volume / 5)
   const dragStartY = useRef<number | null>(null)
@@ -329,13 +323,13 @@ function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeKnobUnit
 // Picker — portaled to document.body to avoid layout shift
 // ------------------------------------------------------------------
 
-interface PickerOption {
+export interface PickerOption {
   label: string
   value: number
   brightnessDot?: number
 }
 
-interface PickerProps {
+export interface PickerProps {
   options: PickerOption[]
   currentValue: number
   anchorRect: DOMRect
@@ -343,7 +337,7 @@ interface PickerProps {
   onClose: () => void
 }
 
-function Picker({ options, currentValue, anchorRect, onSelect, onClose }: PickerProps) {
+export function Picker({ options, currentValue, anchorRect, onSelect, onClose }: PickerProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
 
@@ -382,196 +376,3 @@ function Picker({ options, currentValue, anchorRect, onSelect, onClose }: Picker
   )
 }
 
-// ------------------------------------------------------------------
-// Note name helper
-// ------------------------------------------------------------------
-
-const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-const FLAT_NAMES  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
-
-function pcName(pc: number, enharmonicPrefs: Record<number, 'sharp' | 'flat'>): string {
-  const norm = wrap(pc, 12)
-  const opt = ENHARMONIC_OPTIONS[norm]
-  if (!opt) return SHARP_NAMES[norm]
-  const pref = enharmonicPrefs[norm]
-  if (pref === 'flat') return FLAT_NAMES[norm]
-  if (pref === 'sharp') return SHARP_NAMES[norm]
-  return FLAT_NAMES[norm]
-}
-
-const FAMILY_LCD: Record<string, string> = {
-  'major':           'MAJOR',
-  'melodic-minor':   'MEL MIN',
-  'harmonic-minor':  'HRM MIN',
-  'harmonic-major':  'HRM MAJ',
-  'double-harmonic': 'DBL HRM',
-}
-
-const TENSION_LCD = ['DIA', '1 AUG', '2 AUG']
-
-// ------------------------------------------------------------------
-// Main component
-// ------------------------------------------------------------------
-
-interface PickerState {
-  type: PickerType
-  anchorRect: DOMRect
-}
-
-export default function ScaleNavigator(): React.ReactElement {
-  const {
-    currentModeRootPc,
-    familyIndex,
-    modeIndex,
-    currentFamily,
-    currentMode,
-    currentTension,
-    currentBrightnessPosition,
-    enharmonicPrefs,
-    setKey,
-    setFamily,
-    setModeIndex,
-    setModeIndexPreservingTonic,
-    setModeByBrightness,
-    setModeByTension,
-  } = useTonalStore()
-
-  const { volume, toggleMuteVolume, setVolume } = useAudio()
-  const { navigatorGroups, setNavigatorGroup } = useLayoutStore()
-
-  const [picker, setPicker] = useState<PickerState | null>(null)
-
-  const openPicker = useCallback((type: PickerType, rect: DOMRect) => {
-    setPicker(prev => prev?.type === type ? null : { type, anchorRect: rect })
-  }, [])
-
-  const closePicker = useCallback(() => setPicker(null), [])
-
-  const rootOptions: PickerOption[] = Array.from({ length: 12 }, (_, i) => ({
-    label: pcName(i, enharmonicPrefs),
-    value: i,
-  }))
-
-  const familyOptions: PickerOption[] = SCALE_FAMILIES.map((f, i) => ({
-    label: f.name,
-    value: i,
-  }))
-
-  const modeOptions: PickerOption[] = currentFamily.modes.map((m, i) => ({
-    label: m.name,
-    value: i,
-    brightnessDot: m.brightness,
-  }))
-
-  const brightnessOptions: PickerOption[] = BRIGHTNESS_ORDER.map((entry, pos) => {
-    const f = SCALE_FAMILIES[entry.familyIndex]
-    const m = f.modes[entry.modeIndex]
-    return { label: `${m.name} (${f.name})`, value: pos, brightnessDot: m.brightness }
-  })
-
-  const tensionOptions: PickerOption[] = [
-    { label: 'Diatonic — no augmented 2nds', value: 0 },
-    { label: '1 Augmented 2nd', value: 1 },
-    { label: '2 Augmented 2nds', value: 2 },
-  ]
-
-  function handlePickerSelect(value: number) {
-    if (!picker) return
-    switch (picker.type) {
-      case 'root':       setKey(value); break
-      case 'family':     setFamily(value); break
-      case 'mode':       setModeIndexPreservingTonic(value); break
-      case 'brightness': setModeByBrightness(value); break
-      case 'tension':    setModeByTension(value as 0 | 1 | 2); break
-    }
-  }
-
-  function handleKnobChange(type: 'root' | 'family' | 'mode', newValue: number) {
-    if (type === 'root') setKey(newValue)
-    else if (type === 'family') setFamily(newValue)
-    else setModeIndex(newValue)
-  }
-
-  const pickerOptions: PickerOption[] =
-    picker?.type === 'root'         ? rootOptions
-    : picker?.type === 'family'     ? familyOptions
-    : picker?.type === 'mode'       ? modeOptions
-    : picker?.type === 'brightness' ? brightnessOptions
-    : tensionOptions
-
-  const pickerValue =
-    picker?.type === 'root'         ? currentModeRootPc
-    : picker?.type === 'family'     ? familyIndex
-    : picker?.type === 'mode'       ? modeIndex
-    : picker?.type === 'brightness' ? currentBrightnessPosition
-    : currentTension
-
-  return (
-    <div className={styles.outer}>
-      <div className={styles.toggleBar}>
-        <button
-          className={[styles.groupToggle, navigatorGroups.logical ? styles.groupToggleActive : ''].join(' ')}
-          onClick={() => setNavigatorGroup('logical', !navigatorGroups.logical)}
-          aria-pressed={navigatorGroups.logical}
-          aria-label="Toggle logical knobs"
-        >
-          LOGICAL
-        </button>
-        <button
-          className={[styles.groupToggle, navigatorGroups.exploratory ? styles.groupToggleActive : ''].join(' ')}
-          onClick={() => setNavigatorGroup('exploratory', !navigatorGroups.exploratory)}
-          aria-pressed={navigatorGroups.exploratory}
-          aria-label="Toggle exploratory knobs"
-        >
-          EXPLORATORY
-        </button>
-      </div>
-
-      <div className={styles.panel}>
-
-        {navigatorGroups.logical && (
-          <>
-            <div className={styles.region}>
-              <span className={styles.regionLabel}>LOGICAL</span>
-              <div className={styles.knobRow}>
-                <KnobUnit label="ROOT"   lcdValue={pcName(currentModeRootPc, enharmonicPrefs)} step={currentModeRootPc} total={12} pickerType="root"   onOpen={openPicker} onChange={v => handleKnobChange('root', v)} />
-                <KnobUnit label="FAMILY" lcdValue={FAMILY_LCD[currentFamily.id] ?? currentFamily.name.toUpperCase()} step={familyIndex} total={5} pickerType="family" onOpen={openPicker} onChange={v => handleKnobChange('family', v)} />
-                <KnobUnit label="MODE"   lcdValue={currentMode.lcdName} step={modeIndex} total={7} pickerType="mode" onOpen={openPicker} onChange={v => handleKnobChange('mode', v)} />
-              </div>
-            </div>
-            {navigatorGroups.exploratory && <div className={styles.divider} />}
-          </>
-        )}
-
-        {navigatorGroups.exploratory && (
-          <div className={styles.region}>
-            <span className={styles.regionLabel}>EXPLORATORY</span>
-            <div className={styles.knobRow}>
-              <WheelUnit label="BRIGHTNESS" lcdValue={currentMode.lcdName}        step={currentBrightnessPosition} total={BRIGHTNESS_ORDER.length} pickerType="brightness" onOpen={openPicker} onChange={pos => setModeByBrightness(pos)} />
-              {/* Tension has 3 steps — use a short arc confined to the upper face of the knob */}
-              <WheelUnit label="TENSION"    lcdValue={TENSION_LCD[currentTension]} step={currentTension}            total={3}                        pickerType="tension"    arcMin={-75} arcMax={75} onOpen={openPicker} onChange={t => setModeByTension(t as 0 | 1 | 2)} />
-              <VolumeKnobUnit volume={volume} onToggleMute={toggleMuteVolume} onVolumeChange={setVolume} />
-            </div>
-          </div>
-        )}
-
-        {!navigatorGroups.logical && !navigatorGroups.exploratory && (
-          <div className={styles.allHidden}>
-            <span className={styles.regionLabel}>All groups hidden</span>
-          </div>
-        )}
-
-      </div>
-
-      {picker && (
-        <Picker
-          options={pickerOptions}
-          currentValue={pickerValue}
-          anchorRect={picker.anchorRect}
-          onSelect={handlePickerSelect}
-          onClose={closePicker}
-        />
-      )}
-    </div>
-  )
-}
