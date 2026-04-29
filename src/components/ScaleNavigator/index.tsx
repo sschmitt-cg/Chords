@@ -18,7 +18,7 @@ export interface KnobProps {
   onPointerUp: (e: React.PointerEvent) => void
 }
 
-export function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }: KnobProps) {
+export function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }: KnobProps): React.ReactElement {
   const ticks: React.ReactNode[] = []
   for (let i = 0; i < total; i++) {
     const angleDeg = (i / total) * 360
@@ -63,7 +63,7 @@ export interface BoundedKnobProps extends KnobProps {
   arcMax?: number  // degrees, default +135
 }
 
-export function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointerDown, onPointerMove, onPointerUp }: BoundedKnobProps) {
+export function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointerDown, onPointerMove, onPointerUp }: BoundedKnobProps): React.ReactElement {
   const ticks: React.ReactNode[] = []
   for (let i = 0; i < total; i++) {
     const angleDeg = arcMin + (i / (total - 1)) * (arcMax - arcMin)
@@ -104,7 +104,7 @@ export function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointe
 // LCD display
 // ------------------------------------------------------------------
 
-export function LCD({ value, onClick }: { value: string; onClick?: () => void }) {
+export function LCD({ value, onClick }: { value: string; onClick?: () => void }): React.ReactElement {
   return (
     <div className={styles.lcd} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
       {value}
@@ -116,7 +116,7 @@ export function LCD({ value, onClick }: { value: string; onClick?: () => void })
 // Brightness sun icon for picker rows
 // ------------------------------------------------------------------
 
-export function BrightnessDot({ brightness }: { brightness: number }) {
+export function BrightnessDot({ brightness }: { brightness: number }): React.ReactElement {
   const t = brightness / 100
   const r = 255
   const g = Math.round(170 + t * 85)   // amber → near-white yellow
@@ -165,7 +165,7 @@ export interface KnobUnitProps {
   onChange: (newValue: number) => void
 }
 
-export function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onChange }: KnobUnitProps) {
+export function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onChange }: KnobUnitProps): React.ReactElement {
   const dragStartY = useRef<number | null>(null)
   const dragStartValue = useRef<number>(step)
   const dragged = useRef(false)
@@ -223,7 +223,7 @@ export interface WheelUnitProps {
   onChange: (newValue: number) => void
 }
 
-export function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, arcMax, onOpen, onChange }: WheelUnitProps) {
+export function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, arcMax, onOpen, onChange }: WheelUnitProps): React.ReactElement {
   const dragStartY = useRef<number | null>(null)
   const dragStartValue = useRef<number>(step)
   const dragged = useRef(false)
@@ -277,7 +277,7 @@ export interface VolumeKnobUnitProps {
   onVolumeChange: (v: number) => void
 }
 
-export function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeKnobUnitProps) {
+export function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeKnobUnitProps): React.ReactElement {
   const TOTAL = 21
   const step = Math.round(volume / 5)
   const dragStartY = useRef<number | null>(null)
@@ -337,7 +337,7 @@ export interface PickerProps {
   onClose: () => void
 }
 
-export function Picker({ options, currentValue, anchorRect, onSelect, onClose }: PickerProps) {
+export function Picker({ options, currentValue, anchorRect, onSelect, onClose }: PickerProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
 

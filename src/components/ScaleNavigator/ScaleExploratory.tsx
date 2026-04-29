@@ -8,8 +8,10 @@ import { WheelUnit, VolumeKnobUnit, Picker, type PickerType, type PickerOption }
 import { TENSION_LCD } from './shared'
 import styles from './ScaleNavigator.module.css'
 
+type ExploratoryPickerType = 'brightness' | 'tension'
+
 interface PickerState {
-  type: PickerType
+  type: ExploratoryPickerType
   anchorRect: DOMRect
 }
 
@@ -26,8 +28,10 @@ export default function ScaleExploratory(): React.ReactElement {
 
   const [picker, setPicker] = useState<PickerState | null>(null)
 
+  // WheelUnit only ever passes 'brightness' | 'tension' here, so the assertion is safe
   const openPicker = useCallback((type: PickerType, rect: DOMRect) => {
-    setPicker(prev => prev?.type === type ? null : { type, anchorRect: rect })
+    const exploratoryType = type as ExploratoryPickerType
+    setPicker(prev => prev?.type === exploratoryType ? null : { type: exploratoryType, anchorRect: rect })
   }, [])
 
   const closePicker = useCallback(() => setPicker(null), [])
