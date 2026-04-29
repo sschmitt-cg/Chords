@@ -79,10 +79,6 @@
   flex: 3;
 }
 
-.region:nth-child(3) {
-  flex: 2;
-}
-
 .allHidden {
   padding: 8px 4px;
   color: #8090c0;
@@ -90,7 +86,7 @@
 }
 
 .regionLabel {
-  font-size: 9px;
+  font-size: 0.5625rem;
   color: #8090c0;
   text-transform: uppercase;
   letter-spacing: 0.12em;

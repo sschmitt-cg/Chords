@@ -19,6 +19,8 @@ export interface NavigatorGroups {
   exploratory: boolean
 }
 
+// This default applies only on first install (no persisted state) or after resetLayout —
+// not on every load (zustand/persist restores the saved value after that).
 // On mobile portrait the logical group (ROOT/FAMILY/MODE) overflows the 6-knob row;
 // hiding it by default leaves only 3 knobs which fit comfortably.
 function defaultNavigatorGroups(): NavigatorGroups {
