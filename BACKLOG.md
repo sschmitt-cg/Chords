@@ -29,7 +29,7 @@ parity. Open both side by side during testing.
 - [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
 - [x] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
 - [x] Mobile layout — touch targets all ≥ 44pt (PR #89): HarmonyGrid columns, picker rows, reset button; LCD displays non-interactive; layout compacted (portrait 12px gaps, landscape 8px, max-width 1100px); keyboard/fretboard equal height in landscape; ScaleStrip flex layout in portrait eliminates tile overlap
-- [x] ScaleNavigator — two hideable knob groups (LOGICAL: ROOT/FAMILY/MODE; EXPLORATORY: BRIGHTNESS/TENSION/VOLUME); toggle buttons in panel header; LOGICAL hidden by default on mobile portrait (3-knob row fits comfortably vs. 6-knob overflow); group visibility stored in useLayoutStore and persisted across page loads
+- [x] ScaleNavigator — split into two independent first-class sections: "Key & Mode" (`scale-logical`: ROOT/FAMILY/MODE knobs) and "Scale Explorer" (`scale-exploratory`: BRIGHTNESS/TENSION/VOLUME knobs); each has its own `SectionId`, visibility toggle, and drag-reorder slot in SectionMenu; "Key & Mode" hidden by default on mobile portrait, "Scale Explorer" visible by default
 
 ---
 
