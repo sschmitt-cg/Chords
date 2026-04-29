@@ -7,8 +7,10 @@ import { KnobUnit, Picker, type PickerType, type PickerOption } from './index'
 import { pcName, FAMILY_LCD } from './shared'
 import styles from './ScaleNavigator.module.css'
 
+type LogicalPickerType = 'root' | 'family' | 'mode'
+
 interface PickerState {
-  type: PickerType
+  type: LogicalPickerType
   anchorRect: DOMRect
 }
 
@@ -28,8 +30,10 @@ export default function ScaleLogical(): React.ReactElement {
 
   const [picker, setPicker] = useState<PickerState | null>(null)
 
+  // KnobUnit only ever passes 'root' | 'family' | 'mode' here, so the assertion is safe
   const openPicker = useCallback((type: PickerType, rect: DOMRect) => {
-    setPicker(prev => prev?.type === type ? null : { type, anchorRect: rect })
+    const logicalType = type as LogicalPickerType
+    setPicker(prev => prev?.type === logicalType ? null : { type: logicalType, anchorRect: rect })
   }, [])
 
   const closePicker = useCallback(() => setPicker(null), [])

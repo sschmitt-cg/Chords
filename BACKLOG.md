@@ -155,5 +155,6 @@ parity. Open both side by side during testing.
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
 - [ ] ScaleNavigator — persist navigator group visibility independently of orientation changes (currently resets to orientation default on each page load rather than remembering the user's last manual choice)
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
+- [ ] ScaleNavigator knob SVG colors (accent ticks, indicator dot) use hard-coded hex values — replace with CSS custom properties (e.g. --knob-accent) for design-system consistency
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
 - [x] iOS safe-area insets (`env(safe-area-inset-*)`) applied to header and all layout panels
