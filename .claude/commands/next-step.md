@@ -68,7 +68,10 @@ The implementation agent should:
 2. Run `npx tsc --noEmit`, `npm run lint`, and `npm test` before making changes
    to establish a clean baseline, then again after all changes are complete
 3. Make small, focused commits (`feat:` / `fix:` / `refactor:` prefix)
-4. **Do not open a PR** — report back with the branch name and a summary of
+4. Update `BACKLOG.md` to check off any completed items and add new items that
+   emerged from the work; update `docs/product-vision.md` if new design
+   principles or platform constraints were established
+5. **Do not open a PR** — report back with the branch name and a summary of
    all changed files when done
 
 ---
