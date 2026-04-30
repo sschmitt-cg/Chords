@@ -84,26 +84,15 @@ Spawn a focused review sub-agent. Give it:
 - The branch name and list of changed files
 - The full text of `CLAUDE.md` (copy it into the prompt)
 
-The review sub-agent should read every changed file and check for violations of
-the constraints in `CLAUDE.md` and `docs/architecture.md`:
-- **Architecture** — components must not compute theory; all theory logic must
-  live in `src/theory/index.ts`; components read from the store, never maintain
-  parallel state
-- **Colors** — pitch class colors must use `pcColorVar(pc)`; no hard-coded hex
-  colors for notes; tinted surfaces use `color-mix`
-- **CSS** — co-located CSS Modules; no inline styles for colors
-- **Mobile** — every interactive element ≥ 44×44pt touch target; safe area
-  insets applied; `rem` units, no fixed `px` font sizes
-- **TypeScript** — no `any` without a same-line comment; exported functions have
-  explicit return types; unused params prefixed with `_`
-- **Scope** — only files relevant to the task are modified; no opportunistic
-  refactors
+The review sub-agent should read `docs/architecture.md` and every changed file,
+then check for violations of all constraints defined in `CLAUDE.md` and
+`docs/architecture.md`. It derives its checklist from those files — the
+constraints are fully specified there.
 
 The review sub-agent reports findings. For each finding, apply these rules:
 
 **Fix autonomously (send back to implementation agent):**
-- Clear rule violation: wrong pattern, missing `pcColorVar`, hard-coded color,
-  missing touch target size, `any` without comment, missing return type
+- Clear rule violation of any constraint in `CLAUDE.md` or `docs/architecture.md`
 - Mechanical style issue: formatting, naming inconsistency
 
 **Stop, summarize, and ask the user:**
