@@ -34,9 +34,9 @@ these sources in priority order:
    - An unstarted or deprioritized BACKLOG item worth revisiting `[BACKLOG]`
    - An innovation you are proposing based on the project's vision `[NEW IDEA]`
 
-Before proposing, read **`docs/product-vision.md`** to ensure the chosen task
-(or generated options) aligns with the project's audiences, platform goals, and
-design principles.
+Before proposing, read **`docs/product-vision.md`** and **`docs/architecture.md`**
+to ensure the chosen task (or generated options) aligns with the project's
+audiences, platform goals, design principles, and technical constraints.
 
 ---
 
@@ -64,13 +64,15 @@ context:
 - Constraints from `CLAUDE.md` and `docs/product-vision.md` that apply
 
 The implementation agent should:
-1. Read `CLAUDE.md` fully before writing any code
+1. Read `CLAUDE.md`, `docs/architecture.md`, and `docs/product-vision.md` fully
+   before writing any code
 2. Run `npx tsc --noEmit`, `npm run lint`, and `npm test` before making changes
    to establish a clean baseline, then again after all changes are complete
 3. Make small, focused commits (`feat:` / `fix:` / `refactor:` prefix)
 4. Update `BACKLOG.md` to check off any completed items and add new items that
-   emerged from the work; update `docs/product-vision.md` if new design
-   principles or platform constraints were established
+   emerged from the work; update `docs/product-vision.md` or `docs/architecture.md`
+   if new design principles, platform constraints, or architectural decisions were
+   established
 5. **Do not open a PR** — report back with the branch name and a summary of
    all changed files when done
 
@@ -83,7 +85,7 @@ Spawn a focused review sub-agent. Give it:
 - The full text of `CLAUDE.md` (copy it into the prompt)
 
 The review sub-agent should read every changed file and check for violations of
-the constraints in `CLAUDE.md`:
+the constraints in `CLAUDE.md` and `docs/architecture.md`:
 - **Architecture** — components must not compute theory; all theory logic must
   live in `src/theory/index.ts`; components read from the store, never maintain
   parallel state
