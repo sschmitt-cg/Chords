@@ -1,0 +1,286 @@
+/* Metronome — BPM control, tap tempo, time signature, beat indicator */
+
+.card {
+  background: var(--surface-1, #eef0ff);
+  border: 1px solid var(--card-border, #c8cef0);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Section header ---- */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #7c86ac);
+}
+
+/* ---- Start/Stop button ---- */
+
+.startStop {
+  min-width: 80px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 22px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.08s;
+  color: #ffffff;
+  background: #2a3580;
+}
+
+.startStop:hover {
+  background: #3a47a8;
+}
+
+.startStop:active {
+  transform: scale(0.96);
+}
+
+.startStopActive {
+  background: #c44b2a;
+}
+
+.startStopActive:hover {
+  background: #e0563a;
+}
+
+/* ---- BPM row ---- */
+
+.bpmRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bpmBtn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--card-border, #c8cef0);
+  border-radius: 10px;
+  background: var(--surface-2, #e4e7ff);
+  color: var(--text-primary, #0c1020);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, transform 0.08s;
+  /* flex-shrink: 0 prevents the button from squishing on narrow screens */
+  flex-shrink: 0;
+}
+
+.bpmBtn:hover {
+  background: var(--surface-3, #d8dcff);
+}
+
+.bpmBtn:active {
+  transform: scale(0.93);
+}
+
+.bpmDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 64px;
+}
+
+.bpmValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary, #0c1020);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bpmLabel {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #7c86ac);
+}
+
+/* ---- Tempo slider ---- */
+
+.sliderRow {
+  padding: 0 4px;
+}
+
+.tempoSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3, #d8dcff);
+  outline: none;
+  cursor: pointer;
+}
+
+.tempoSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2a3580;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.tempoSlider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #2a3580;
+  cursor: pointer;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* ---- Tap tempo ---- */
+
+.tapBtn {
+  width: 100%;
+  min-height: 52px;
+  border: 2px dashed var(--card-border, #c8cef0);
+  border-radius: 10px;
+  background: var(--surface-2, #e4e7ff);
+  color: var(--text-secondary, #7c86ac);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: background 0.1s, border-color 0.1s, color 0.1s, transform 0.06s;
+}
+
+.tapBtn:hover {
+  background: var(--surface-3, #d8dcff);
+  color: var(--text-primary, #0c1020);
+  border-color: #a0aacc;
+}
+
+.tapBtn:active {
+  transform: scale(0.97);
+  background: var(--surface-3, #d8dcff);
+}
+
+/* ---- Time signature ---- */
+
+.timeSigRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeSigLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary, #7c86ac);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.timeSigOptions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timeSigBtn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--card-border, #c8cef0);
+  border-radius: 8px;
+  background: var(--surface-2, #e4e7ff);
+  color: var(--text-secondary, #7c86ac);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s, transform 0.08s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeSigBtn:hover {
+  background: var(--surface-3, #d8dcff);
+  color: var(--text-primary, #0c1020);
+}
+
+.timeSigBtn:active {
+  transform: scale(0.93);
+}
+
+.timeSigBtnActive {
+  background: #2a3580;
+  color: #ffffff;
+  border-color: #2a3580;
+}
+
+.timeSigBtnActive:hover {
+  background: #3a47a8;
+  border-color: #3a47a8;
+  color: #ffffff;
+}
+
+/* ---- Beat indicator ---- */
+
+.beatRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.beat {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-3, #d8dcff);
+  border: 1.5px solid var(--card-border, #c8cef0);
+  transition: background 0.05s, transform 0.05s, border-color 0.05s;
+  flex-shrink: 0;
+}
+
+.beatDownbeat {
+  /* Downbeat dot is slightly larger */
+  width: 24px;
+  height: 24px;
+}
+
+.beatActive {
+  background: #2a3580;
+  border-color: #2a3580;
+  transform: scale(1.18);
+}
+
+.beatActiveDownbeat {
+  background: #e87d3e;
+  border-color: #e87d3e;
+  transform: scale(1.25);
+}
