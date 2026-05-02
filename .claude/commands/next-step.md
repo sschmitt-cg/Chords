@@ -23,7 +23,7 @@ these sources in priority order:
 
 1. **Open PRs** — run `gh pr list --state open` and review. If any PR exists
    with unresolved CI failures, that takes priority over all new work. Resume
-   from Step 8 with that PR rather than starting something new.
+   from Step 8 (CI monitoring) with that PR rather than starting something new.
 2. **Open GitHub issues** — run `gh issue list --state open` and review. A
    bug report or explicitly filed issue takes priority over backlog items.
 3. **`BACKLOG.md`** — scan for unchecked items across all phases. Prefer items
@@ -50,22 +50,46 @@ Present the proposed task (or 3 options) to the user in a short paragraph:
 **Stop here and wait for explicit confirmation before writing any code,
 creating any branch, or running any commands.**
 
-If the user selects from 3 options or modifies the proposal, confirm the final
-scope before proceeding.
+If the user modifies the proposal, confirm the adjusted scope before proceeding.
 
 ---
 
-## Step 4 — Hand off to implementation agent
+## Step 4 — Resolve or create the working branch
 
-Once the user confirms, spawn a focused implementation sub-agent with this
-context:
+Before creating any branch, check for an existing one:
+
+1. Run `git branch --show-current` — if not on `main`, you are already on a
+   working branch; use it.
+2. Run `git fetch` then `git branch -r --no-merged main` to list all remote
+   branches ahead of main. If any appear, present them to the user and ask
+   whether one should be used for this task.
+3. Run `gh pr list --state open` and check whether any open PR already targets
+   this task's scope.
+
+If an existing branch is identified, check it out (`git checkout <branch>`) rather
+than creating a new one.
+
+If no matching branch exists, ensure main is current before branching:
+- Run `git checkout main`
+- Run `git pull`
+- Run `git checkout -b feature/<name>`
+
+Never create a branch from any base other than an up-to-date main.
+
+---
+
+## Step 5 — Hand off to implementation agent
+
+Once the user confirms and the branch is resolved, spawn a focused implementation
+sub-agent with this context:
 - The agreed task description
+- The branch name to work on
 - Relevant files and components to read first
-- Constraints from `CLAUDE.md` and `docs/product-vision.md` that apply
+- Any specific constraints or file paths particularly relevant to this task
 
 The implementation agent should:
-1. Read `CLAUDE.md`, `docs/architecture.md`, and `docs/product-vision.md` fully
-   before writing any code
+1. Read `docs/architecture.md` and `docs/product-vision.md` fully before writing
+   any code (`CLAUDE.md` is loaded automatically as project instructions)
 2. Run `npx tsc --noEmit`, `npm run lint`, and `npm test` before making changes
    to establish a clean baseline, then again after all changes are complete
 3. Make small, focused commits (`feat:` / `fix:` / `refactor:` prefix)
@@ -78,11 +102,10 @@ The implementation agent should:
 
 ---
 
-## Step 5 — Review sub-agent (up to 5 rounds)
+## Step 6 — Review sub-agent (up to 5 rounds)
 
 Spawn a focused review sub-agent. Give it:
 - The branch name and list of changed files
-- The full text of `CLAUDE.md` (copy it into the prompt)
 
 The review sub-agent should read `docs/architecture.md` and every changed file,
 then check for violations of all constraints defined in `CLAUDE.md` and
@@ -106,7 +129,7 @@ summary of what is unresolved.
 
 ---
 
-## Step 6 — Open the PR
+## Step 7 — Open the PR
 
 Once the review sub-agent gives a clean pass (no findings), open a PR:
 
@@ -124,9 +147,11 @@ needed — CI monitoring is low cost and expected).
 
 ---
 
-## Step 7 — Monitor CI and iterate (up to 5 rounds)
+## Step 8 — Monitor CI and iterate (up to 5 rounds)
 
-Poll for CI results using `gh pr checks`. For each failure, apply these rules:
+Check CI status with `gh pr checks <number>`. Wait 30 seconds between polls;
+use `gh run watch` to stream a job that is actively running. For each failure,
+apply these rules:
 
 **Fix autonomously:**
 - Type error, lint violation, or broken import caused by the implementation
@@ -152,3 +177,7 @@ After each autonomous fix: commit, push, and wait for CI to re-run.
 - The `.claude/` directory is version-controlled in this repo (except
   `settings.json` and `settings.local.json`, which are gitignored). Changes to
   commands should be committed on a feature branch like any other code change.
+- Shell commands: use one Bash call per action — no `||`, `&&`, or `|` chains
+  in diagnostic or discovery commands. Each command runs individually so
+  auto-approval can work. This applies to validation gates too: run
+  `npx tsc --noEmit`, `npm run lint`, and `npm test` as separate calls.
