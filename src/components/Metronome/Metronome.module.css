@@ -38,7 +38,7 @@
   font-weight: 700;
   cursor: pointer;
   transition: background 0.15s, transform 0.08s;
-  color: #ffffff;
+  color: var(--text-on-action);
   background: var(--action-primary);
 }
 
@@ -81,7 +81,6 @@
   align-items: center;
   justify-content: center;
   transition: background 0.1s, transform 0.08s;
-  /* flex-shrink: 0 prevents the button from squishing on narrow screens */
   flex-shrink: 0;
 }
 
@@ -142,7 +141,7 @@
   border-radius: 50%;
   background: var(--action-primary);
   cursor: pointer;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--text-on-action);
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 
@@ -152,7 +151,7 @@
   border-radius: 50%;
   background: var(--action-primary);
   cursor: pointer;
-  border: 2px solid #ffffff;
+  border: 2px solid var(--text-on-action);
   box-shadow: 0 1px 4px rgba(0,0,0,0.2);
 }
 
@@ -235,14 +234,14 @@
 
 .timeSigBtnActive {
   background: var(--action-primary);
-  color: #ffffff;
+  color: var(--text-on-action);
   border-color: var(--action-primary);
 }
 
 .timeSigBtnActive:hover {
   background: var(--action-primary-hover);
   border-color: var(--action-primary-hover);
-  color: #ffffff;
+  color: var(--text-on-action);
 }
 
 /* ---- Beat indicator ---- */

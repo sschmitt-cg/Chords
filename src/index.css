@@ -49,4 +49,5 @@ body {
   --action-danger-hover: #e0563a;
   --action-warning: #e87d3e;
   --text-muted: #a0aacc;
+  --text-on-action: #ffffff;
 }

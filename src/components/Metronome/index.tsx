@@ -3,6 +3,7 @@
 // ~60 ms and schedules oscillator bursts a fixed lookahead window ahead of currentTime.
 // This keeps timing rock-solid regardless of JS thread jank.
 
+import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ensureAudio,
@@ -145,7 +146,6 @@ export default function Metronome(): React.ReactElement {
   // Single ref holding all mutable engine state — never read during render
   const engineRef = useRef<EngineState>(createEngine())
 
-  // Cleanup on unmount
   useEffect(() => {
     const engine = engineRef.current
     return () => { engineStop(engine) }
