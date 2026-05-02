@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ensureAudio,
   getAudioContext,
+  getMasterGain,
   unlockAudioGestureSync,
   unlockAudioIfNeeded,
   isIOS,
@@ -46,7 +47,8 @@ function scheduleClick(
   gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.06)
 
   osc.connect(gain)
-  gain.connect(ctx.destination)
+  const dest = getMasterGain() ?? ctx.destination
+  gain.connect(dest)
 
   osc.start(time)
   osc.stop(time + 0.08)
@@ -68,7 +70,7 @@ interface EngineState {
   nextBeatTime: number
   beatIndex: number
   timerId: ReturnType<typeof setTimeout> | null
-  onBeat: (beat: number) => void
+  onBeat: ((beat: number) => void) | null
 }
 
 function createEngine(): EngineState {
@@ -79,7 +81,7 @@ function createEngine(): EngineState {
     nextBeatTime: 0,
     beatIndex: 0,
     timerId: null,
-    onBeat: () => { /* set by component */ },
+    onBeat: null,
   }
 }
 
@@ -96,7 +98,7 @@ function engineTick(engine: EngineState): void {
     // Schedule the visual indicator to fire approximately when the beat sounds
     const delayMs = Math.max(0, (engine.nextBeatTime - ctx.currentTime) * 1000)
     const capturedBeat = beatIdx
-    setTimeout(() => engine.onBeat(capturedBeat), delayMs)
+    setTimeout(() => engine.onBeat?.(capturedBeat), delayMs)
 
     const beatDuration = 60 / engine.bpm
     engine.nextBeatTime += beatDuration
@@ -121,11 +123,14 @@ function engineStop(engine: EngineState): void {
     clearTimeout(engine.timerId)
     engine.timerId = null
   }
+  engine.onBeat = null
 }
 
 function engineRestart(engine: EngineState): void {
   if (!engine.isPlaying) return
+  const savedOnBeat = engine.onBeat
   engineStop(engine)
+  engine.onBeat = savedOnBeat
   engineStart(engine)
 }
 
@@ -139,11 +144,6 @@ export default function Metronome(): React.ReactElement {
 
   // Single ref holding all mutable engine state — never read during render
   const engineRef = useRef<EngineState>(createEngine())
-
-  // Wire the beat callback once after mount; stable because setCurrentBeat is stable
-  useEffect(() => {
-    engineRef.current.onBeat = setCurrentBeat
-  }, [])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -208,6 +208,7 @@ export default function Metronome(): React.ReactElement {
       if (!isIOS()) {
         unlockAudioIfNeeded().catch(() => { /* best-effort */ })
       }
+      engine.onBeat = setCurrentBeat
       engineStart(engine)
       setIsPlaying(true)
     }
@@ -229,7 +230,6 @@ export default function Metronome(): React.ReactElement {
         </button>
       </div>
 
-      {/* BPM display + +/- buttons */}
       <div className={styles.bpmRow}>
         <button
           className={styles.bpmBtn}
@@ -255,7 +255,6 @@ export default function Metronome(): React.ReactElement {
         </button>
       </div>
 
-      {/* Slider for quick BPM sweeps */}
       <div className={styles.sliderRow}>
         <input
           type="range"
@@ -268,12 +267,10 @@ export default function Metronome(): React.ReactElement {
         />
       </div>
 
-      {/* Tap tempo */}
       <button className={styles.tapBtn} onClick={handleTap} aria-label="Tap tempo">
         Tap Tempo
       </button>
 
-      {/* Time signature */}
       <div className={styles.timeSigRow}>
         <span className={styles.timeSigLabel}>Beats</span>
         <div className={styles.timeSigOptions}>
@@ -294,7 +291,6 @@ export default function Metronome(): React.ReactElement {
         </div>
       </div>
 
-      {/* Beat indicator */}
       <div className={styles.beatRow} aria-hidden="true">
         {Array.from({ length: beatsPerBar }, (_, i) => {
           const isActive = currentBeat === i

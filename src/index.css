@@ -41,4 +41,12 @@ body {
   --card-border: #c8cef0;
   --text-primary: #0c1020;
   --text-secondary: #7c86ac;
+
+  /* Action color tokens */
+  --action-primary: #2a3580;
+  --action-primary-hover: #3a47a8;
+  --action-danger: #c44b2a;
+  --action-danger-hover: #e0563a;
+  --action-warning: #e87d3e;
+  --text-muted: #a0aacc;
 }

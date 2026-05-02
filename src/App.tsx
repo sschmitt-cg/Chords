@@ -16,7 +16,7 @@ import styles from './App.module.css'
 // circle is rendered separately to the right of the navigator+strip column
 const LANDSCAPE_TOP: SectionId[]   = ['scale-logical', 'scale-exploratory', 'strip']
 const LANDSCAPE_LEFT: SectionId[]  = ['keyboard', 'fretboard']
-const LANDSCAPE_RIGHT: SectionId[] = ['harmony']
+const LANDSCAPE_RIGHT: SectionId[] = ['harmony', 'metronome']
 
 function renderSection(id: SectionId) {
   switch (id) {
