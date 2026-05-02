@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type SectionId = 'scale-logical' | 'scale-exploratory' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony'
+export type SectionId = 'scale-logical' | 'scale-exploratory' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony' | 'metronome'
 
 export const SECTION_LABELS: Record<SectionId, string> = {
   'scale-logical':     'Key & Mode',
@@ -11,9 +11,10 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   keyboard:            'Keyboard',
   fretboard:           'Fretboard',
   harmony:             'Harmony Grid',
+  metronome:           'Metronome',
 }
 
-export const DEFAULT_ORDER: SectionId[] = ['scale-logical', 'scale-exploratory', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony']
+export const DEFAULT_ORDER: SectionId[] = ['scale-logical', 'scale-exploratory', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony', 'metronome']
 
 interface LayoutStore {
   sectionOrder: SectionId[]
@@ -37,6 +38,7 @@ function defaultVisible(): Record<SectionId, boolean> {
     keyboard:            true,
     fretboard:           true,
     harmony:             true,
+    metronome:           false,
   }
 }
 

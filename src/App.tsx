@@ -9,6 +9,7 @@ import HarmonyGrid from './components/HarmonyGrid/index'
 import KeyboardVisualizer from './components/KeyboardVisualizer/index'
 import FretboardVisualizer from './components/FretboardVisualizer/index'
 import CircleOfFifths from './components/CircleOfFifths/index'
+import Metronome from './components/Metronome/index'
 import styles from './App.module.css'
 
 // Landscape panel assignments — fixed regardless of portrait section order
@@ -26,6 +27,7 @@ function renderSection(id: SectionId) {
     case 'keyboard':          return <KeyboardVisualizer />
     case 'fretboard':         return <FretboardVisualizer />
     case 'harmony':           return <HarmonyGrid />
+    case 'metronome':         return <Metronome />
   }
 }
 
