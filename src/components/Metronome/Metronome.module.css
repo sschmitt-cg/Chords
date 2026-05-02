@@ -1,6 +1,6 @@
 .card {
-  background: var(--surface-1, #eef0ff);
-  border: 1px solid var(--card-border, #c8cef0);
+  background: var(--surface-1);
+  border: 1px solid var(--card-border);
   border-radius: 14px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
   padding: 16px;
@@ -23,7 +23,7 @@
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-secondary, #7c86ac);
+  color: var(--text-secondary);
 }
 
 /* ---- Start/Stop button ---- */
@@ -70,10 +70,10 @@
 .bpmBtn {
   min-width: 44px;
   min-height: 44px;
-  border: 1px solid var(--card-border, #c8cef0);
+  border: 1px solid var(--card-border);
   border-radius: 10px;
-  background: var(--surface-2, #e4e7ff);
-  color: var(--text-primary, #0c1020);
+  background: var(--surface-2);
+  color: var(--text-primary);
   font-size: 1.25rem;
   font-weight: 600;
   cursor: pointer;
@@ -85,7 +85,7 @@
 }
 
 .bpmBtn:hover {
-  background: var(--surface-3, #d8dcff);
+  background: var(--surface-3);
 }
 
 .bpmBtn:active {
@@ -103,7 +103,7 @@
 .bpmValue {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--text-primary, #0c1020);
+  color: var(--text-primary);
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
 }
@@ -113,7 +113,7 @@
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-secondary, #7c86ac);
+  color: var(--text-secondary);
 }
 
 /* ---- Tempo slider ---- */
@@ -129,7 +129,7 @@
   height: 6px;
   min-height: 44px;
   border-radius: 3px;
-  background: var(--surface-3, #d8dcff);
+  background: var(--surface-3);
   outline: none;
   cursor: pointer;
 }
@@ -161,10 +161,10 @@
 .tapBtn {
   width: 100%;
   min-height: 52px;
-  border: 2px dashed var(--card-border, #c8cef0);
+  border: 2px dashed var(--card-border);
   border-radius: 10px;
-  background: var(--surface-2, #e4e7ff);
-  color: var(--text-secondary, #7c86ac);
+  background: var(--surface-2);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -174,14 +174,14 @@
 }
 
 .tapBtn:hover {
-  background: var(--surface-3, #d8dcff);
-  color: var(--text-primary, #0c1020);
+  background: var(--surface-3);
+  color: var(--text-primary);
   border-color: var(--text-muted);
 }
 
 .tapBtn:active {
   transform: scale(0.97);
-  background: var(--surface-3, #d8dcff);
+  background: var(--surface-3);
 }
 
 /* ---- Time signature ---- */
@@ -197,7 +197,7 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-secondary, #7c86ac);
+  color: var(--text-secondary);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -211,10 +211,10 @@
 .timeSigBtn {
   min-width: 44px;
   min-height: 44px;
-  border: 1px solid var(--card-border, #c8cef0);
+  border: 1px solid var(--card-border);
   border-radius: 8px;
-  background: var(--surface-2, #e4e7ff);
-  color: var(--text-secondary, #7c86ac);
+  background: var(--surface-2);
+  color: var(--text-secondary);
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
@@ -225,8 +225,8 @@
 }
 
 .timeSigBtn:hover {
-  background: var(--surface-3, #d8dcff);
-  color: var(--text-primary, #0c1020);
+  background: var(--surface-3);
+  color: var(--text-primary);
 }
 
 .timeSigBtn:active {
@@ -259,8 +259,8 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: var(--surface-3, #d8dcff);
-  border: 1.5px solid var(--card-border, #c8cef0);
+  background: var(--surface-3);
+  border: 1.5px solid var(--card-border);
   transition: background 0.05s, transform 0.05s, border-color 0.05s;
   flex-shrink: 0;
 }
