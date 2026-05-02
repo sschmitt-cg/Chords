@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type SectionId = 'scale-logical' | 'scale-exploratory' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony'
+export type SectionId = 'scale-logical' | 'scale-exploratory' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony' | 'metronome'
 
 export const SECTION_LABELS: Record<SectionId, string> = {
   'scale-logical':     'Key & Mode',
@@ -11,9 +11,10 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   keyboard:            'Keyboard',
   fretboard:           'Fretboard',
   harmony:             'Harmony Grid',
+  metronome:           'Metronome',
 }
 
-export const DEFAULT_ORDER: SectionId[] = ['scale-logical', 'scale-exploratory', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony']
+export const DEFAULT_ORDER: SectionId[] = ['scale-logical', 'scale-exploratory', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony', 'metronome']
 
 interface LayoutStore {
   sectionOrder: SectionId[]
@@ -37,6 +38,7 @@ function defaultVisible(): Record<SectionId, boolean> {
     keyboard:            true,
     fretboard:           true,
     harmony:             true,
+    metronome:           false,
   }
 }
 
@@ -55,6 +57,18 @@ export const useLayoutStore = create<LayoutStore>()(
     }),
     {
       name: 'tonal-layout',
+      version: 1,
+      migrate(persisted, version) {
+        const state = persisted as { sectionOrder: SectionId[]; sectionVisible: Record<SectionId, boolean> }
+        if (version < 1) {
+          // Add sections introduced after initial release to existing saved layouts
+          for (const id of DEFAULT_ORDER) {
+            if (!state.sectionOrder.includes(id)) state.sectionOrder.push(id)
+            if (state.sectionVisible[id] === undefined) state.sectionVisible[id] = false
+          }
+        }
+        return state
+      },
       partialize: (state) => ({
         sectionOrder: state.sectionOrder,
         sectionVisible: state.sectionVisible,

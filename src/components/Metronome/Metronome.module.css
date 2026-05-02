@@ -1,0 +1,283 @@
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Section header ---- */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ---- Start/Stop button ---- */
+
+.startStop {
+  min-width: 80px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 22px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.08s;
+  color: var(--text-on-action);
+  background: var(--action-primary);
+}
+
+.startStop:hover {
+  background: var(--action-primary-hover);
+}
+
+.startStop:active {
+  transform: scale(0.96);
+}
+
+.startStopActive {
+  background: var(--action-danger);
+}
+
+.startStopActive:hover {
+  background: var(--action-danger-hover);
+}
+
+/* ---- BPM row ---- */
+
+.bpmRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.bpmBtn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s, transform 0.08s;
+  flex-shrink: 0;
+}
+
+.bpmBtn:hover {
+  background: var(--surface-3);
+}
+
+.bpmBtn:active {
+  transform: scale(0.93);
+}
+
+.bpmDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 64px;
+}
+
+.bpmValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bpmLabel {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ---- Tempo slider ---- */
+
+.sliderRow {
+  padding: 0 4px;
+}
+
+.tempoSlider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  min-height: 44px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  outline: none;
+  cursor: pointer;
+}
+
+.tempoSlider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--action-primary);
+  cursor: pointer;
+  border: 2px solid var(--text-on-action);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.tempoSlider::-moz-range-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--action-primary);
+  cursor: pointer;
+  border: 2px solid var(--text-on-action);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* ---- Tap tempo ---- */
+
+.tapBtn {
+  width: 100%;
+  min-height: 52px;
+  border: 2px dashed var(--card-border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: background 0.1s, border-color 0.1s, color 0.1s, transform 0.06s;
+}
+
+.tapBtn:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+.tapBtn:active {
+  transform: scale(0.97);
+  background: var(--surface-3);
+}
+
+/* ---- Time signature ---- */
+
+.timeSigRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeSigLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.timeSigOptions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timeSigBtn {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s, transform 0.08s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.timeSigBtn:hover {
+  background: var(--surface-3);
+  color: var(--text-primary);
+}
+
+.timeSigBtn:active {
+  transform: scale(0.93);
+}
+
+.timeSigBtnActive {
+  background: var(--action-primary);
+  color: var(--text-on-action);
+  border-color: var(--action-primary);
+}
+
+.timeSigBtnActive:hover {
+  background: var(--action-primary-hover);
+  border-color: var(--action-primary-hover);
+  color: var(--text-on-action);
+}
+
+/* ---- Beat indicator ---- */
+
+.beatRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.beat {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  border: 1.5px solid var(--card-border);
+  transition: background 0.05s, transform 0.05s, border-color 0.05s;
+  flex-shrink: 0;
+}
+
+.beatDownbeat {
+  width: 24px;
+  height: 24px;
+}
+
+.beatActive {
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+  transform: scale(1.18);
+}
+
+.beatActiveDownbeat {
+  background: var(--action-warning);
+  border-color: var(--action-warning);
+  transform: scale(1.25);
+}

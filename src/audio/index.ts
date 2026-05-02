@@ -315,3 +315,5 @@ export function buildChordMidis(pitchClasses: number[]): number[] {
 }
 
 export function getAudioContext(): AudioContext | null { return audioCtx }
+
+export function getMasterGain(): GainNode | null { return masterGain }

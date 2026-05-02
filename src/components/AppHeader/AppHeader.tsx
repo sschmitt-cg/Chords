@@ -20,12 +20,6 @@ export default function AppHeader() {
         <div className={styles.inner}>
           <span className={styles.title}>Tonal Explorer</span>
           <div className={styles.actions}>
-            <button className={styles.iconBtn} aria-label="Info">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M9 8v5M9 6v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </button>
             <button
               ref={menuBtnRef}
               className={[styles.iconBtn, menuOpen ? styles.iconBtnActive : ''].join(' ')}

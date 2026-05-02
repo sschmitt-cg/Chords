@@ -25,7 +25,7 @@ parity. Open both side by side during testing.
 - [x] Audio — volume knob (ScaleNavigator, 6th knob) replaces mute toggle; click=toggle mute/unmute, drag=set volume 0–100%; iOS unlock flow works
 - [x] Audio — scale playback (ascending arpeggio)
 - [x] Audio — chord playback (arpeggiate then strum)
-- [ ] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
+- [x] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
 - [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
 - [x] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
 - [x] Mobile layout — touch targets all ≥ 44pt (PR #89): HarmonyGrid columns, picker rows, reset button; LCD displays non-interactive; layout compacted (portrait 12px gaps, landscape 8px, max-width 1100px); keyboard/fretboard equal height in landscape; ScaleStrip flex layout in portrait eliminates tile overlap
@@ -43,7 +43,7 @@ parity. Open both side by side during testing.
 - [x] KeyboardVisualizer component (piano keys, highlights scale/chord/note)
 - [x] FretboardVisualizer component (guitar fretboard, reads `guitarTuning` from store)
 - [x] Migrate Web Audio engine → `src/audio/index.ts` + `useAudio` hook
-- [ ] Metronome component (BPM, time signature, tap tempo, downbeat accent)
+- [x] Metronome component (BPM, time signature, tap tempo, downbeat accent)
 - [ ] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
 - [ ] WheelModal (picker for key / mode / scale type selection) — deprioritized; may be superseded by swipe gestures on ScaleStrip; retain as accessibility fallback candidate
 - [ ] Shareable URLs (encode key + mode + scale type in query params)
