@@ -1,27 +1,15 @@
-// Chromatic Tuner — microphone pitch detection via autocorrelation.
-// Microphone permission is requested only on first "Start" interaction, not on mount.
-
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './Tuner.module.css'
+import { freqToNoteInfo } from '../../theory/index'
+import type { NoteInfo } from '../../theory/index'
 
-// ---- Constants ----
-
-// A4 = 440 Hz — standard concert pitch reference
-const A4_HZ = 440
-const A4_MIDI = 69
-
-// Minimum signal power to treat as a real note (silence gate)
 const SILENCE_THRESHOLD = 0.005
 
-// Autocorrelation minimum period samples (lower bound: ~1500 Hz at 48 kHz)
+// Lower bound on lag; shorter lags alias frequencies above ~1500 Hz (above guitar's high E)
 const MIN_SAMPLES = 30
-// Autocorrelation maximum period samples (upper bound: ~50 Hz at 48 kHz)
+// Upper bound on lag; longer lags would alias below ~47 Hz, below the lowest bass guitar string
 const MAX_SAMPLES = 1024
-
-const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-
-// ---- Pitch detection ----
 
 function detectPitch(buffer: Float32Array<ArrayBuffer>, sampleRate: number): number | null {
   // RMS power gate — skip if signal is nearly silent
@@ -65,26 +53,6 @@ function autocorrAt(buffer: Float32Array<ArrayBuffer>, maxLag: number, lag: numb
   return c
 }
 
-// ---- Music math ----
-
-interface NoteInfo {
-  name: string    // e.g. "A"
-  octave: number  // e.g. 4
-  cents: number   // -50 to +50
-}
-
-function freqToNoteInfo(hz: number): NoteInfo {
-  // MIDI note number (float) for this frequency
-  const midi = 12 * Math.log2(hz / A4_HZ) + A4_MIDI
-  const rounded = Math.round(midi)
-  const cents = Math.round((midi - rounded) * 100)
-  const pc = ((rounded % 12) + 12) % 12
-  const octave = Math.floor(rounded / 12) - 1
-  return { name: SHARP_NAMES[pc], octave, cents }
-}
-
-// ---- Needle gauge (SVG arc) ----
-
 interface NeedleProps {
   cents: number  // -50 to +50
 }
@@ -117,7 +85,6 @@ function Needle({ cents }: NeedleProps): React.ReactElement {
       className={styles.gauge}
       aria-hidden="true"
     >
-      {/* Arc track */}
       <path
         d={`M ${startX} ${startY} A ${r} ${r} 0 0 1 ${endX} ${endY}`}
         fill="none"
@@ -125,9 +92,8 @@ function Needle({ cents }: NeedleProps): React.ReactElement {
         strokeWidth="4"
         strokeLinecap="round"
       />
-      {/* In-tune zone: center 10 cents */}
       {(() => {
-        const zoneRad = (10 / 50) * (Math.PI / 3)
+        const zoneRad = (10 / 50) * (Math.PI / 3) // ±10 cents gives visual margin around the ±5-cent perceptual threshold
         const zs = cx + r * Math.sin(-zoneRad)
         const zy = cy - r * Math.cos(-zoneRad)
         const ze = cx + r * Math.sin(zoneRad)
@@ -143,7 +109,6 @@ function Needle({ cents }: NeedleProps): React.ReactElement {
           />
         )
       })()}
-      {/* Tick marks at -50, -25, 0, +25, +50 */}
       {[-50, -25, 0, 25, 50].map((c) => {
         const a = (c / 50) * (Math.PI / 3)
         const inner = r - 6
@@ -160,7 +125,6 @@ function Needle({ cents }: NeedleProps): React.ReactElement {
           />
         )
       })}
-      {/* Needle */}
       <line
         x1={cx}
         y1={cy}
@@ -171,13 +135,10 @@ function Needle({ cents }: NeedleProps): React.ReactElement {
         strokeLinecap="round"
         className={styles.needle}
       />
-      {/* Pivot dot */}
       <circle cx={cx} cy={cy} r="3.5" fill="var(--text-secondary)" />
     </svg>
   )
 }
-
-// ---- Component ----
 
 type TunerStatus = 'idle' | 'requesting' | 'running' | 'denied'
 
@@ -268,8 +229,6 @@ export default function ChromaticTuner(): React.ReactElement {
       startTuner().catch(() => { /* handled inside */ })
     }
   }, [status, startTuner, stopTuner])
-
-  // ---- Render helpers ----
 
   function renderDisplay(): React.ReactNode {
     if (status === 'denied') {
