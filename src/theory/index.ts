@@ -107,6 +107,25 @@ export function wrap(value: number, size: number): number {
 export const SHARP_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
 export const FLAT_NAMES  = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
 
+const A4_HZ   = 440
+const A4_MIDI = 69
+
+export interface NoteInfo {
+  name: string
+  octave: number
+  cents: number
+}
+
+// Sharps are the universal chromatic convention for tuners; enharmonic preference does not apply.
+export function freqToNoteInfo(hz: number): NoteInfo {
+  const midi = 12 * Math.log2(hz / A4_HZ) + A4_MIDI
+  const rounded = Math.round(midi)
+  const cents = Math.round((midi - rounded) * 100)
+  const pc = ((rounded % 12) + 12) % 12
+  const octave = Math.floor(rounded / 12) - 1
+  return { name: SHARP_NAMES[pc], octave, cents }
+}
+
 export function pcName(pc: number, enharmonicPrefs: Record<number, 'sharp' | 'flat'>): string {
   const norm = wrap(pc, 12)
   const opt = ENHARMONIC_OPTIONS[norm]

@@ -26,7 +26,7 @@ parity. Open both side by side during testing.
 - [x] Audio — scale playback (ascending arpeggio)
 - [x] Audio — chord playback (arpeggiate then strum)
 - [x] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
-- [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
+- [x] Chromatic tuner — microphone pitch detection, cents display, needle animation
 - [x] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
 - [x] Mobile layout — touch targets all ≥ 44pt (PR #89): HarmonyGrid columns, picker rows, reset button; LCD displays non-interactive; layout compacted (portrait 12px gaps, landscape 8px, max-width 1100px); keyboard/fretboard equal height in landscape; ScaleStrip flex layout in portrait eliminates tile overlap
 - [x] ScaleNavigator — split into two independent first-class sections: "Key & Mode" (`scale-logical`: ROOT/FAMILY/MODE knobs) and "Scale Explorer" (`scale-exploratory`: BRIGHTNESS/TENSION/VOLUME knobs); each has its own `SectionId`, visibility toggle, and drag-reorder slot in SectionMenu; "Key & Mode" hidden by default on mobile portrait, "Scale Explorer" visible by default
@@ -44,7 +44,7 @@ parity. Open both side by side during testing.
 - [x] FretboardVisualizer component (guitar fretboard, reads `guitarTuning` from store)
 - [x] Migrate Web Audio engine → `src/audio/index.ts` + `useAudio` hook
 - [x] Metronome component (BPM, time signature, tap tempo, downbeat accent)
-- [ ] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
+- [x] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
 - [ ] WheelModal (picker for key / mode / scale type selection) — deprioritized; may be superseded by swipe gestures on ScaleStrip; retain as accessibility fallback candidate
 - [ ] Shareable URLs (encode key + mode + scale type in query params)
 - [ ] Circle of Fifths visualizer — interactive; clicking a wedge drives the full app state (key, relative mode); integrated with the unified store
