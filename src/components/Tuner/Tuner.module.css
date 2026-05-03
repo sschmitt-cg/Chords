@@ -1,0 +1,131 @@
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ---- Section header ---- */
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ---- Start/Stop button ---- */
+
+.startStop {
+  min-width: 80px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 22px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.08s;
+  color: var(--text-on-action);
+  background: var(--action-primary);
+}
+
+.startStop:hover {
+  background: var(--action-primary-hover);
+}
+
+.startStop:active {
+  transform: scale(0.96);
+}
+
+.startStopActive {
+  background: var(--action-danger);
+}
+
+.startStopActive:hover {
+  background: var(--action-danger-hover);
+}
+
+/* ---- Display area ---- */
+
+.displayArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 140px;
+  justify-content: center;
+}
+
+/* ---- Status / idle message ---- */
+
+.message {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 16px 0;
+}
+
+/* ---- Note name + octave ---- */
+
+.noteDisplay {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.noteName {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.noteOctave {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  line-height: 1;
+}
+
+/* ---- SVG gauge ---- */
+
+.gauge {
+  width: 100%;
+  max-width: 180px;
+}
+
+.needle {
+  transition: x2 0.06s linear, y2 0.06s linear;
+}
+
+.inTuneArc {
+  transition: stroke 0.15s;
+}
+
+/* ---- Cents readout ---- */
+
+.centsDisplay {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.centsInTune {
+  color: var(--action-primary);
+}

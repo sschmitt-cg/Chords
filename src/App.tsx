@@ -10,13 +10,14 @@ import KeyboardVisualizer from './components/KeyboardVisualizer/index'
 import FretboardVisualizer from './components/FretboardVisualizer/index'
 import CircleOfFifths from './components/CircleOfFifths/index'
 import Metronome from './components/Metronome/index'
+import ChromaticTuner from './components/Tuner/index'
 import styles from './App.module.css'
 
 // Landscape panel assignments — fixed regardless of portrait section order
 // circle is rendered separately to the right of the navigator+strip column
 const LANDSCAPE_TOP: SectionId[]   = ['scale-logical', 'scale-exploratory', 'strip']
 const LANDSCAPE_LEFT: SectionId[]  = ['keyboard', 'fretboard']
-const LANDSCAPE_RIGHT: SectionId[] = ['harmony', 'metronome']
+const LANDSCAPE_RIGHT: SectionId[] = ['harmony', 'metronome', 'tuner']
 
 function renderSection(id: SectionId) {
   switch (id) {
@@ -28,6 +29,7 @@ function renderSection(id: SectionId) {
     case 'fretboard':         return <FretboardVisualizer />
     case 'harmony':           return <HarmonyGrid />
     case 'metronome':         return <Metronome />
+    case 'tuner':             return <ChromaticTuner />
   }
 }
 
