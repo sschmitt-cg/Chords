@@ -19,6 +19,12 @@ constraints, and current work status.
 
 ---
 
+## First-time setup
+
+If this repo was just created from the template, run the global command `/project-setup` once. It adds project-path-specific entries to `.claude/settings.json` and prompts for anything else project-specific.
+
+---
+
 ## Behavior rules
 
 ### Before writing any code
@@ -42,6 +48,9 @@ the wrong thing.
 - No boilerplate or generated comments.
 - Favor naming clarity over inline documentation.
 - Do not add comments or type annotations to code you didn't change.
+
+### Shell commands
+Run each shell command as a separate Bash call. Do not chain commands with `&&`, `||`, or `|` unless the compound form is the only practical way to achieve the result (e.g., piping to `head` to cap verbose output). This keeps individual commands auto-approvable without permission prompts.
 
 ### Scope discipline
 - Only modify files relevant to the current task.
