@@ -116,6 +116,7 @@ export interface NoteInfo {
   cents: number
 }
 
+// Sharps are the universal chromatic convention for tuners; enharmonic preference does not apply.
 export function freqToNoteInfo(hz: number): NoteInfo {
   const midi = 12 * Math.log2(hz / A4_HZ) + A4_MIDI
   const rounded = Math.round(midi)

@@ -1,8 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './Tuner.module.css'
-import { freqToNoteInfo } from '../../theory/index'
-import type { NoteInfo } from '../../theory/index'
+import { freqToNoteInfo, type NoteInfo } from '../../theory/index'
 
 const SILENCE_THRESHOLD = 0.005
 
