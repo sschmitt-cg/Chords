@@ -93,7 +93,20 @@ parity. Open both side by side during testing.
 
 ---
 
-## Phase 5 — Ear Training
+## Phase 5 — Layout Configuration
+
+- [ ] **User-configurable named layouts** — let users save named presets that record which sections
+  are visible and how they are arranged for each orientation (portrait vs landscape). Switching
+  presets instantly reconfigures the view without requiring manual toggle-and-drag each time.
+  Example presets: "Instrument Practice" (keyboard + fretboard + tuner + metronome), "Theory Study"
+  (harmony grid + scale strip + circle of fifths), "Compose" (harmony + scale explorer + metronome).
+  Design questions to resolve: preset storage (localStorage vs cloud), conflict-resolution when a
+  section added in a future update doesn't exist in a saved preset, and a discoverable UI surface
+  (bottom sheet, gear panel, or dedicated Layout screen).
+
+---
+
+## Phase 7 — Ear Training
 
 - [ ] Interval identification mode (play two notes, user identifies the interval)
 - [ ] Chord quality identification (play chord, user identifies major / minor / dim / aug / etc.)
@@ -102,7 +115,7 @@ parity. Open both side by side during testing.
 
 ---
 
-## Phase 6 — iOS App (Capacitor)
+## Phase 8 — iOS App (Capacitor)
 
 - [ ] Install and configure Capacitor (`@capacitor/core`, `@capacitor/ios`)
 - [ ] Bottom tab bar navigation (Explore / Practice / Visualize / Tools)
@@ -115,7 +128,7 @@ parity. Open both side by side during testing.
 
 ---
 
-## Phase 7 — Input Modalities
+## Phase 9 — Input Modalities
 
 - [ ] **Web MIDI input** — detect connected MIDI controllers; incoming notes light up
   keyboard, fretboard, and scale strip; simultaneous notes trigger chord detection
