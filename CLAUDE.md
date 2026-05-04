@@ -52,6 +52,8 @@ the wrong thing.
 ### Shell commands
 Run each shell command as a separate Bash call. Do not chain commands with `&&`, `||`, or `|` unless the compound form is the only practical way to achieve the result (e.g., piping to `head` to cap verbose output). This keeps individual commands auto-approvable without permission prompts.
 
+When working in a subdirectory or another project's directory, use `cd <path>` as its own Bash call first — the working directory persists between calls. Never write `cd <path> && <command>` as a single call.
+
 ### Scope discipline
 - Only modify files relevant to the current task.
 - Do not refactor surrounding code opportunistically.
@@ -66,6 +68,8 @@ Run each shell command as a separate Bash call. Do not chain commands with `&&`,
 - Never commit directly to `main`.
 - Never merge branches automatically.
 - Never force-push.
+
+**Before every `git commit`:** run `git branch --show-current` as a separate prior Bash call and confirm the output is not `main`. If it is `main`, stop and tell the user instead of committing.
 
 ### Commits
 - Small, focused commits with present-tense messages
