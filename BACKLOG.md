@@ -106,7 +106,7 @@ parity. Open both side by side during testing.
 
 ---
 
-## Phase 7 — Ear Training
+## Phase 6 — Ear Training
 
 - [ ] Interval identification mode (play two notes, user identifies the interval)
 - [ ] Chord quality identification (play chord, user identifies major / minor / dim / aug / etc.)
@@ -115,7 +115,7 @@ parity. Open both side by side during testing.
 
 ---
 
-## Phase 8 — iOS App (Capacitor)
+## Phase 7 — iOS App (Capacitor)
 
 - [ ] Install and configure Capacitor (`@capacitor/core`, `@capacitor/ios`)
 - [ ] Bottom tab bar navigation (Explore / Practice / Visualize / Tools)
@@ -128,7 +128,7 @@ parity. Open both side by side during testing.
 
 ---
 
-## Phase 9 — Input Modalities
+## Phase 8 — Input Modalities
 
 - [ ] **Web MIDI input** — detect connected MIDI controllers; incoming notes light up
   keyboard, fretboard, and scale strip; simultaneous notes trigger chord detection
