@@ -90,6 +90,14 @@ interesting within seconds. A user who comes back every day for a year should
 still be finding new things. Complexity should reveal itself progressively, not
 confront the user at the door.
 
+### Adaptable to the moment
+
+Different use contexts call for different layouts. A guitarist tuning before a rehearsal wants the
+tuner and metronome front and center; a theory student wants the harmony grid and scale strip. Named
+layout presets — user-saved configurations that control which sections are visible and how they are
+arranged for each orientation — are a planned capability that extends the app's utility without
+complicating the default experience. Presets are discovered when needed, not imposed upfront.
+
 ---
 
 ## Non-goals (current phase)
