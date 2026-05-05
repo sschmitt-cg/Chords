@@ -11,7 +11,7 @@ The original app (`index-legacy.html` + `styles.css` + `script.js`) is the
 reference implementation and must remain untouched until the new app reaches full
 parity. Open both side by side during testing.
 
-- [ ] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db)
+- [x] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db) — auto-handled: `computeDisplayScaleFromFamily` picks sharp vs flat by accidental count; diatonic spelling assigns unique letters per degree; no manual toggle needed
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
 - [x] Scale strip — correct note spelling for every key/mode combination
 - [ ] Scale strip — swipe/drag gestures (horizontal = mode shift, vertical = chromatic transposition; see Bugs/Polish for design notes)
@@ -70,7 +70,7 @@ parity. Open both side by side during testing.
 
 - [ ] Functional harmony labels on HarmonyGrid rows (T / S / D — Tonic / Subdominant / Dominant)
 - [x] Roman numeral analysis shown in ScaleStrip (chord quality: uppercase major, lowercase minor, °dim)
-- [ ] Roman numeral analysis in HarmonyGrid row headers
+- [x] Roman numeral analysis in HarmonyGrid row headers
 - [ ] Progression Builder component (4–8 chord slots, drag-to-reorder, loop playback)
 - [ ] Common progressions library (I–V–vi–IV, ii–V–I, 12-bar blues, etc.)
 - [ ] Parallel / relative mode panel (e.g. show C major ↔ A minor side by side)
