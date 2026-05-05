@@ -4,6 +4,8 @@
 
 import { useTonalStore } from '../../store/index'
 import { pcColorVar } from '../../theory/index'
+import { computeKeyboardVoicings } from '../../theory/voicings'
+import VoicingNavigator from '../VoicingNavigator/index'
 import styles from './KeyboardVisualizer.module.css'
 
 // White key layout: pc, midi, position-index
@@ -41,8 +43,10 @@ export default function KeyboardVisualizer() {
     selectedNotePc,
     globalHarmonyMax,
     rowHarmonyMaxOverrides,
+    keyboardVoicingIndex,
     setSelectedNote,
     setSelectedChord,
+    setKeyboardVoicingIndex,
   } = useTonalStore()
 
   const scalePcs = new Set(currentScale.pitchClasses)
@@ -55,13 +59,35 @@ export default function KeyboardVisualizer() {
     ? (rowHarmonyMaxOverrides.get(selectedRow.index) ?? globalHarmonyMax)
     : globalHarmonyMax
 
+  // Compute voicings when a chord is selected
+  const voicings = selectedRow ? computeKeyboardVoicings(selectedRow, effectiveMax) : []
+  const safeVoicingIndex = voicings.length > 0
+    ? Math.min(keyboardVoicingIndex, voicings.length - 1)
+    : 0
+  const activeVoicing = voicings[safeVoicingIndex] ?? null
+
+  // When a voicing is active, highlight exactly those MIDI notes.
+  // Otherwise fall back to all chord pitch classes (original behavior).
+  const voicingMidiSet: Set<number> = activeVoicing
+    ? new Set(activeVoicing.midiNotes)
+    : new Set()
+
   const chordPcs: Set<number> = selectedRow
     ? new Set(selectedRow.notes.filter(n => n.degree <= effectiveMax).map(n => n.pc))
     : new Set()
   const chordRootPc = selectedRow?.notes.find(n => n.degree === 1)?.pc ?? null
 
-  function getRole(pc: number): HighlightRole {
+  function getRole(pc: number, midi: number): HighlightRole {
     if (chordPcs.size) {
+      if (activeVoicing) {
+        // In voicing mode: highlight only the specific MIDI notes in the active voicing
+        if (voicingMidiSet.has(midi)) {
+          return pc === chordRootPc ? 'root' : 'tone'
+        }
+        // Dim other chord tones to scale level so the shape is visible
+        if (scalePcs.has(pc)) return 'scale'
+        return 'off'
+      }
       if (chordPcs.has(pc)) return pc === chordRootPc ? 'root' : 'tone'
       if (scalePcs.has(pc)) return 'scale'
       return 'off'
@@ -87,13 +113,21 @@ export default function KeyboardVisualizer() {
     }
   }
 
+  function handlePrevVoicing() {
+    setKeyboardVoicingIndex(Math.max(0, safeVoicingIndex - 1))
+  }
+
+  function handleNextVoicing() {
+    setKeyboardVoicingIndex(Math.min(voicings.length - 1, safeVoicingIndex + 1))
+  }
+
   return (
     <div className={styles.wrapper} aria-label="Piano keyboard">
       <div className={styles.shell} style={{ '--white-count': WHITE_COUNT } as React.CSSProperties}>
 
         {/* White keys */}
         {WHITE_KEYS.map(({ pc, midi }, idx) => {
-          const role = getRole(pc)
+          const role = getRole(pc, midi)
           return (
             <div
               key={midi}
@@ -119,7 +153,7 @@ export default function KeyboardVisualizer() {
 
         {/* Black keys — absolutely positioned */}
         {BLACK_KEYS.map(({ pc, midi, whiteIndex }) => {
-          const role = getRole(pc)
+          const role = getRole(pc, midi)
           // Center the black key over the gap between whiteIndex and whiteIndex+1
           const leftPct = ((whiteIndex + 1) / WHITE_COUNT) * 100
           return (
@@ -146,6 +180,18 @@ export default function KeyboardVisualizer() {
         })}
 
       </div>
+
+      {selectedRow && (
+        <VoicingNavigator
+          index={safeVoicingIndex}
+          total={voicings.length}
+          label={voicings[safeVoicingIndex]?.label}
+          onPrev={handlePrevVoicing}
+          onNext={handleNextVoicing}
+        />
+      )}
     </div>
   )
 }
+
+import React from 'react'

@@ -99,6 +99,10 @@ interface TonalStore {
   // Guitar tuning
   guitarTuning: GuitarTuning
 
+  // Voicing navigation (reset to 0 when selectedChord changes)
+  keyboardVoicingIndex: number
+  guitarVoicingIndex: number
+
   // Actions
   setKey: (pc: number) => void
   setFamily: (familyIndex: number) => void
@@ -117,6 +121,8 @@ interface TonalStore {
   setMuted: (muted: boolean) => void
   setVolume: (v: number) => void
   setGuitarTuning: (tuning: GuitarTuning) => void
+  setKeyboardVoicingIndex: (index: number) => void
+  setGuitarVoicingIndex: (index: number) => void
   setProgressionSlot: (slotIndex: number, chordIndex: number | null) => void
   setLoopPlaying: (playing: boolean) => void
 }
@@ -184,6 +190,9 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   volume: 0,
   lastVolume: 75,
   guitarTuning: STANDARD_TUNING,
+
+  keyboardVoicingIndex: 0,
+  guitarVoicingIndex: 0,
 
   // --- Key ---
   // pc is the desired tonal center (mode root); back-compute family root
@@ -380,7 +389,7 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     }
   },
 
-  setSelectedChord: (index) => set({ selectedChordIndex: index, selectedNotePc: null }),
+  setSelectedChord: (index) => set({ selectedChordIndex: index, selectedNotePc: null, keyboardVoicingIndex: 0, guitarVoicingIndex: 0 }),
   setSelectedNote: (pc) => set({ selectedNotePc: pc, selectedChordIndex: null }),
 
   setGlobalHarmonyMax: (max) => set({ globalHarmonyMax: max, rowHarmonyMaxOverrides: new Map() }),
@@ -400,6 +409,9 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     set(updates)
   },
   setGuitarTuning: (tuning) => set({ guitarTuning: tuning }),
+
+  setKeyboardVoicingIndex: (index) => set({ keyboardVoicingIndex: index }),
+  setGuitarVoicingIndex: (index) => set({ guitarVoicingIndex: index }),
 
   setProgressionSlot: (slotIndex, chordIndex) =>
     set((state) => {
