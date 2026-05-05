@@ -3,17 +3,11 @@ import { computeKeyboardVoicings, computeGuitarVoicings } from '../voicings'
 import { buildHarmonyRowsForScale, computeDisplayScale } from '../index'
 import type { GuitarTuning } from '../types'
 
-// ---- Shared fixtures ----
-
 const cMajorScale = computeDisplayScale(0, 'ionian')
 const rows = buildHarmonyRowsForScale(cMajorScale)
-// rows[0] = C major, rows[1] = Dm, rows[2] = Em, rows[4] = G7, etc.
 
 const STANDARD_TUNING: GuitarTuning = [64, 59, 55, 50, 45, 40]
-// Drop D tuning: low E → D
 const DROP_D_TUNING: GuitarTuning = [64, 59, 55, 50, 45, 38]
-
-// -------------------- KEYBOARD VOICINGS --------------------
 
 describe('computeKeyboardVoicings — triads', () => {
   it('returns 3 voicings for a major triad (root + 2 inversions)', () => {
@@ -101,8 +95,6 @@ describe('computeKeyboardVoicings — edge cases', () => {
     expect(voicings).toEqual([])
   })
 })
-
-// -------------------- GUITAR VOICINGS --------------------
 
 describe('computeGuitarVoicings — basic contract', () => {
   it('returns at least one voicing for a C major triad in standard tuning', () => {

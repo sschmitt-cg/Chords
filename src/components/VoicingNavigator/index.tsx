@@ -1,6 +1,4 @@
-// VoicingNavigator — prev/next control for cycling chord voicings.
-// Renders nothing when fewer than 2 voicings exist.
-
+import React from 'react'
 import styles from './VoicingNavigator.module.css'
 
 interface VoicingNavigatorProps {
@@ -44,5 +42,3 @@ export default function VoicingNavigator({
     </div>
   )
 }
-
-import React from 'react'

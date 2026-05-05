@@ -146,6 +146,7 @@ parity. Open both side by side during testing.
 
 - [ ] Vitest config uses `/// <reference types="vitest" />` triple-slash pattern (older); migrate to `import type { UserConfig } from 'vitest/config'` when upgrading Vitest
 - [ ] `computeRomans` test for non-7-note input tests an undocumented fallback — if the fallback behavior ever changes, this test will give a false signal; revisit when expanding theory test coverage
+- [ ] Voicing computation (`computeKeyboardVoicings` / `computeGuitarVoicings`) is recomputed on each chord/tuning/maxDegree change. Fast enough now, but not free. If profiling ever shows it as a bottleneck, consider a `Map` keyed by `(rootPc, quality, maxDegree, tuningSignature)` for memoization.
 
 ---
 

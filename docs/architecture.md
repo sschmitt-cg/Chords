@@ -27,9 +27,11 @@ state change. Components read from the store; they never recompute theory
 results themselves.
 
 ### Theory — one layer, no reimplementation
-All music theory logic lives in `src/theory/index.ts` as pure functions with no
-DOM or React dependencies. Nothing outside `theory/` should reimplement theory
-logic — not components, not the store, not the audio engine.
+All music theory logic lives in `src/theory/` as pure modules with no DOM or
+React dependencies (`index.ts` and `voicings.ts` currently). Nothing outside
+`theory/` should reimplement theory logic — not components, not the store, not
+the audio engine. As the theory layer grows, revisit how these modules are
+organized.
 
 ### Colors — always via the pitch class system
 12 CSS custom properties `--pc-0` through `--pc-11` are defined in
@@ -57,7 +59,8 @@ Every interactive element must meet these requirements, always:
 | `docs/product-vision.md` | Product goals, audiences, design principles |
 | `BACKLOG.md` | Phased feature backlog and current status |
 | `v2.html` | Vite entry point for the React app |
-| `src/theory/index.ts` | All music theory pure functions |
+| `src/theory/index.ts` | Core music theory pure functions |
+| `src/theory/voicings.ts` | Chord voicing computation (keyboard inversions + guitar fingerings) |
 | `src/theory/types.ts` | TypeScript interfaces for the theory layer |
 | `src/store/index.ts` | Zustand store — single source of truth |
 | `src/index.css` | Global styles + `--pc-0` through `--pc-11` pitch class colors |

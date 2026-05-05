@@ -1,10 +1,6 @@
-// KeyboardVisualizer — two-octave piano with scale/chord/note highlights
-// White keys: C D E F G A B C D E F G A B (MIDI 60–83)
-// Black keys positioned relative to their white-key neighbors
-
+import React from 'react'
 import { useTonalStore } from '../../store/index'
 import { pcColorVar } from '../../theory/index'
-import { computeKeyboardVoicings } from '../../theory/voicings'
 import VoicingNavigator from '../VoicingNavigator/index'
 import styles from './KeyboardVisualizer.module.css'
 
@@ -16,8 +12,8 @@ const WHITE_KEYS: { pc: number; midi: number }[] = [
   { pc: 5, midi: 77 }, { pc: 7, midi: 79 }, { pc: 9, midi: 81 }, { pc: 11, midi: 83 },
 ]
 
-// Black key layout: pc, midi, position between white keys (fractional white-key index)
-// Position is the left edge expressed as a fraction of total white keys (14)
+// Black key layout — position is (whiteIndex + 1) / WHITE_COUNT expressed as a percentage,
+// centering the key over the gap between white keys at that index and the next.
 const BLACK_KEYS: { pc: number; midi: number; whiteIndex: number }[] = [
   { pc: 1,  midi: 61, whiteIndex: 0  },
   { pc: 3,  midi: 63, whiteIndex: 1  },
@@ -35,7 +31,7 @@ const WHITE_COUNT = WHITE_KEYS.length  // 14
 
 type HighlightRole = 'root' | 'tone' | 'scale' | 'off'
 
-export default function KeyboardVisualizer() {
+export default function KeyboardVisualizer(): React.ReactElement {
   const {
     currentScale,
     harmonyRows,
@@ -43,6 +39,7 @@ export default function KeyboardVisualizer() {
     selectedNotePc,
     globalHarmonyMax,
     rowHarmonyMaxOverrides,
+    keyboardVoicings,
     keyboardVoicingIndex,
     setSelectedNote,
     setSelectedChord,
@@ -59,8 +56,7 @@ export default function KeyboardVisualizer() {
     ? (rowHarmonyMaxOverrides.get(selectedRow.index) ?? globalHarmonyMax)
     : globalHarmonyMax
 
-  // Compute voicings when a chord is selected
-  const voicings = selectedRow ? computeKeyboardVoicings(selectedRow, effectiveMax) : []
+  const voicings = keyboardVoicings
   const safeVoicingIndex = voicings.length > 0
     ? Math.min(keyboardVoicingIndex, voicings.length - 1)
     : 0
@@ -154,7 +150,6 @@ export default function KeyboardVisualizer() {
         {/* Black keys — absolutely positioned */}
         {BLACK_KEYS.map(({ pc, midi, whiteIndex }) => {
           const role = getRole(pc, midi)
-          // Center the black key over the gap between whiteIndex and whiteIndex+1
           const leftPct = ((whiteIndex + 1) / WHITE_COUNT) * 100
           return (
             <div
@@ -193,5 +188,3 @@ export default function KeyboardVisualizer() {
     </div>
   )
 }
-
-import React from 'react'

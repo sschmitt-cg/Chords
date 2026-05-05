@@ -1,10 +1,6 @@
-// FretboardVisualizer — guitar fretboard 0–12 frets, tuning-aware
-// Reads guitarTuning from the store (index 0 = high E, index 5 = low E).
-// Highlights scale/chord/note tones by pitch class color.
-
+import React from 'react'
 import { useTonalStore } from '../../store/index'
 import { pcColorVar, wrap } from '../../theory/index'
-import { computeGuitarVoicings } from '../../theory/voicings'
 import VoicingNavigator from '../VoicingNavigator/index'
 import styles from './FretboardVisualizer.module.css'
 
@@ -14,7 +10,7 @@ const MARKER_FRETS = [3, 5, 7, 9, 12]
 
 type HighlightRole = 'root' | 'tone' | 'scale' | 'off' | 'muted'
 
-export default function FretboardVisualizer() {
+export default function FretboardVisualizer(): React.ReactElement {
   const {
     currentScale,
     harmonyRows,
@@ -23,6 +19,7 @@ export default function FretboardVisualizer() {
     globalHarmonyMax,
     rowHarmonyMaxOverrides,
     guitarTuning,
+    guitarVoicings,
     guitarVoicingIndex,
     setSelectedNote,
     setSelectedChord,
@@ -39,8 +36,7 @@ export default function FretboardVisualizer() {
     ? (rowHarmonyMaxOverrides.get(selectedRow.index) ?? globalHarmonyMax)
     : globalHarmonyMax
 
-  // Compute guitar voicings when a chord is selected
-  const voicings = selectedRow ? computeGuitarVoicings(selectedRow, effectiveMax, guitarTuning) : []
+  const voicings = guitarVoicings
   const safeVoicingIndex = voicings.length > 0
     ? Math.min(guitarVoicingIndex, voicings.length - 1)
     : 0
@@ -51,8 +47,8 @@ export default function FretboardVisualizer() {
     : new Set()
   const chordRootPc = selectedRow?.notes.find(n => n.degree === 1)?.pc ?? null
 
-  // In voicing mode, build a per-string lookup: stringIndex → fret or null (muted)
-  // stringIndex 0 = high E; this matches guitarTuning indexing.
+  // Per-string fret assignment for the active voicing (stringIndex → fret or null for muted).
+  // guitarTuning[0] = high E (string 0), so this map is index-aligned with the tuning array.
   const voicingFretMap: Map<number, number | null> = new Map()
   if (activeVoicing) {
     activeVoicing.frets.forEach((fret, si) => {
@@ -109,9 +105,6 @@ export default function FretboardVisualizer() {
   function handleNextVoicing() {
     setGuitarVoicingIndex(Math.min(voicings.length - 1, safeVoicingIndex + 1))
   }
-
-  // guitarTuning[0] = high E (top string visually), guitarTuning[5] = low E (bottom)
-  // For display we render strings top-to-bottom, so string index 0 is at the top.
 
   return (
     <div className={styles.wrapper} aria-label="Guitar fretboard">
@@ -218,6 +211,3 @@ export default function FretboardVisualizer() {
     </div>
   )
 }
-
-// React is needed for JSX Fragment
-import React from 'react'
