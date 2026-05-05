@@ -47,8 +47,6 @@ export default function FretboardVisualizer(): React.ReactElement {
     : new Set()
   const chordRootPc = selectedRow?.notes.find(n => n.degree === 1)?.pc ?? null
 
-  // Per-string fret assignment for the active voicing (stringIndex → fret or null for muted).
-  // guitarTuning[0] = high E (string 0), so this map is index-aligned with the tuning array.
   const voicingFretMap: Map<number, number | null> = new Map()
   if (activeVoicing) {
     activeVoicing.frets.forEach((fret, si) => {
@@ -60,14 +58,11 @@ export default function FretboardVisualizer(): React.ReactElement {
     if (activeVoicing) {
       const assignedFret = voicingFretMap.get(stringIdx)
       if (assignedFret === null) {
-        // String is explicitly muted in this voicing — show nothing
         return 'off'
       }
       if (assignedFret === fret) {
-        // This is exactly the fret prescribed by the voicing
         return pc === chordRootPc ? 'root' : 'tone'
       }
-      // Not the active fret — fade to scale or off
       if (scalePcs.has(pc)) return 'scale'
       return 'off'
     }

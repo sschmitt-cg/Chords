@@ -25,7 +25,7 @@ function stackMidi(orderedPcs: number[], baseMidi: number): number[] {
   return notes
 }
 
-// Drop-2: swap the second-highest note down an octave. Only defined for 4-note chords.
+// Drop-2 voicing: second-highest note dropped an octave.
 function buildDrop2(closeMidi: number[]): number[] | null {
   if (closeMidi.length !== 4) return null
   const sorted = [...closeMidi].sort((a, b) => a - b)
@@ -34,7 +34,7 @@ function buildDrop2(closeMidi: number[]): number[] | null {
   return dropped.sort((a, b) => a - b)
 }
 
-// Drop-3: swap the third-highest note down an octave. Only defined for 4-note chords.
+// Drop-3 voicing: third-highest note dropped an octave.
 function buildDrop3(closeMidi: number[]): number[] | null {
   if (closeMidi.length !== 4) return null
   const sorted = [...closeMidi].sort((a, b) => a - b)
@@ -95,8 +95,6 @@ function isStandardTuning(tuning: GuitarTuning): boolean {
   return tuning.every((v, i) => v === STANDARD_TUNING[i])
 }
 
-// Note omission rules by chord size: for larger chords the 3rd, 7th, and the
-// characteristic upper extension are essential; the root and 5th are optional.
 // This follows standard jazz voicing practice where the 3rd/7th define quality
 // and the 5th is typically redundant.
 function partitionEssential(
@@ -357,7 +355,6 @@ export function computeGuitarVoicings(
 
   const voicings: GuitarVoicing[] = []
 
-  // Curated shapes only for standard tuning — they are validated before inclusion
   if (isStandardTuning(tuning)) {
     for (const shape of CURATED_SHAPES) {
       if (shape.rootPc !== rootPc) continue
@@ -367,7 +364,6 @@ export function computeGuitarVoicings(
     }
   }
 
-  // Algorithmic layer always runs — covers all tunings and supplemental voicings
   const algorithmic = computeAlgorithmicVoicings(row, maxDegree, tuning)
   voicings.push(...algorithmic)
 

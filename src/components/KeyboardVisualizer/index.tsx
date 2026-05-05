@@ -62,8 +62,6 @@ export default function KeyboardVisualizer(): React.ReactElement {
     : 0
   const activeVoicing = voicings[safeVoicingIndex] ?? null
 
-  // When a voicing is active, highlight exactly those MIDI notes.
-  // Otherwise fall back to all chord pitch classes (original behavior).
   const voicingMidiSet: Set<number> = activeVoicing
     ? new Set(activeVoicing.midiNotes)
     : new Set()
@@ -76,11 +74,9 @@ export default function KeyboardVisualizer(): React.ReactElement {
   function getRole(pc: number, midi: number): HighlightRole {
     if (chordPcs.size) {
       if (activeVoicing) {
-        // In voicing mode: highlight only the specific MIDI notes in the active voicing
         if (voicingMidiSet.has(midi)) {
           return pc === chordRootPc ? 'root' : 'tone'
         }
-        // Dim other chord tones to scale level so the shape is visible
         if (scalePcs.has(pc)) return 'scale'
         return 'off'
       }

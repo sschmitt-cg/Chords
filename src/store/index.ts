@@ -124,7 +124,6 @@ interface TonalStore {
   keyboardVoicingIndex: number
   guitarVoicingIndex: number
 
-  // Derived voicings for the selected chord (recomputed when chord/tuning/maxDegree changes)
   keyboardVoicings: KeyboardVoicing[]
   guitarVoicings: GuitarVoicing[]
 
