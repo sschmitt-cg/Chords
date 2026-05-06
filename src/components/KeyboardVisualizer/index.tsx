@@ -57,7 +57,6 @@ export default function KeyboardVisualizer(): React.ReactElement {
     : globalHarmonyMax
 
   const voicings = keyboardVoicings
-  // -1 means "All notes" — no specific voicing active
   const voicingActive = keyboardVoicingIndex >= 0 && voicings.length > 0
   const safeVoicingIndex = voicingActive
     ? Math.min(keyboardVoicingIndex, voicings.length - 1)
@@ -108,7 +107,6 @@ export default function KeyboardVisualizer(): React.ReactElement {
   }
 
   function handlePrevVoicing() {
-    // Step back to -1 ("All notes") when already at voicing 0
     setKeyboardVoicingIndex(keyboardVoicingIndex <= 0 ? -1 : keyboardVoicingIndex - 1)
   }
 

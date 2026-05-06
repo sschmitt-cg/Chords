@@ -120,7 +120,6 @@ interface TonalStore {
   // Guitar tuning
   guitarTuning: GuitarTuning
 
-  // Voicing navigation (-1 = "All notes", ≥ 0 = specific voicing; reset to -1 on chord change)
   keyboardVoicingIndex: number
   guitarVoicingIndex: number
 

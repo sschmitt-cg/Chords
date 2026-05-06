@@ -2,7 +2,6 @@ import React from 'react'
 import styles from './VoicingNavigator.module.css'
 
 interface VoicingNavigatorProps {
-  // -1 = "All notes" state; 0..total-1 = specific voicing
   index: number
   total: number
   label?: string

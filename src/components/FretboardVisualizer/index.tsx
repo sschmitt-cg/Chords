@@ -37,7 +37,6 @@ export default function FretboardVisualizer(): React.ReactElement {
     : globalHarmonyMax
 
   const voicings = guitarVoicings
-  // -1 means "All notes" — no specific voicing active
   const voicingActive = guitarVoicingIndex >= 0 && voicings.length > 0
   const safeVoicingIndex = voicingActive
     ? Math.min(guitarVoicingIndex, voicings.length - 1)
@@ -96,7 +95,6 @@ export default function FretboardVisualizer(): React.ReactElement {
   }
 
   function handlePrevVoicing() {
-    // Step back to -1 ("All notes") when already at voicing 0
     setGuitarVoicingIndex(guitarVoicingIndex <= 0 ? -1 : guitarVoicingIndex - 1)
   }
 
