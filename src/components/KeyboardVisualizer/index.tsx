@@ -114,6 +114,15 @@ export default function KeyboardVisualizer(): React.ReactElement {
     setKeyboardVoicingIndex(Math.min(voicings.length - 1, keyboardVoicingIndex + 1))
   }
 
+  let description: string
+  if (!selectedRow) {
+    description = 'all scale notes, root emphasized'
+  } else if (keyboardVoicingIndex < 0) {
+    description = 'all chord notes, root emphasized'
+  } else {
+    description = `voicing ${keyboardVoicingIndex + 1} of ${voicings.length}, root emphasized`
+  }
+
   return (
     <div className={styles.wrapper} aria-label="Piano keyboard">
       <div className={styles.shell} style={{ '--white-count': WHITE_COUNT } as React.CSSProperties}>
@@ -173,15 +182,13 @@ export default function KeyboardVisualizer(): React.ReactElement {
 
       </div>
 
-      {selectedRow && (
-        <VoicingNavigator
-          index={keyboardVoicingIndex}
-          total={voicings.length}
-          label={voicings[safeVoicingIndex]?.label}
-          onPrev={handlePrevVoicing}
-          onNext={handleNextVoicing}
-        />
-      )}
+      <VoicingNavigator
+        description={description}
+        index={keyboardVoicingIndex}
+        total={selectedRow ? voicings.length : 0}
+        onPrev={handlePrevVoicing}
+        onNext={handleNextVoicing}
+      />
     </div>
   )
 }

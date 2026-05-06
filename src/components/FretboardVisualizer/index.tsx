@@ -102,6 +102,15 @@ export default function FretboardVisualizer(): React.ReactElement {
     setGuitarVoicingIndex(Math.min(voicings.length - 1, guitarVoicingIndex + 1))
   }
 
+  let description: string
+  if (!selectedRow) {
+    description = 'all scale notes, root squared'
+  } else if (guitarVoicingIndex < 0) {
+    description = 'all chord notes, root squared'
+  } else {
+    description = `voicing ${guitarVoicingIndex + 1} of ${voicings.length}, root squared`
+  }
+
   return (
     <div className={styles.wrapper} aria-label="Guitar fretboard">
       <div
@@ -196,14 +205,13 @@ export default function FretboardVisualizer(): React.ReactElement {
 
       </div>
 
-      {selectedRow && (
-        <VoicingNavigator
-          index={guitarVoicingIndex}
-          total={voicings.length}
-          onPrev={handlePrevVoicing}
-          onNext={handleNextVoicing}
-        />
-      )}
+      <VoicingNavigator
+        description={description}
+        index={guitarVoicingIndex}
+        total={selectedRow ? voicings.length : 0}
+        onPrev={handlePrevVoicing}
+        onNext={handleNextVoicing}
+      />
     </div>
   )
 }

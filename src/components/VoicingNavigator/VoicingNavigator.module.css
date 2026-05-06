@@ -4,7 +4,8 @@
   justify-content: center;
   gap: 6px;
   margin-top: 6px;
-  /* 44pt minimum touch area per Apple HIG — buttons provide their own target */
+  min-height: 44px;
+  /* 44pt row height keeps layout stable whether or not buttons are rendered */
 }
 
 .btn {
