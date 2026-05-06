@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback } from 'react'
+import { flushSync } from 'react-dom'
 import * as htmlToImage from 'html-to-image'
 import SectionMenu from '../SectionMenu/SectionMenu'
 import ShareCard from '../ShareCard/ShareCard'
@@ -21,7 +22,9 @@ export default function AppHeader() {
 
   const handleShare = useCallback(async () => {
     if (isSharing || !shareCardRef.current) return
-    setIsSharing(true)
+    // flushSync forces the re-render to complete before toPng reads the DOM,
+    // so the share card's footer URL reflects the current window.location.href.
+    flushSync(() => setIsSharing(true))
     try {
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
         backgroundColor: '#1a2660',
