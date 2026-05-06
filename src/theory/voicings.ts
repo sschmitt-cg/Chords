@@ -144,8 +144,11 @@ interface CuratedShape {
 
 const CURATED_SHAPES: CuratedShape[] = [
   { label: 'Open C',     rootPc: 0,  frets: [null, 3, 2, 0, 1, 0] },
+  { label: 'Open Cmaj7', rootPc: 0,  frets: [0, 0, 0, 2, 3, null] },
   { label: 'Open G',     rootPc: 7,  frets: [3, 2, 0, 0, 0, 3] },
+  { label: 'Open Gmaj7', rootPc: 7,  frets: [2, 0, 0, 0, 2, 3] },
   { label: 'Open D',     rootPc: 2,  frets: [2, 3, 2, 0, null, null] },
+  { label: 'Open Dmaj7', rootPc: 2,  frets: [2, 2, 2, 0, null, null] },
   { label: 'Open A',     rootPc: 9,  frets: [0, 2, 2, 2, 0, null] },
   { label: 'Open E',     rootPc: 4,  frets: [0, 0, 1, 2, 2, 0] },
   { label: 'Open Am',    rootPc: 9,  frets: [0, 1, 2, 2, 0, null] },
@@ -162,6 +165,48 @@ const CURATED_SHAPES: CuratedShape[] = [
   { label: 'Open Am7',   rootPc: 9,  frets: [0, 1, 0, 2, 0, null] },
   { label: 'Open Dm7',   rootPc: 2,  frets: [1, 1, 2, 0, null, null] },
 ]
+
+interface BarreTemplate {
+  label: string
+  rootStringIdx: number
+  relFrets: (number | null)[]
+}
+
+// Relative fret offsets from root position (root string is always 0).
+// E-shape: root on string 5 (low E). A-shape: root on string 4 (A).
+// Derived from the matching open chord shape, so the same voicing quality applies at any root.
+const BARRE_TEMPLATES: BarreTemplate[] = [
+  { label: 'E-shape', rootStringIdx: 5, relFrets: [0, 0, 1, 2, 2, 0] },
+  { label: 'E-shape', rootStringIdx: 5, relFrets: [0, 0, 0, 2, 2, 0] },
+  { label: 'E-shape', rootStringIdx: 5, relFrets: [0, 0, 1, 1, 2, 0] },
+  { label: 'E-shape', rootStringIdx: 5, relFrets: [0, 3, 0, 2, 2, 0] },
+  { label: 'E-shape', rootStringIdx: 5, relFrets: [0, 3, 1, 2, 2, 0] },
+  { label: 'A-shape', rootStringIdx: 4, relFrets: [0, 2, 2, 2, 0, null] },
+  { label: 'A-shape', rootStringIdx: 4, relFrets: [0, 1, 2, 2, 0, null] },
+  { label: 'A-shape', rootStringIdx: 4, relFrets: [0, 2, 1, 2, 0, null] },
+  { label: 'A-shape', rootStringIdx: 4, relFrets: [0, 1, 0, 2, 0, null] },
+  { label: 'A-shape', rootStringIdx: 4, relFrets: [0, 2, 0, 2, 0, null] },
+]
+
+function computeBarreVoicings(
+  rootPc: number,
+  chordPcs: Set<number>,
+  essentialSet: Set<number>,
+  tuning: GuitarTuning,
+): GuitarVoicing[] {
+  const voicings: GuitarVoicing[] = []
+  for (const template of BARRE_TEMPLATES) {
+    const rootStringPc = wrap(tuning[template.rootStringIdx], 12)
+    const shift = wrap(rootPc - rootStringPc, 12)
+    if (shift > 9) continue
+    const frets: (number | null)[] = template.relFrets.map(f => f === null ? null : f + shift)
+    const shape: CuratedShape = { label: template.label, rootPc, frets }
+    if (validateShape(shape, chordPcs, essentialSet, rootPc, tuning)) {
+      voicings.push({ label: template.label, frets })
+    }
+  }
+  return voicings
+}
 
 function validateShape(
   shape: CuratedShape,
@@ -362,6 +407,8 @@ export function computeGuitarVoicings(
         voicings.push({ label: shape.label, frets: shape.frets })
       }
     }
+    const barreVoicings = computeBarreVoicings(rootPc, chordPcs, essentialSet, tuning)
+    voicings.push(...barreVoicings)
   }
 
   const algorithmic = computeAlgorithmicVoicings(row, maxDegree, tuning)

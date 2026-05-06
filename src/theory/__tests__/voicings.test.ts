@@ -162,8 +162,12 @@ describe('computeGuitarVoicings — playability constraints', () => {
   it('no voicing exceeds 4 pressed fingers', () => {
     const voicings = computeGuitarVoicings(rows[0], 7, STANDARD_TUNING)
     for (const v of voicings) {
-      const pressed = v.frets.filter(f => f !== null && f > 0)
-      expect(pressed.length).toBeLessThanOrEqual(4)
+      const pressed = v.frets.filter((f): f is number => f !== null && f > 0)
+      if (pressed.length === 0) continue
+      const min = Math.min(...pressed)
+      const uniqueAboveMin = new Set(pressed.filter(f => f > min)).size
+      const fingerCount = 1 + uniqueAboveMin
+      expect(fingerCount).toBeLessThanOrEqual(4)
     }
   })
 

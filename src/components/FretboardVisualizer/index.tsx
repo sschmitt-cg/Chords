@@ -59,7 +59,7 @@ export default function FretboardVisualizer(): React.ReactElement {
     if (activeVoicing) {
       const assignedFret = voicingFretMap.get(stringIdx)
       if (assignedFret === null) {
-        return 'off'
+        return fret === 0 ? 'muted' : 'off'
       }
       if (assignedFret === fret) {
         return pc === chordRootPc ? 'root' : 'tone'
@@ -181,8 +181,13 @@ export default function FretboardVisualizer(): React.ReactElement {
                       <div className={fret === 1 ? styles.nut : styles.fretWire} aria-hidden="true" />
                     )}
 
-                    {/* Note dot — only rendered when role is not 'off' */}
-                    {role !== 'off' && (
+                    {/* Muted string X — only at open slot, non-interactive */}
+                    {role === 'muted' && (
+                      <div className={[styles.dot, styles.role_muted, styles.dotOpen].join(' ')} aria-hidden="true" />
+                    )}
+
+                    {/* Note dot — only rendered when role is not 'off' or 'muted' */}
+                    {role !== 'off' && role !== 'muted' && (
                       <button
                         className={[
                           styles.dot,
