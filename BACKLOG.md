@@ -46,7 +46,7 @@ parity. Open both side by side during testing.
 - [x] Metronome component (BPM, time signature, tap tempo, downbeat accent)
 - [x] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
 - [ ] WheelModal (picker for key / mode / scale type selection) — deprioritized; may be superseded by swipe gestures on ScaleStrip; retain as accessibility fallback candidate
-- [ ] Shareable URLs (encode key + mode + scale type in query params)
+- [x] Shareable URLs (encode key + mode + scale type in query params)
 - [ ] Circle of Fifths visualizer — interactive; clicking a wedge drives the full app state (key, relative mode); integrated with the unified store
 
 ---
