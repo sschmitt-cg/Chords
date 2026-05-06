@@ -90,6 +90,10 @@ interesting within seconds. A user who comes back every day for a year should
 still be finding new things. Complexity should reveal itself progressively, not
 confront the user at the door.
 
+### Mobile as a first-class surface
+
+The app lives on phones as much as it does on desktops — a guitarist reaching for a reference mid-practice, a student on the couch, a teacher projecting from a tablet. Every feature must feel intentional at phone size, not like a desktop layout that was made to fit. Touch targets are never an afterthought; layout decisions are made with portrait and landscape both in mind from the start. If a control works well on desktop but feels awkward to tap, it is not done.
+
 ### Adaptable to the moment
 
 Different use contexts call for different layouts. A guitarist tuning before a rehearsal wants the

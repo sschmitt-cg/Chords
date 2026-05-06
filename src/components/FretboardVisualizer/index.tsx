@@ -1,18 +1,16 @@
-// FretboardVisualizer — guitar fretboard 0–12 frets, tuning-aware
-// Reads guitarTuning from the store (index 0 = high E, index 5 = low E).
-// Highlights scale/chord/note tones by pitch class color.
-
+import React from 'react'
 import { useTonalStore } from '../../store/index'
 import { pcColorVar, wrap } from '../../theory/index'
+import VoicingNavigator from '../VoicingNavigator/index'
 import styles from './FretboardVisualizer.module.css'
 
 const FRET_COUNT = 13  // frets 0–12
 const STRING_COUNT = 6
 const MARKER_FRETS = [3, 5, 7, 9, 12]
 
-type HighlightRole = 'root' | 'tone' | 'scale' | 'off'
+type HighlightRole = 'root' | 'tone' | 'scale' | 'off' | 'muted'
 
-export default function FretboardVisualizer() {
+export default function FretboardVisualizer(): React.ReactElement {
   const {
     currentScale,
     harmonyRows,
@@ -21,8 +19,11 @@ export default function FretboardVisualizer() {
     globalHarmonyMax,
     rowHarmonyMaxOverrides,
     guitarTuning,
+    guitarVoicings,
+    guitarVoicingIndex,
     setSelectedNote,
     setSelectedChord,
+    setGuitarVoicingIndex,
   } = useTonalStore()
 
   const scalePcs = new Set(currentScale.pitchClasses)
@@ -35,12 +36,38 @@ export default function FretboardVisualizer() {
     ? (rowHarmonyMaxOverrides.get(selectedRow.index) ?? globalHarmonyMax)
     : globalHarmonyMax
 
+  const voicings = guitarVoicings
+  const voicingActive = guitarVoicingIndex >= 0 && voicings.length > 0
+  const safeVoicingIndex = voicingActive
+    ? Math.min(guitarVoicingIndex, voicings.length - 1)
+    : 0
+  const activeVoicing = voicingActive ? (voicings[safeVoicingIndex] ?? null) : null
+
   const chordPcs: Set<number> = selectedRow
     ? new Set(selectedRow.notes.filter(n => n.degree <= effectiveMax).map(n => n.pc))
     : new Set()
   const chordRootPc = selectedRow?.notes.find(n => n.degree === 1)?.pc ?? null
 
-  function getRole(pc: number): HighlightRole {
+  const voicingFretMap: Map<number, number | null> = new Map()
+  if (activeVoicing) {
+    activeVoicing.frets.forEach((fret, si) => {
+      voicingFretMap.set(si, fret)
+    })
+  }
+
+  function getRole(pc: number, stringIdx: number, fret: number): HighlightRole {
+    if (activeVoicing) {
+      const assignedFret = voicingFretMap.get(stringIdx)
+      if (assignedFret === null) {
+        return 'off'
+      }
+      if (assignedFret === fret) {
+        return pc === chordRootPc ? 'root' : 'tone'
+      }
+      // Only voicing positions shown; scale context is noise when viewing a fingering
+      return 'off'
+    }
+
     if (chordPcs.size) {
       if (chordPcs.has(pc)) return pc === chordRootPc ? 'root' : 'tone'
       if (scalePcs.has(pc)) return 'scale'
@@ -67,8 +94,22 @@ export default function FretboardVisualizer() {
     }
   }
 
-  // guitarTuning[0] = high E (top string visually), guitarTuning[5] = low E (bottom)
-  // For display we render strings top-to-bottom, so string index 0 is at the top.
+  function handlePrevVoicing() {
+    setGuitarVoicingIndex(guitarVoicingIndex <= 0 ? -1 : guitarVoicingIndex - 1)
+  }
+
+  function handleNextVoicing() {
+    setGuitarVoicingIndex(Math.min(voicings.length - 1, guitarVoicingIndex + 1))
+  }
+
+  let description: string
+  if (!selectedRow) {
+    description = 'all scale notes, root squared'
+  } else if (guitarVoicingIndex < 0) {
+    description = 'all chord notes, root squared'
+  } else {
+    description = `voicing ${guitarVoicingIndex + 1} of ${voicings.length}, root squared`
+  }
 
   return (
     <div className={styles.wrapper} aria-label="Guitar fretboard">
@@ -126,7 +167,7 @@ export default function FretboardVisualizer() {
               {Array.from({ length: FRET_COUNT }, (_, fret) => {
                 const pc = wrap(openPc + fret, 12)
                 const midi = openMidi + fret
-                const role = getRole(pc)
+                const role = getRole(pc, stringIdx, fret)
                 const isOpen = fret === 0
 
                 return (
@@ -163,9 +204,14 @@ export default function FretboardVisualizer() {
         })}
 
       </div>
+
+      <VoicingNavigator
+        description={description}
+        index={guitarVoicingIndex}
+        total={selectedRow ? voicings.length : 0}
+        onPrev={handlePrevVoicing}
+        onNext={handleNextVoicing}
+      />
     </div>
   )
 }
-
-// React is needed for JSX Fragment
-import React from 'react'

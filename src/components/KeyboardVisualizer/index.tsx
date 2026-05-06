@@ -1,9 +1,7 @@
-// KeyboardVisualizer — two-octave piano with scale/chord/note highlights
-// White keys: C D E F G A B C D E F G A B (MIDI 60–83)
-// Black keys positioned relative to their white-key neighbors
-
+import React from 'react'
 import { useTonalStore } from '../../store/index'
 import { pcColorVar } from '../../theory/index'
+import VoicingNavigator from '../VoicingNavigator/index'
 import styles from './KeyboardVisualizer.module.css'
 
 // White key layout: pc, midi, position-index
@@ -14,8 +12,8 @@ const WHITE_KEYS: { pc: number; midi: number }[] = [
   { pc: 5, midi: 77 }, { pc: 7, midi: 79 }, { pc: 9, midi: 81 }, { pc: 11, midi: 83 },
 ]
 
-// Black key layout: pc, midi, position between white keys (fractional white-key index)
-// Position is the left edge expressed as a fraction of total white keys (14)
+// Black key layout — position is (whiteIndex + 1) / WHITE_COUNT expressed as a percentage,
+// centering the key over the gap between white keys at that index and the next.
 const BLACK_KEYS: { pc: number; midi: number; whiteIndex: number }[] = [
   { pc: 1,  midi: 61, whiteIndex: 0  },
   { pc: 3,  midi: 63, whiteIndex: 1  },
@@ -33,7 +31,7 @@ const WHITE_COUNT = WHITE_KEYS.length  // 14
 
 type HighlightRole = 'root' | 'tone' | 'scale' | 'off'
 
-export default function KeyboardVisualizer() {
+export default function KeyboardVisualizer(): React.ReactElement {
   const {
     currentScale,
     harmonyRows,
@@ -41,8 +39,11 @@ export default function KeyboardVisualizer() {
     selectedNotePc,
     globalHarmonyMax,
     rowHarmonyMaxOverrides,
+    keyboardVoicings,
+    keyboardVoicingIndex,
     setSelectedNote,
     setSelectedChord,
+    setKeyboardVoicingIndex,
   } = useTonalStore()
 
   const scalePcs = new Set(currentScale.pitchClasses)
@@ -55,13 +56,31 @@ export default function KeyboardVisualizer() {
     ? (rowHarmonyMaxOverrides.get(selectedRow.index) ?? globalHarmonyMax)
     : globalHarmonyMax
 
+  const voicings = keyboardVoicings
+  const voicingActive = keyboardVoicingIndex >= 0 && voicings.length > 0
+  const safeVoicingIndex = voicingActive
+    ? Math.min(keyboardVoicingIndex, voicings.length - 1)
+    : 0
+  const activeVoicing = voicingActive ? (voicings[safeVoicingIndex] ?? null) : null
+
+  const voicingMidiSet: Set<number> = activeVoicing
+    ? new Set(activeVoicing.midiNotes)
+    : new Set()
+
   const chordPcs: Set<number> = selectedRow
     ? new Set(selectedRow.notes.filter(n => n.degree <= effectiveMax).map(n => n.pc))
     : new Set()
   const chordRootPc = selectedRow?.notes.find(n => n.degree === 1)?.pc ?? null
 
-  function getRole(pc: number): HighlightRole {
+  function getRole(pc: number, midi: number): HighlightRole {
     if (chordPcs.size) {
+      if (activeVoicing) {
+        // Only voicing notes shown; scale context is noise when viewing a fingering
+        if (voicingMidiSet.has(midi)) {
+          return pc === chordRootPc ? 'root' : 'tone'
+        }
+        return 'off'
+      }
       if (chordPcs.has(pc)) return pc === chordRootPc ? 'root' : 'tone'
       if (scalePcs.has(pc)) return 'scale'
       return 'off'
@@ -87,13 +106,30 @@ export default function KeyboardVisualizer() {
     }
   }
 
+  function handlePrevVoicing() {
+    setKeyboardVoicingIndex(keyboardVoicingIndex <= 0 ? -1 : keyboardVoicingIndex - 1)
+  }
+
+  function handleNextVoicing() {
+    setKeyboardVoicingIndex(Math.min(voicings.length - 1, keyboardVoicingIndex + 1))
+  }
+
+  let description: string
+  if (!selectedRow) {
+    description = 'all scale notes, root emphasized'
+  } else if (keyboardVoicingIndex < 0) {
+    description = 'all chord notes, root emphasized'
+  } else {
+    description = `voicing ${keyboardVoicingIndex + 1} of ${voicings.length}, root emphasized`
+  }
+
   return (
     <div className={styles.wrapper} aria-label="Piano keyboard">
       <div className={styles.shell} style={{ '--white-count': WHITE_COUNT } as React.CSSProperties}>
 
         {/* White keys */}
         {WHITE_KEYS.map(({ pc, midi }, idx) => {
-          const role = getRole(pc)
+          const role = getRole(pc, midi)
           return (
             <div
               key={midi}
@@ -119,8 +155,7 @@ export default function KeyboardVisualizer() {
 
         {/* Black keys — absolutely positioned */}
         {BLACK_KEYS.map(({ pc, midi, whiteIndex }) => {
-          const role = getRole(pc)
-          // Center the black key over the gap between whiteIndex and whiteIndex+1
+          const role = getRole(pc, midi)
           const leftPct = ((whiteIndex + 1) / WHITE_COUNT) * 100
           return (
             <div
@@ -146,6 +181,14 @@ export default function KeyboardVisualizer() {
         })}
 
       </div>
+
+      <VoicingNavigator
+        description={description}
+        index={keyboardVoicingIndex}
+        total={selectedRow ? voicings.length : 0}
+        onPrev={handlePrevVoicing}
+        onNext={handleNextVoicing}
+      />
     </div>
   )
 }

@@ -75,7 +75,7 @@ parity. Open both side by side during testing.
 - [ ] Common progressions library (I–V–vi–IV, ii–V–I, 12-bar blues, etc.)
 - [ ] Parallel / relative mode panel (e.g. show C major ↔ A minor side by side)
 - [ ] Theory tooltips (tap interval name to get explanation, e.g. "minor 7th")
-- [ ] Chord inversion display option in HarmonyGrid
+- [x] Chord inversion display — voicing navigator added to KeyboardVisualizer and FretboardVisualizer (prev/next, shows current voicing label)
 
 ---
 
@@ -88,7 +88,8 @@ parity. Open both side by side during testing.
   - [ ] Tension formula: `ratio = 2^(n/6)` where n = semitones above standard
   - [ ] Guided tuning mode in Tuner (reads active `guitarTuning`, shows per-string target)
 - [ ] CAGED scale box positions on fretboard
-- [ ] Guitar chord voicing suggestions (common fingerings for selected HarmonyGrid chord)
+- [x] Guitar chord voicing suggestions — `computeGuitarVoicings` in `src/theory/voicings.ts`; curated open shapes for standard tuning + algorithmic layer for all tunings; prev/next navigator in FretboardVisualizer; state in Zustand store (`guitarVoicingIndex`)
+- [x] Keyboard chord inversions — `computeKeyboardVoicings` in `src/theory/voicings.ts`; root position + inversions + Drop 2/3 for 7th chords; prev/next navigator in KeyboardVisualizer; state in Zustand store (`keyboardVoicingIndex`)
 - [ ] Capo support (offset all fretboard display by n frets)
 
 ---
@@ -145,12 +146,12 @@ parity. Open both side by side during testing.
 
 - [ ] Vitest config uses `/// <reference types="vitest" />` triple-slash pattern (older); migrate to `import type { UserConfig } from 'vitest/config'` when upgrading Vitest
 - [ ] `computeRomans` test for non-7-note input tests an undocumented fallback — if the fallback behavior ever changes, this test will give a false signal; revisit when expanding theory test coverage
+- [ ] Voicing computation (`computeKeyboardVoicings` / `computeGuitarVoicings`) is recomputed on each chord/tuning/maxDegree change. Fast enough now, but not free. If profiling ever shows it as a bottleneck, consider a `Map` keyed by `(rootPc, quality, maxDegree, tuningSignature)` for memoization.
 
 ---
 
 ## Bugs / Polish
 
-- [ ] Enharmonic preference persistence (user picks C# vs Db — survives navigation)
 - [x] ScaleStrip — scale description annotation below strip (mode name + family context)
 - [x] ScaleStrip active tiles now use diatonic spelling (`currentScale.spelled`) so Cb/E#/B# render correctly instead of falling back to chromatic names
 - [x] Fretboard + keyboard visualizers now respect per-row harmony extension overrides (previously only used `globalHarmonyMax`)

@@ -13,6 +13,8 @@ import {
   wrap,
 } from '../theory/index'
 import type { ScaleData, HarmonyRow, GuitarTuning, ScaleFamily, ScaleMode } from '../theory/types'
+import { computeKeyboardVoicings, computeGuitarVoicings } from '../theory/voicings'
+import type { KeyboardVoicing, GuitarVoicing } from '../theory/voicings'
 
 // Standard tuning: high E → low E (MIDI 64, 59, 55, 50, 45, 40)
 const STANDARD_TUNING: GuitarTuning = [64, 59, 55, 50, 45, 40]
@@ -35,6 +37,25 @@ function computeScaleForFamily(
     keyIdx: display.keyIdx,
     tonicLabel: display.tonicLabel,
     preferenceUsed: display.preferenceUsed,
+  }
+}
+
+function computeVoicings(
+  harmonyRows: HarmonyRow[],
+  selectedChordIndex: number | null,
+  globalHarmonyMax: number,
+  rowHarmonyMaxOverrides: Map<number, number>,
+  guitarTuning: GuitarTuning,
+): { keyboardVoicings: KeyboardVoicing[]; guitarVoicings: GuitarVoicing[] } {
+  if (selectedChordIndex === null) {
+    return { keyboardVoicings: [], guitarVoicings: [] }
+  }
+  const row = harmonyRows.find(r => r.index === selectedChordIndex)
+  if (!row) return { keyboardVoicings: [], guitarVoicings: [] }
+  const effectiveMax = rowHarmonyMaxOverrides.get(row.index) ?? globalHarmonyMax
+  return {
+    keyboardVoicings: computeKeyboardVoicings(row, effectiveMax),
+    guitarVoicings: computeGuitarVoicings(row, effectiveMax, guitarTuning),
   }
 }
 
@@ -99,6 +120,12 @@ interface TonalStore {
   // Guitar tuning
   guitarTuning: GuitarTuning
 
+  keyboardVoicingIndex: number
+  guitarVoicingIndex: number
+
+  keyboardVoicings: KeyboardVoicing[]
+  guitarVoicings: GuitarVoicing[]
+
   // Actions
   setKey: (pc: number) => void
   setFamily: (familyIndex: number) => void
@@ -117,6 +144,8 @@ interface TonalStore {
   setMuted: (muted: boolean) => void
   setVolume: (v: number) => void
   setGuitarTuning: (tuning: GuitarTuning) => void
+  setKeyboardVoicingIndex: (index: number) => void
+  setGuitarVoicingIndex: (index: number) => void
   setProgressionSlot: (slotIndex: number, chordIndex: number | null) => void
   setLoopPlaying: (playing: boolean) => void
 }
@@ -185,6 +214,12 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   lastVolume: 75,
   guitarTuning: STANDARD_TUNING,
 
+  keyboardVoicingIndex: -1,
+  guitarVoicingIndex: -1,
+
+  keyboardVoicings: [],
+  guitarVoicings: [],
+
   // --- Key ---
   // pc is the desired tonal center (mode root); back-compute family root
   setKey: (pc) => {
@@ -202,6 +237,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
       selectedChordIndex: null,
       selectedNotePc: null,
       rowHarmonyMaxOverrides: new Map(),
+      keyboardVoicings: [],
+      guitarVoicings: [],
       ...derivedFields(newKeyPc, familyIndex, modeIndex),
     })
   },
@@ -233,6 +270,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
       selectedChordIndex: null,
       selectedNotePc: null,
       rowHarmonyMaxOverrides: new Map(),
+      keyboardVoicings: [],
+      guitarVoicings: [],
       ...derivedFields(newKeyPc, safeNewFamilyIndex, 0),
     })
   },
@@ -255,6 +294,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
       selectedChordIndex: null,
       selectedNotePc: null,
       rowHarmonyMaxOverrides: new Map(),
+      keyboardVoicings: [],
+      guitarVoicings: [],
       ...derivedFields(currentKeyPc, familyIndex, safeIndex),
     })
   },
@@ -287,6 +328,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
       selectedChordIndex: null,
       selectedNotePc: null,
       rowHarmonyMaxOverrides: new Map(),
+      keyboardVoicings: [],
+      guitarVoicings: [],
       ...derivedFields(newKeyPc, entry.familyIndex, entry.modeIndex),
     })
   },
@@ -330,6 +373,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
       selectedChordIndex: null,
       selectedNotePc: null,
       rowHarmonyMaxOverrides: new Map(),
+      keyboardVoicings: [],
+      guitarVoicings: [],
       ...derivedFields(newKeyPc, best.familyIndex, best.modeIndex),
     })
   },
@@ -353,6 +398,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
       selectedChordIndex: null,
       selectedNotePc: null,
       rowHarmonyMaxOverrides: new Map(),
+      keyboardVoicings: [],
+      guitarVoicings: [],
       ...derivedFields(newKeyPc, familyIndex, safeIndex),
     })
   },
@@ -380,16 +427,32 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     }
   },
 
-  setSelectedChord: (index) => set({ selectedChordIndex: index, selectedNotePc: null }),
+  setSelectedChord: (index) =>
+    set((state) => {
+      const { keyboardVoicings, guitarVoicings } = computeVoicings(
+        state.harmonyRows, index, state.globalHarmonyMax, state.rowHarmonyMaxOverrides, state.guitarTuning,
+      )
+      return { selectedChordIndex: index, selectedNotePc: null, keyboardVoicingIndex: -1, guitarVoicingIndex: -1, keyboardVoicings, guitarVoicings }
+    }),
   setSelectedNote: (pc) => set({ selectedNotePc: pc, selectedChordIndex: null }),
 
-  setGlobalHarmonyMax: (max) => set({ globalHarmonyMax: max, rowHarmonyMaxOverrides: new Map() }),
+  setGlobalHarmonyMax: (max) =>
+    set((state) => {
+      const newOverrides = new Map<number, number>()
+      const { keyboardVoicings, guitarVoicings } = computeVoicings(
+        state.harmonyRows, state.selectedChordIndex, max, newOverrides, state.guitarTuning,
+      )
+      return { globalHarmonyMax: max, rowHarmonyMaxOverrides: newOverrides, keyboardVoicings, guitarVoicings }
+    }),
   setRowHarmonyMax: (rowIndex, max) =>
     set((state) => {
       const overrides = new Map(state.rowHarmonyMaxOverrides)
       if (max === null) overrides.delete(rowIndex)
       else overrides.set(rowIndex, max)
-      return { rowHarmonyMaxOverrides: overrides }
+      const { keyboardVoicings, guitarVoicings } = computeVoicings(
+        state.harmonyRows, state.selectedChordIndex, state.globalHarmonyMax, overrides, state.guitarTuning,
+      )
+      return { rowHarmonyMaxOverrides: overrides, keyboardVoicings, guitarVoicings }
     }),
 
   setMuted: (muted) => set({ isMuted: muted }),
@@ -399,7 +462,16 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     if (clamped > 0) updates.lastVolume = clamped
     set(updates)
   },
-  setGuitarTuning: (tuning) => set({ guitarTuning: tuning }),
+  setGuitarTuning: (tuning) =>
+    set((state) => {
+      const { keyboardVoicings, guitarVoicings } = computeVoicings(
+        state.harmonyRows, state.selectedChordIndex, state.globalHarmonyMax, state.rowHarmonyMaxOverrides, tuning,
+      )
+      return { guitarTuning: tuning, keyboardVoicings, guitarVoicings }
+    }),
+
+  setKeyboardVoicingIndex: (index) => set({ keyboardVoicingIndex: index }),
+  setGuitarVoicingIndex: (index) => set({ guitarVoicingIndex: index }),
 
   setProgressionSlot: (slotIndex, chordIndex) =>
     set((state) => {
