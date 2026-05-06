@@ -45,10 +45,9 @@ export function hydrateFromUrl(): void {
 
 /** Hook that watches tonal state and keeps the URL in sync via replaceState. */
 export function useUrlSync(): void {
-  const currentKeyPc = useTonalStore(s => s.currentKeyPc)
-  const familyId     = useTonalStore(s => s.familyId)
-  const modeIndex    = useTonalStore(s => s.modeIndex)
-  const modeRootPc   = useTonalStore(s => s.currentModeRootPc)
+  const familyId   = useTonalStore(s => s.familyId)
+  const modeIndex  = useTonalStore(s => s.modeIndex)
+  const modeRootPc = useTonalStore(s => s.currentModeRootPc)
 
   useEffect(() => {
     const params = new URLSearchParams()
@@ -61,5 +60,5 @@ export function useUrlSync(): void {
     if (window.location.search !== newSearch) {
       history.replaceState(null, '', newSearch)
     }
-  }, [currentKeyPc, familyId, modeIndex, modeRootPc])
+  }, [familyId, modeIndex, modeRootPc])
 }

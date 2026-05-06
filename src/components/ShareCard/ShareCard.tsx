@@ -7,18 +7,22 @@ import { useTonalStore } from '../../store/index'
 import { chordNameForRow, pcColorVar } from '../../theory/index'
 import styles from './ShareCard.module.css'
 
-interface ShareCardProps {
-  shareUrl: string
-}
-
-const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(
-  function ShareCard({ shareUrl }, ref) {
-    const tonicLabel      = useTonalStore(s => s.currentTonicLabel)
-    const currentMode     = useTonalStore(s => s.currentMode)
-    const currentFamily   = useTonalStore(s => s.currentFamily)
-    const currentScale    = useTonalStore(s => s.currentScale)
-    const harmonyRows     = useTonalStore(s => s.harmonyRows)
+const ShareCard = forwardRef<HTMLDivElement>(
+  function ShareCard(_props, ref) {
+    const tonicLabel       = useTonalStore(s => s.currentTonicLabel)
+    const currentMode      = useTonalStore(s => s.currentMode)
+    const currentFamily    = useTonalStore(s => s.currentFamily)
+    const currentScale     = useTonalStore(s => s.currentScale)
+    const harmonyRows      = useTonalStore(s => s.harmonyRows)
     const globalHarmonyMax = useTonalStore(s => s.globalHarmonyMax)
+    const modeRootPc       = useTonalStore(s => s.currentModeRootPc)
+    const familyId         = useTonalStore(s => s.familyId)
+    const modeIndex        = useTonalStore(s => s.modeIndex)
+
+    // Build the URL from store state so it stays in sync even when replaceState
+    // hasn't run yet (effects are async; this read is synchronous at render time).
+    const params = new URLSearchParams({ root: String(modeRootPc), family: familyId, mode: String(modeIndex) })
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`
 
     const title    = `${tonicLabel} ${currentMode.name}`
     const subtitle = currentFamily.name

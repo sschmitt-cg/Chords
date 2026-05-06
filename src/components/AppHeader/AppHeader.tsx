@@ -30,7 +30,6 @@ export default function AppHeader() {
         backgroundColor: '#1a2660',
         pixelRatio: 2,
       })
-      const shareUrl = window.location.href
 
       // Convert data URL to Blob for Web Share API file sharing
       const res = await fetch(dataUrl)
@@ -46,7 +45,7 @@ export default function AppHeader() {
         await navigator.share({
           files: [file],
           title: 'Tonal Explorer',
-          text: shareUrl,
+          text: window.location.href,
         })
       } else {
         // Fallback: trigger programmatic download
@@ -103,10 +102,7 @@ export default function AppHeader() {
       </header>
 
       {/* Share card — always mounted off-screen so html-to-image can capture it */}
-      <ShareCard
-        ref={shareCardRef}
-        shareUrl={window.location.href}
-      />
+      <ShareCard ref={shareCardRef} />
 
       {menuOpen && (
         <SectionMenu

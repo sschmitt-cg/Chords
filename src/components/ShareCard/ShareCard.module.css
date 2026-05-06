@@ -2,9 +2,10 @@
 
 .card {
   position: fixed;
-  /* Off-screen but not display:none so html-to-image can measure it */
+  /* Off-screen but not display:none so html-to-image can measure it.
+     top offset (not left) avoids potential horizontal scrollbar on desktop. */
   top: -9999px;
-  left: -9999px;
+  left: 0;
   width: 360px;
   background: #1a2660;
   border-radius: 16px;
@@ -16,7 +17,7 @@
 
 /* Title row: e.g. "C Dorian" */
 .title {
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: 700;
   letter-spacing: 0.02em;
   margin: 0 0 4px;
@@ -24,7 +25,7 @@
 }
 
 .subtitle {
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -38,7 +39,7 @@
 }
 
 .sectionLabel {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -60,7 +61,7 @@
   height: 30px;
   padding: 0 6px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   /* background and color set via inline style using pcColorVar */
   background: color-mix(in srgb, var(--pc-color) 30%, #1a2660);
@@ -87,7 +88,7 @@
 }
 
 .romanNumeral {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
   width: 28px;
   flex-shrink: 0;
@@ -95,7 +96,7 @@
 }
 
 .chordName {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.85);
   flex: 1;
@@ -111,7 +112,7 @@
 }
 
 .footerLabel {
-  font-size: 10px;
+  font-size: 0.625rem;
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -120,7 +121,7 @@
 }
 
 .footerUrl {
-  font-size: 10px;
+  font-size: 0.625rem;
   color: rgba(255, 255, 255, 0.5);
   word-break: break-all;
   font-family: monospace;
