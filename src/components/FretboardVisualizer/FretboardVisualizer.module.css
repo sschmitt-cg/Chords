@@ -5,6 +5,8 @@
   border: 1px solid var(--card-border, #d9def2);
   border-radius: 14px;
   padding: 8px 12px;
+  /* Reserve space so the VoicingNavigator below never squashes the fretboard */
+  padding-bottom: 56px;
   overflow-x: auto;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
   scrollbar-width: none;
@@ -170,6 +172,7 @@
     display: flex;
     flex-direction: column;
     padding: 6px 10px;
+    padding-bottom: 56px;
     overflow-x: hidden;
   }
   .shell {

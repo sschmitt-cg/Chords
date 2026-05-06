@@ -2,6 +2,7 @@ import React from 'react'
 import styles from './VoicingNavigator.module.css'
 
 interface VoicingNavigatorProps {
+  // -1 = "All notes" state; 0..total-1 = specific voicing
   index: number
   total: number
   label?: string
@@ -16,16 +17,17 @@ export default function VoicingNavigator({
   onPrev,
   onNext,
 }: VoicingNavigatorProps): React.ReactElement | null {
-  if (total < 2) return null
+  if (total < 1) return null
 
-  const displayLabel = label ?? `Voicing ${index + 1}/${total}`
+  const isAllNotes = index < 0
+  const displayLabel = isAllNotes ? 'All notes' : (label ?? `Voicing ${index + 1}/${total}`)
 
   return (
     <div className={styles.nav} role="group" aria-label="Voicing navigator">
       <button
         className={styles.btn}
         onClick={onPrev}
-        disabled={index === 0}
+        disabled={isAllNotes}
         aria-label="Previous voicing"
       >
         ‹
@@ -34,7 +36,7 @@ export default function VoicingNavigator({
       <button
         className={styles.btn}
         onClick={onNext}
-        disabled={index === total - 1}
+        disabled={!isAllNotes && index >= total - 1}
         aria-label="Next voicing"
       >
         ›

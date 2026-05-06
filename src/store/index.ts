@@ -120,7 +120,7 @@ interface TonalStore {
   // Guitar tuning
   guitarTuning: GuitarTuning
 
-  // Voicing navigation (reset to 0 when selectedChord changes)
+  // Voicing navigation (-1 = "All notes", ≥ 0 = specific voicing; reset to -1 on chord change)
   keyboardVoicingIndex: number
   guitarVoicingIndex: number
 
@@ -215,8 +215,8 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   lastVolume: 75,
   guitarTuning: STANDARD_TUNING,
 
-  keyboardVoicingIndex: 0,
-  guitarVoicingIndex: 0,
+  keyboardVoicingIndex: -1,
+  guitarVoicingIndex: -1,
 
   keyboardVoicings: [],
   guitarVoicings: [],
@@ -433,7 +433,7 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
       const { keyboardVoicings, guitarVoicings } = computeVoicings(
         state.harmonyRows, index, state.globalHarmonyMax, state.rowHarmonyMaxOverrides, state.guitarTuning,
       )
-      return { selectedChordIndex: index, selectedNotePc: null, keyboardVoicingIndex: 0, guitarVoicingIndex: 0, keyboardVoicings, guitarVoicings }
+      return { selectedChordIndex: index, selectedNotePc: null, keyboardVoicingIndex: -1, guitarVoicingIndex: -1, keyboardVoicings, guitarVoicings }
     }),
   setSelectedNote: (pc) => set({ selectedNotePc: pc, selectedChordIndex: null }),
 

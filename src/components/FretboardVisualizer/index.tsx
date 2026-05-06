@@ -37,10 +37,12 @@ export default function FretboardVisualizer(): React.ReactElement {
     : globalHarmonyMax
 
   const voicings = guitarVoicings
-  const safeVoicingIndex = voicings.length > 0
+  // -1 means "All notes" — no specific voicing active
+  const voicingActive = guitarVoicingIndex >= 0 && voicings.length > 0
+  const safeVoicingIndex = voicingActive
     ? Math.min(guitarVoicingIndex, voicings.length - 1)
     : 0
-  const activeVoicing = voicings[safeVoicingIndex] ?? null
+  const activeVoicing = voicingActive ? (voicings[safeVoicingIndex] ?? null) : null
 
   const chordPcs: Set<number> = selectedRow
     ? new Set(selectedRow.notes.filter(n => n.degree <= effectiveMax).map(n => n.pc))
@@ -63,7 +65,7 @@ export default function FretboardVisualizer(): React.ReactElement {
       if (assignedFret === fret) {
         return pc === chordRootPc ? 'root' : 'tone'
       }
-      if (scalePcs.has(pc)) return 'scale'
+      // Only voicing positions shown; scale context is noise when viewing a fingering
       return 'off'
     }
 
@@ -94,11 +96,12 @@ export default function FretboardVisualizer(): React.ReactElement {
   }
 
   function handlePrevVoicing() {
-    setGuitarVoicingIndex(Math.max(0, safeVoicingIndex - 1))
+    // Step back to -1 ("All notes") when already at voicing 0
+    setGuitarVoicingIndex(guitarVoicingIndex <= 0 ? -1 : guitarVoicingIndex - 1)
   }
 
   function handleNextVoicing() {
-    setGuitarVoicingIndex(Math.min(voicings.length - 1, safeVoicingIndex + 1))
+    setGuitarVoicingIndex(Math.min(voicings.length - 1, guitarVoicingIndex + 1))
   }
 
   return (
@@ -197,7 +200,7 @@ export default function FretboardVisualizer(): React.ReactElement {
 
       {selectedRow && (
         <VoicingNavigator
-          index={safeVoicingIndex}
+          index={guitarVoicingIndex}
           total={voicings.length}
           onPrev={handlePrevVoicing}
           onNext={handleNextVoicing}

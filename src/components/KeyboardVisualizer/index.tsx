@@ -57,10 +57,12 @@ export default function KeyboardVisualizer(): React.ReactElement {
     : globalHarmonyMax
 
   const voicings = keyboardVoicings
-  const safeVoicingIndex = voicings.length > 0
+  // -1 means "All notes" — no specific voicing active
+  const voicingActive = keyboardVoicingIndex >= 0 && voicings.length > 0
+  const safeVoicingIndex = voicingActive
     ? Math.min(keyboardVoicingIndex, voicings.length - 1)
     : 0
-  const activeVoicing = voicings[safeVoicingIndex] ?? null
+  const activeVoicing = voicingActive ? (voicings[safeVoicingIndex] ?? null) : null
 
   const voicingMidiSet: Set<number> = activeVoicing
     ? new Set(activeVoicing.midiNotes)
@@ -74,10 +76,10 @@ export default function KeyboardVisualizer(): React.ReactElement {
   function getRole(pc: number, midi: number): HighlightRole {
     if (chordPcs.size) {
       if (activeVoicing) {
+        // Only voicing notes shown; scale context is noise when viewing a fingering
         if (voicingMidiSet.has(midi)) {
           return pc === chordRootPc ? 'root' : 'tone'
         }
-        if (scalePcs.has(pc)) return 'scale'
         return 'off'
       }
       if (chordPcs.has(pc)) return pc === chordRootPc ? 'root' : 'tone'
@@ -106,11 +108,12 @@ export default function KeyboardVisualizer(): React.ReactElement {
   }
 
   function handlePrevVoicing() {
-    setKeyboardVoicingIndex(Math.max(0, safeVoicingIndex - 1))
+    // Step back to -1 ("All notes") when already at voicing 0
+    setKeyboardVoicingIndex(keyboardVoicingIndex <= 0 ? -1 : keyboardVoicingIndex - 1)
   }
 
   function handleNextVoicing() {
-    setKeyboardVoicingIndex(Math.min(voicings.length - 1, safeVoicingIndex + 1))
+    setKeyboardVoicingIndex(Math.min(voicings.length - 1, keyboardVoicingIndex + 1))
   }
 
   return (
@@ -174,7 +177,7 @@ export default function KeyboardVisualizer(): React.ReactElement {
 
       {selectedRow && (
         <VoicingNavigator
-          index={safeVoicingIndex}
+          index={keyboardVoicingIndex}
           total={voicings.length}
           label={voicings[safeVoicingIndex]?.label}
           onPrev={handlePrevVoicing}
