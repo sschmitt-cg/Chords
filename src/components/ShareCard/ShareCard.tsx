@@ -40,7 +40,7 @@ const ShareCard = forwardRef<HTMLDivElement>(
               const pc = currentScale.pitchClasses[i]
               return (
                 <span
-                  key={i}
+                  key={`${pc}-${note}`}
                   className={styles.notePill}
                   style={{ '--pc-color': pcColorVar(pc) } as React.CSSProperties}
                 >

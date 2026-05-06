@@ -23,7 +23,8 @@ export default function AppHeader() {
   const handleShare = useCallback(async () => {
     if (isSharing || !shareCardRef.current) return
     // flushSync forces the re-render to complete before toPng reads the DOM,
-    // so the share card's footer URL reflects the current window.location.href.
+    // so the share card re-renders with the latest store state (including the
+    // URL it builds from store slices) before html-to-image captures it.
     flushSync(() => setIsSharing(true))
     try {
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, {

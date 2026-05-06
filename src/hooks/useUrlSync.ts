@@ -33,6 +33,9 @@ export function hydrateFromUrl(): void {
   const familyIndex = SCALE_FAMILIES.findIndex(f => f.id === rawFamily)
   if (familyIndex === -1) return
 
+  const family = SCALE_FAMILIES[familyIndex]
+  if (modeIndex >= family.modes.length) return
+
   // setFamily resets modeIndex to 0 and preserves the audible tonal center.
   // We call setModeIndex after to reach the desired mode, then setKey to
   // reach the desired tonal center (modeRootPc = root).
