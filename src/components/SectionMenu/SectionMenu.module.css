@@ -69,6 +69,19 @@
   background: rgba(102, 112, 232, 0.1);
 }
 
+.pinnedSeparator {
+  height: 0.5px;
+  background: #2c3c78;
+  margin: 4px 0;
+}
+
+/* Spacer that occupies the same width as a drag handle, keeping label alignment consistent */
+.pinnedSpacer {
+  display: flex;
+  width: 36px;
+  flex-shrink: 0;
+}
+
 .footer {
   border-top: 0.5px solid #2c3c78;
   margin-top: 4px;

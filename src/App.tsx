@@ -9,6 +9,7 @@ import ScaleStrip from './components/ScaleStrip/index'
 import HarmonyGrid from './components/HarmonyGrid/index'
 import KeyboardVisualizer from './components/KeyboardVisualizer/index'
 import FretboardVisualizer from './components/FretboardVisualizer/index'
+import TuningSelector from './components/TuningSelector/index'
 import CircleOfFifths from './components/CircleOfFifths/index'
 import Metronome from './components/Metronome/index'
 import ChromaticTuner from './components/Tuner/index'
@@ -20,17 +21,24 @@ const LANDSCAPE_TOP: SectionId[]   = ['scale-logical', 'scale-exploratory', 'str
 const LANDSCAPE_LEFT: SectionId[]  = ['keyboard', 'fretboard']
 const LANDSCAPE_RIGHT: SectionId[] = ['harmony', 'metronome', 'tuner']
 
-function renderSection(id: SectionId) {
+function renderSection(id: SectionId, sectionVisible: Record<SectionId, boolean>) {
   switch (id) {
     case 'scale-logical':     return <ScaleLogical />
     case 'scale-exploratory': return <ScaleExploratory />
     case 'circle':            return <CircleOfFifths />
     case 'strip':             return <ScaleStrip />
     case 'keyboard':          return <KeyboardVisualizer />
-    case 'fretboard':         return <FretboardVisualizer />
+    case 'fretboard':         return (
+      <>
+        <FretboardVisualizer />
+        {sectionVisible['tuning-selector'] && <TuningSelector />}
+      </>
+    )
     case 'harmony':           return <HarmonyGrid />
     case 'metronome':         return <Metronome />
     case 'tuner':             return <ChromaticTuner />
+    // tuning-selector is pinned below fretboard; never rendered standalone
+    case 'tuning-selector':   return null
   }
 }
 
@@ -67,7 +75,7 @@ function App(): React.ReactElement {
           <div className={styles.panelTop}>
             <div className={styles.panelTopLeft}>
               {LANDSCAPE_TOP.filter(id => sectionVisible[id]).map(id => (
-                <div key={id}>{renderSection(id)}</div>
+                <div key={id}>{renderSection(id, sectionVisible)}</div>
               ))}
             </div>
             {sectionVisible['circle'] && (
@@ -81,7 +89,7 @@ function App(): React.ReactElement {
             leftEmpty ? styles.panelHidden : '',
           ].join(' ')}>
             {LANDSCAPE_LEFT.filter(id => sectionVisible[id]).map(id => (
-              <div key={id}>{renderSection(id)}</div>
+              <div key={id}>{renderSection(id, sectionVisible)}</div>
             ))}
           </div>
           <div className={[
@@ -90,14 +98,14 @@ function App(): React.ReactElement {
             leftEmpty  ? styles.panelFull    : '',
           ].join(' ')}>
             {LANDSCAPE_RIGHT.filter(id => sectionVisible[id]).map(id => (
-              <div key={id}>{renderSection(id)}</div>
+              <div key={id}>{renderSection(id, sectionVisible)}</div>
             ))}
           </div>
         </div>
       ) : (
         <main className={styles.portraitContent}>
           {sectionOrder.filter(id => sectionVisible[id]).map(id => (
-            <div key={id}>{renderSection(id)}</div>
+            <div key={id}>{renderSection(id, sectionVisible)}</div>
           ))}
         </main>
       )}

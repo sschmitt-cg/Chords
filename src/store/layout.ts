@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type SectionId = 'scale-logical' | 'scale-exploratory' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony' | 'metronome' | 'tuner'
+export type SectionId = 'scale-logical' | 'scale-exploratory' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony' | 'metronome' | 'tuner' | 'tuning-selector'
 
 export const SECTION_LABELS: Record<SectionId, string> = {
   'scale-logical':     'Key & Mode',
@@ -13,7 +13,12 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   harmony:             'Harmony Grid',
   metronome:           'Metronome',
   tuner:               'Chromatic Tuner',
+  'tuning-selector':   'Tuning Selector',
 }
+
+// Sections that appear in the menu but are positionally fixed (not drag-reorderable).
+// Rendered at a fixed position relative to their coupled component (e.g. tuning-selector below fretboard).
+export const PINNED_SECTIONS: SectionId[] = ['tuning-selector']
 
 export const DEFAULT_ORDER: SectionId[] = ['scale-logical', 'scale-exploratory', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony', 'metronome', 'tuner']
 
@@ -41,6 +46,7 @@ function defaultVisible(): Record<SectionId, boolean> {
     harmony:             true,
     metronome:           false,
     tuner:               true,
+    'tuning-selector':   false,
   }
 }
 
@@ -59,7 +65,7 @@ export const useLayoutStore = create<LayoutStore>()(
     }),
     {
       name: 'tonal-layout',
-      version: 2,
+      version: 3,
       migrate(persisted, version) {
         const state = persisted as { sectionOrder: SectionId[]; sectionVisible: Record<SectionId, boolean> }
         if (version < 1) {
@@ -73,6 +79,12 @@ export const useLayoutStore = create<LayoutStore>()(
           // Add tuner section; visible by default as a parity item
           if (!state.sectionOrder.includes('tuner')) state.sectionOrder.push('tuner')
           if (state.sectionVisible['tuner'] === undefined) state.sectionVisible['tuner'] = true
+        }
+        if (version < 3) {
+          // Add tuning-selector as a pinned section (not in sectionOrder); hidden by default
+          if (state.sectionVisible['tuning-selector'] === undefined) {
+            state.sectionVisible['tuning-selector'] = false
+          }
         }
         return state
       },
