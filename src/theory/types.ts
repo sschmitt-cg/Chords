@@ -66,7 +66,7 @@ export type GuitarTuning = [number, number, number, number, number, number]
 export interface TuningPreset {
   id: string
   name: string
-  category: string
+  category?: string
   tuning: GuitarTuning
   warning?: string  // e.g. "Strings 4 and 5 are tuned above standard — use medium gauge or heavier"
 }

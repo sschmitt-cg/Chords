@@ -3,15 +3,8 @@
 import type React from 'react'
 import { useTonalStore } from '../../store/index'
 import { SHARP_NAMES, wrap } from '../../theory/index'
-import type { GuitarTuning } from '../../theory/types'
+import type { GuitarTuning, TuningPreset } from '../../theory/types'
 import styles from './TuningSelector.module.css'
-
-interface TuningPreset {
-  id: string
-  name: string
-  // MIDI values, index 0 = highest string (high E), index 5 = lowest string (low E)
-  tuning: GuitarTuning
-}
 
 // String order: high→low, matching the store's GuitarTuning convention
 const PRESETS: TuningPreset[] = [

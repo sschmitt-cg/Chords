@@ -29,6 +29,7 @@
   gap: 3px;
   padding: 8px 10px;
   min-height: 44px;
+  min-width: 44px;
   background: #111c50;
   border: 1px solid #2c3c78;
   border-radius: 8px;
