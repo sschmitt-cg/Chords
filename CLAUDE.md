@@ -15,17 +15,27 @@ constraints, and current work status.
 | `docs/project-vision.md` | Product goals, target audiences, and design principles |
 | `docs/architecture.md` | Tech stack, architectural constraints, and key file map |
 | `BACKLOG.md` | Phased feature backlog and current development status |
+| `INBOX.md` | Raw ideas routed here from the Apple Notes inbox — not authoritative |
+| `SCRATCH.md` | In-session working space for discussion and exploration before committing |
 | `.claude/commands/next-step.md` | Orchestration logic for the `/next-step` slash command |
 
 ---
 
-## First-time setup
-
-If this repo was just created from the template, run the global command `/project-setup` once. It adds project-path-specific entries to `.claude/settings.json` and prompts for anything else project-specific.
-
----
-
 ## Behavior rules
+
+### Firm document protection
+`docs/project-vision.md` and `BACKLOG.md` are authoritative records. Before making
+any edit to either file — including wording changes, priority shifts, or additions —
+propose the change clearly and wait for explicit confirmation. Never edit them silently.
+
+`INBOX.md` and `SCRATCH.md` are working surfaces. They can be freely updated during
+sessions without confirmation.
+
+### Inbox workflow
+When the user asks to process the inbox, read `INBOX.md`, discuss how the items map
+to the project vision and backlog, propose any changes to `docs/project-vision.md` or
+`BACKLOG.md`, and wait for confirmation before writing those changes. Once applied,
+clear the processed items from `INBOX.md`.
 
 ### Before writing any code
 For any **significant design or architectural decision** (new component structure,
@@ -50,9 +60,29 @@ the wrong thing.
 - Do not add comments or type annotations to code you didn't change.
 
 ### Shell commands
-Run each shell command as a separate Bash call. Do not chain commands with `&&`, `||`, or `|` unless the compound form is the only practical way to achieve the result (e.g., piping to `head` to cap verbose output). This keeps individual commands auto-approvable without permission prompts.
+Run each shell command as a separate Bash call. Do not chain commands with `&&`, `||`, or `|` unless the compound form is the only practical way to achieve the result.
 
-When working in a subdirectory or another project's directory, use `cd <path>` as its own Bash call first — the working directory persists between calls. Never write `cd <path> && <command>` as a single call.
+**Acceptable pipes** — these are the only cases where `|` or `||` is justified:
+- `cmd | head -N` / `cmd | tail -N` — capping verbose output
+- `cmd | grep <pattern>` — filtering output from a read-only source command
+- `cmd | jq <expr>` — transforming structured output
+- `cmd | base64 -d` — decoding (e.g. `gh api` content fields)
+- `read-only-cmd 2>/dev/null || echo "fallback"` — existence/probe checks where the
+  source is a read-only command (`cat`, `ls`, `lsof`, `test`, etc.). Never use this
+  form with a mutating source — `rm … || echo` is not acceptable.
+
+**Never use `cd <path> && <command>` as a single call.** This is the most common
+violation. `cd` persists between Bash calls — always issue it as its own call first:
+```
+# Wrong
+cd "/path/to/project" && npm run typecheck
+
+# Right
+cd "/path/to/project"
+npm run typecheck
+```
+
+All other `&&` and `||` chains are prohibited. Run them as separate Bash calls.
 
 ### Scope discipline
 - Only modify files relevant to the current task.
