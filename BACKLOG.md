@@ -47,8 +47,8 @@ parity. Open both side by side during testing.
 - [x] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
 - [ ] WheelModal (picker for key / mode / scale type selection) — deprioritized; may be superseded by swipe gestures on ScaleStrip; retain as accessibility fallback candidate
 - [x] Shareable URLs (encode key + mode + scale type in query params)
-- [ ] Randomize button — pick a random root, family, and mode; wires into existing store actions
-- [ ] Circle of Fifths visualizer — interactive; clicking a wedge drives the full app state (key, relative mode); integrated with the unified store
+- [x] Randomize button — pick a random root, family, and mode; wires into existing store actions
+- [x] Circle of Fifths visualizer — interactive; clicking a wedge drives the full app state (key, relative mode); integrated with the unified store
 
 ---
 
@@ -83,7 +83,7 @@ parity. Open both side by side during testing.
 ## Phase 4 — Guitar Features
 
 - [ ] Alternative tunings — TuningSelector component:
-  - [ ] Preset library (Open G, Open D, Drop D, DADGAD, Open E, Open A, Half-step down, Full-step down, etc.)
+  - [x] Preset library (Open G, Open D, Drop D, DADGAD, Open E, Open A, Half-step down, Full-step down, etc.)
   - [ ] Custom tuning editor (tap each string to set note)
   - [ ] String tension warnings: +2 semi = caution, +3 = warning, +4+ = danger
   - [ ] Tension formula: `ratio = 2^(n/6)` where n = semitones above standard
@@ -166,10 +166,10 @@ parity. Open both side by side during testing.
 - [x] ScaleNavigator pickers — all popups scroll to center the current selection on open
 - [ ] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile)
 - [ ] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile; scroll-conflict is the engineering challenge to solve, e.g. long-press to enter drag mode or a dedicated drag handle)
-- [ ] ScaleNavigator knob labels hidden on desktop — `@media (orientation: landscape)` always fires on desktop (window is always wider than tall); scope to narrow/touch viewports only
+- [x] ScaleNavigator knob labels hidden on desktop — `@media (orientation: landscape)` always fires on desktop (window is always wider than tall); scope to narrow/touch viewports only
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
-- [ ] ScaleNavigator — persist navigator group visibility independently of orientation changes (currently resets to orientation default on each page load rather than remembering the user's last manual choice)
+- [x] ScaleNavigator — persist navigator group visibility independently of orientation changes — handled by shareable URL encoding app state
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
 - [ ] ScaleNavigator knob SVG colors (accent ticks, indicator dot) use hard-coded hex values — replace with CSS custom properties (e.g. --knob-accent) for design-system consistency
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
