@@ -84,23 +84,32 @@
     gap: 8px;
     overflow: hidden;
     min-height: 0;
+    /* Prevents piano/fretboard from growing taller than a usable instrument height
+       on large desktop viewports where the bottom grid row would otherwise be huge */
+    max-height: 320px;
   }
 
   .panelRight {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    overflow: hidden;
+    /* Scrollable so tuner and metronome never overlap when viewport is short */
+    overflow-y: auto;
     min-height: 0;
   }
 
-  /* Give each section in the side panels equal flex share */
-  .panelLeft > div,
-  .panelRight > div {
+  /* Instrument panels (keyboard, fretboard) fill available left-column height equally */
+  .panelLeft > div {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
+  }
+
+  /* Right-column sections (harmony, metronome, tuner) size to their natural content;
+     the panel scrolls rather than forcing sections to overlap when space is tight */
+  .panelRight > div {
+    flex: none;
   }
 
   .panelHidden {

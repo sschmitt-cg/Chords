@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-export type SectionId = 'scale-logical' | 'scale-exploratory' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony' | 'metronome'
+export type SectionId = 'scale-logical' | 'scale-exploratory' | 'circle' | 'strip' | 'keyboard' | 'fretboard' | 'harmony' | 'metronome' | 'tuner'
 
 export const SECTION_LABELS: Record<SectionId, string> = {
   'scale-logical':     'Key & Mode',
@@ -12,9 +12,10 @@ export const SECTION_LABELS: Record<SectionId, string> = {
   fretboard:           'Fretboard',
   harmony:             'Harmony Grid',
   metronome:           'Metronome',
+  tuner:               'Chromatic Tuner',
 }
 
-export const DEFAULT_ORDER: SectionId[] = ['scale-logical', 'scale-exploratory', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony', 'metronome']
+export const DEFAULT_ORDER: SectionId[] = ['scale-logical', 'scale-exploratory', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony', 'metronome', 'tuner']
 
 interface LayoutStore {
   sectionOrder: SectionId[]
@@ -39,6 +40,7 @@ function defaultVisible(): Record<SectionId, boolean> {
     fretboard:           true,
     harmony:             true,
     metronome:           false,
+    tuner:               true,
   }
 }
 
@@ -57,7 +59,7 @@ export const useLayoutStore = create<LayoutStore>()(
     }),
     {
       name: 'tonal-layout',
-      version: 1,
+      version: 2,
       migrate(persisted, version) {
         const state = persisted as { sectionOrder: SectionId[]; sectionVisible: Record<SectionId, boolean> }
         if (version < 1) {
@@ -66,6 +68,11 @@ export const useLayoutStore = create<LayoutStore>()(
             if (!state.sectionOrder.includes(id)) state.sectionOrder.push(id)
             if (state.sectionVisible[id] === undefined) state.sectionVisible[id] = false
           }
+        }
+        if (version < 2) {
+          // Add tuner section; visible by default as a parity item
+          if (!state.sectionOrder.includes('tuner')) state.sectionOrder.push('tuner')
+          if (state.sectionVisible['tuner'] === undefined) state.sectionVisible['tuner'] = true
         }
         return state
       },

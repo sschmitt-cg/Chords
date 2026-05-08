@@ -1,0 +1,123 @@
+/* Share card — rendered off-screen for PNG export; must look good standalone */
+
+.card {
+  width: 360px;
+  background: #1a2660;
+  border-radius: 16px;
+  padding: 28px 24px 20px;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Title row: e.g. "C Dorian" */
+.title {
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 20px;
+}
+
+/* Scale notes strip */
+.scaleSection {
+  margin-bottom: 20px;
+}
+
+.sectionLabel {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  margin-bottom: 8px;
+}
+
+.noteList {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.notePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  /* background and color set via inline style using pcColorVar */
+  background: color-mix(in srgb, var(--pc-color) 30%, #1a2660);
+  color: color-mix(in srgb, var(--pc-color) 80%, #fff);
+  border: 1.5px solid color-mix(in srgb, var(--pc-color) 55%, transparent);
+}
+
+/* Harmony rows table */
+.harmonySection {
+  margin-bottom: 20px;
+}
+
+.harmonyRow {
+  display: flex;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
+  gap: 10px;
+  min-height: 30px;
+}
+
+.harmonyRow:last-child {
+  border-bottom: none;
+}
+
+.romanNumeral {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  width: 28px;
+  flex-shrink: 0;
+  /* color set via inline style */
+}
+
+.chordName {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  flex: 1;
+}
+
+/* Footer with share URL */
+.footer {
+  padding-top: 14px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footerLabel {
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+}
+
+.footerUrl {
+  font-size: 0.625rem;
+  color: rgba(255, 255, 255, 0.5);
+  word-break: break-all;
+  font-family: monospace;
+}

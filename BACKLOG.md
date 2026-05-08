@@ -11,7 +11,7 @@ The original app (`index-legacy.html` + `styles.css` + `script.js`) is the
 reference implementation and must remain untouched until the new app reaches full
 parity. Open both side by side during testing.
 
-- [ ] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db)
+- [x] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db) — auto-handled: `computeDisplayScaleFromFamily` picks sharp vs flat by accidental count; diatonic spelling assigns unique letters per degree; no manual toggle needed
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
 - [x] Scale strip — correct note spelling for every key/mode combination
 - [ ] Scale strip — swipe/drag gestures (horizontal = mode shift, vertical = chromatic transposition; see Bugs/Polish for design notes)
@@ -26,7 +26,7 @@ parity. Open both side by side during testing.
 - [x] Audio — scale playback (ascending arpeggio)
 - [x] Audio — chord playback (arpeggiate then strum)
 - [x] Metronome — start/stop, BPM control, tap tempo, time signature, downbeat accent
-- [ ] Chromatic tuner — microphone pitch detection, cents display, needle animation
+- [x] Chromatic tuner — microphone pitch detection, cents display, needle animation
 - [x] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
 - [x] Mobile layout — touch targets all ≥ 44pt (PR #89): HarmonyGrid columns, picker rows, reset button; LCD displays non-interactive; layout compacted (portrait 12px gaps, landscape 8px, max-width 1100px); keyboard/fretboard equal height in landscape; ScaleStrip flex layout in portrait eliminates tile overlap
 - [x] ScaleNavigator — split into two independent first-class sections: "Key & Mode" (`scale-logical`: ROOT/FAMILY/MODE knobs) and "Scale Explorer" (`scale-exploratory`: BRIGHTNESS/TENSION/VOLUME knobs); each has its own `SectionId`, visibility toggle, and drag-reorder slot in SectionMenu; "Key & Mode" hidden by default on mobile portrait, "Scale Explorer" visible by default
@@ -44,9 +44,10 @@ parity. Open both side by side during testing.
 - [x] FretboardVisualizer component (guitar fretboard, reads `guitarTuning` from store)
 - [x] Migrate Web Audio engine → `src/audio/index.ts` + `useAudio` hook
 - [x] Metronome component (BPM, time signature, tap tempo, downbeat accent)
-- [ ] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
+- [x] Chromatic Tuner component (autocorrelation pitch detection, guided per-string mode)
 - [ ] WheelModal (picker for key / mode / scale type selection) — deprioritized; may be superseded by swipe gestures on ScaleStrip; retain as accessibility fallback candidate
-- [ ] Shareable URLs (encode key + mode + scale type in query params)
+- [x] Shareable URLs (encode key + mode + scale type in query params)
+- [ ] Randomize button — pick a random root, family, and mode; wires into existing store actions
 - [ ] Circle of Fifths visualizer — interactive; clicking a wedge drives the full app state (key, relative mode); integrated with the unified store
 
 ---
@@ -70,12 +71,12 @@ parity. Open both side by side during testing.
 
 - [ ] Functional harmony labels on HarmonyGrid rows (T / S / D — Tonic / Subdominant / Dominant)
 - [x] Roman numeral analysis shown in ScaleStrip (chord quality: uppercase major, lowercase minor, °dim)
-- [ ] Roman numeral analysis in HarmonyGrid row headers
+- [x] Roman numeral analysis in HarmonyGrid row headers
 - [ ] Progression Builder component (4–8 chord slots, drag-to-reorder, loop playback)
 - [ ] Common progressions library (I–V–vi–IV, ii–V–I, 12-bar blues, etc.)
 - [ ] Parallel / relative mode panel (e.g. show C major ↔ A minor side by side)
 - [ ] Theory tooltips (tap interval name to get explanation, e.g. "minor 7th")
-- [ ] Chord inversion display option in HarmonyGrid
+- [x] Chord inversion display — voicing navigator added to KeyboardVisualizer and FretboardVisualizer (prev/next, shows current voicing label)
 
 ---
 
@@ -88,12 +89,26 @@ parity. Open both side by side during testing.
   - [ ] Tension formula: `ratio = 2^(n/6)` where n = semitones above standard
   - [ ] Guided tuning mode in Tuner (reads active `guitarTuning`, shows per-string target)
 - [ ] CAGED scale box positions on fretboard
-- [ ] Guitar chord voicing suggestions (common fingerings for selected HarmonyGrid chord)
+- [x] Guitar chord voicing suggestions — `computeGuitarVoicings` in `src/theory/voicings.ts`; curated open shapes for standard tuning + algorithmic layer for all tunings; prev/next navigator in FretboardVisualizer; state in Zustand store (`guitarVoicingIndex`)
+- [x] Keyboard chord inversions — `computeKeyboardVoicings` in `src/theory/voicings.ts`; root position + inversions + Drop 2/3 for 7th chords; prev/next navigator in KeyboardVisualizer; state in Zustand store (`keyboardVoicingIndex`)
 - [ ] Capo support (offset all fretboard display by n frets)
 
 ---
 
-## Phase 5 — Ear Training
+## Phase 5 — Layout Configuration
+
+- [ ] **User-configurable named layouts** — let users save named presets that record which sections
+  are visible and how they are arranged for each orientation (portrait vs landscape). Switching
+  presets instantly reconfigures the view without requiring manual toggle-and-drag each time.
+  Example presets: "Instrument Practice" (keyboard + fretboard + tuner + metronome), "Theory Study"
+  (harmony grid + scale strip + circle of fifths), "Compose" (harmony + scale explorer + metronome).
+  Design questions to resolve: preset storage (localStorage vs cloud), conflict-resolution when a
+  section added in a future update doesn't exist in a saved preset, and a discoverable UI surface
+  (bottom sheet, gear panel, or dedicated Layout screen).
+
+---
+
+## Phase 6 — Ear Training
 
 - [ ] Interval identification mode (play two notes, user identifies the interval)
 - [ ] Chord quality identification (play chord, user identifies major / minor / dim / aug / etc.)
@@ -102,7 +117,7 @@ parity. Open both side by side during testing.
 
 ---
 
-## Phase 6 — iOS App (Capacitor)
+## Phase 7 — iOS App (Capacitor)
 
 - [ ] Install and configure Capacitor (`@capacitor/core`, `@capacitor/ios`)
 - [ ] Bottom tab bar navigation (Explore / Practice / Visualize / Tools)
@@ -115,7 +130,7 @@ parity. Open both side by side during testing.
 
 ---
 
-## Phase 7 — Input Modalities
+## Phase 8 — Input Modalities
 
 - [ ] **Web MIDI input** — detect connected MIDI controllers; incoming notes light up
   keyboard, fretboard, and scale strip; simultaneous notes trigger chord detection
@@ -132,12 +147,12 @@ parity. Open both side by side during testing.
 
 - [ ] Vitest config uses `/// <reference types="vitest" />` triple-slash pattern (older); migrate to `import type { UserConfig } from 'vitest/config'` when upgrading Vitest
 - [ ] `computeRomans` test for non-7-note input tests an undocumented fallback — if the fallback behavior ever changes, this test will give a false signal; revisit when expanding theory test coverage
+- [ ] Voicing computation (`computeKeyboardVoicings` / `computeGuitarVoicings`) is recomputed on each chord/tuning/maxDegree change. Fast enough now, but not free. If profiling ever shows it as a bottleneck, consider a `Map` keyed by `(rootPc, quality, maxDegree, tuningSignature)` for memoization.
 
 ---
 
 ## Bugs / Polish
 
-- [ ] Enharmonic preference persistence (user picks C# vs Db — survives navigation)
 - [x] ScaleStrip — scale description annotation below strip (mode name + family context)
 - [x] ScaleStrip active tiles now use diatonic spelling (`currentScale.spelled`) so Cb/E#/B# render correctly instead of falling back to chromatic names
 - [x] Fretboard + keyboard visualizers now respect per-row harmony extension overrides (previously only used `globalHarmonyMax`)
@@ -151,6 +166,7 @@ parity. Open both side by side during testing.
 - [x] ScaleNavigator pickers — all popups scroll to center the current selection on open
 - [ ] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile)
 - [ ] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile; scroll-conflict is the engineering challenge to solve, e.g. long-press to enter drag mode or a dedicated drag handle)
+- [ ] ScaleNavigator knob labels hidden on desktop — `@media (orientation: landscape)` always fires on desktop (window is always wider than tall); scope to narrow/touch viewports only
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [ ] ScaleNavigator — haptic feedback on knob step (where supported)
 - [ ] ScaleNavigator — persist navigator group visibility independently of orientation changes (currently resets to orientation default on each page load rather than remembering the user's last manual choice)

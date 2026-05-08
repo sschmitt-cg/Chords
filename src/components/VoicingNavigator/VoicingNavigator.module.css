@@ -1,0 +1,50 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+  min-height: 44px;
+  /* 44pt row height keeps layout stable whether or not buttons are rendered */
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--text-secondary, #5a6080);
+  font-size: 1.1rem;
+  border-radius: 8px;
+  transition: background 0.1s, color 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--surface-2, rgba(90, 96, 128, 0.1));
+  color: var(--text-primary, #1a2060);
+}
+
+.btn:active:not(:disabled) {
+  background: var(--surface-2, rgba(90, 96, 128, 0.18));
+}
+
+.btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary, #5a6080);
+  white-space: nowrap;
+  min-width: 80px;
+  text-align: center;
+  letter-spacing: 0.01em;
+}

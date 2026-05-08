@@ -141,6 +141,36 @@
   display: none;
 }
 
+/* Muted string X marker */
+.role_muted {
+  background: none;
+  border: none;
+  border-radius: 0;
+  cursor: default;
+  pointer-events: none;
+  position: relative;
+}
+
+.role_muted::before,
+.role_muted::after {
+  content: '';
+  position: absolute;
+  width: 9px;
+  height: 2px;
+  background: rgba(22, 26, 48, 0.45);
+  top: 50%;
+  left: 50%;
+  border-radius: 1px;
+}
+
+.role_muted::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.role_muted::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
 /* ---- Fret position markers ---- */
 
 .markerLayer {
