@@ -1,11 +1,6 @@
 /* Share card — rendered off-screen for PNG export; must look good standalone */
 
 .card {
-  position: fixed;
-  /* Off-screen but not display:none so html-to-image can measure it.
-     top offset (not left) avoids potential horizontal scrollbar on desktop. */
-  top: -9999px;
-  left: 0;
   width: 360px;
   background: #1a2660;
   border-radius: 16px;

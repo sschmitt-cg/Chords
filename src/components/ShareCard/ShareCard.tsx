@@ -1,6 +1,3 @@
-// Off-screen chord-sheet component for PNG export.
-// Renders the current tonal state as a shareable "chord sheet" image.
-// Positioned off-screen (not display:none) so html-to-image can measure it.
 
 import { forwardRef } from 'react'
 import { useTonalStore } from '../../store/index'

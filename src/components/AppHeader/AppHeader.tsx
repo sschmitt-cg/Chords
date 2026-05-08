@@ -52,11 +52,6 @@ export default function AppHeader() {
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
         backgroundColor: '#1a2660',
         pixelRatio: 2,
-        // The card uses position:fixed + top:-9999px to stay off-screen while
-        // mounted. html-to-image clones it into a new document where fixed
-        // positioning still offsets by -9999px, pushing content out of the
-        // canvas. Override to relative/static so the clone renders in-place.
-        style: { position: 'relative', top: '0', left: '0' },
       })
       const res  = await fetch(dataUrl)
       const blob = await res.blob()
@@ -176,8 +171,12 @@ export default function AppHeader() {
         </div>
       </header>
 
-      {/* Share card — always mounted off-screen so html-to-image can capture it */}
-      <ShareCard ref={shareCardRef} />
+      {/* Off-screen capture host: fixed so it escapes parent clipping, left:-9999px
+          keeps it invisible. The card itself has no position:fixed, so
+          html-to-image captures it at a clean (0,0) origin. */}
+      <div style={{ position: 'fixed', top: 0, left: '-9999px' }}>
+        <ShareCard ref={shareCardRef} />
+      </div>
 
       {menuOpen && (
         <SectionMenu
