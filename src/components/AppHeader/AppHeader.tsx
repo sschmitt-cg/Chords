@@ -11,11 +11,14 @@ export default function AppHeader() {
   const shareBtnRef  = useRef<HTMLButtonElement>(null)
   const shareCardRef = useRef<HTMLDivElement>(null)
 
-  const randomize = useTonalStore(s => s.randomize)
+  const randomize      = useTonalStore(s => s.randomize)
+  const tonicLabel     = useTonalStore(s => s.currentTonicLabel)
+  const modeName       = useTonalStore(s => s.currentMode.name)
+  const familyName     = useTonalStore(s => s.currentFamily.name)
 
-  const [menuOpen, setMenuOpen]   = useState(false)
+  const [menuOpen, setMenuOpen]     = useState(false)
   const [menuAnchor, setMenuAnchor] = useState<DOMRect | null>(null)
-  const [shareOpen, setShareOpen] = useState(false)
+  const [shareOpen, setShareOpen]   = useState(false)
   const [isCapturing, setIsCapturing] = useState(false)
 
   function toggleMenu() {
@@ -40,7 +43,7 @@ export default function AppHeader() {
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [shareOpen])
 
-  const captureCard = useCallback(async (): Promise<{ blob: Blob; file: File } | null> => {
+  const captureCard = useCallback(async (filename: string): Promise<{ blob: Blob; file: File } | null> => {
     if (!shareCardRef.current) return null
     // flushSync forces the re-render to complete before toPng reads the DOM,
     // so the share card re-renders with the latest store state before capture.
@@ -49,10 +52,15 @@ export default function AppHeader() {
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
         backgroundColor: '#1a2660',
         pixelRatio: 2,
+        // The card uses position:fixed + top:-9999px to stay off-screen while
+        // mounted. html-to-image clones it into a new document where fixed
+        // positioning still offsets by -9999px, pushing content out of the
+        // canvas. Override to relative/static so the clone renders in-place.
+        style: { position: 'relative', top: '0', left: '0' },
       })
       const res  = await fetch(dataUrl)
       const blob = await res.blob()
-      const file = new File([blob], 'tonal-explorer.png', { type: 'image/png' })
+      const file = new File([blob], filename, { type: 'image/png' })
       return { blob, file }
     } catch {
       return null
@@ -63,7 +71,8 @@ export default function AppHeader() {
 
   const handleShareNative = useCallback(async () => {
     setShareOpen(false)
-    const result = await captureCard()
+    const filename = buildFilename(tonicLabel, modeName, familyName)
+    const result = await captureCard(filename)
     if (!result) return
     const { blob, file } = result
     const canShareFile =
@@ -74,20 +83,20 @@ export default function AppHeader() {
       if (canShareFile) {
         await navigator.share({ files: [file], title: 'Tonal Explorer', text: window.location.href })
       } else {
-        // Web Share not available — fall back to download
-        triggerDownload(blob)
+        triggerDownload(blob, filename)
       }
     } catch {
       // User cancelled the share sheet
     }
-  }, [captureCard])
+  }, [captureCard, tonicLabel, modeName, familyName])
 
   const handleDownload = useCallback(async () => {
     setShareOpen(false)
-    const result = await captureCard()
+    const filename = buildFilename(tonicLabel, modeName, familyName)
+    const result = await captureCard(filename)
     if (!result) return
-    triggerDownload(result.blob)
-  }, [captureCard])
+    triggerDownload(result.blob, filename)
+  }, [captureCard, tonicLabel, modeName, familyName])
 
   return (
     <>
@@ -181,11 +190,19 @@ export default function AppHeader() {
   )
 }
 
-function triggerDownload(blob: Blob): void {
+function buildFilename(tonic: string, mode: string, family: string): string {
+  const slug = `${tonic} ${mode} ${family}`
+    .replace(/[^a-zA-Z0-9# ]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+  return `${slug}.png`
+}
+
+function triggerDownload(blob: Blob, filename: string): void {
   const objectUrl = URL.createObjectURL(blob)
   const anchor    = document.createElement('a')
   anchor.href     = objectUrl
-  anchor.download = 'tonal-explorer.png'
+  anchor.download = filename
   anchor.click()
   URL.revokeObjectURL(objectUrl)
 }
