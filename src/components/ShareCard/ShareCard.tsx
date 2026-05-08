@@ -4,8 +4,17 @@
 
 import { forwardRef } from 'react'
 import { useTonalStore } from '../../store/index'
-import { chordNameForRow, pcColorVar } from '../../theory/index'
+import { chordNameForRow } from '../../theory/index'
 import styles from './ShareCard.module.css'
+
+// html-to-image clones the element into a new document and can't follow nested
+// CSS variable chains (--pc-color → var(--pc-N) → hex). Resolve to the actual
+// hex value from :root so color-mix() works in the cloned context.
+function resolvedPcColor(pc: number): string {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(`--pc-${pc}`)
+    .trim()
+}
 
 const ShareCard = forwardRef<HTMLDivElement>(
   function ShareCard(_props, ref) {
@@ -42,7 +51,7 @@ const ShareCard = forwardRef<HTMLDivElement>(
                 <span
                   key={`${pc}-${note}`}
                   className={styles.notePill}
-                  style={{ '--pc-color': pcColorVar(pc) } as React.CSSProperties}
+                  style={{ '--pc-color': resolvedPcColor(pc) } as React.CSSProperties}
                 >
                   {note}
                 </span>
@@ -61,7 +70,7 @@ const ShareCard = forwardRef<HTMLDivElement>(
               <div key={row.index} className={styles.harmonyRow}>
                 <span
                   className={styles.romanNumeral}
-                  style={{ color: pcColorVar(rootPc) }}
+                  style={{ color: resolvedPcColor(rootPc) }}
                 >
                   {row.degree}
                 </span>
