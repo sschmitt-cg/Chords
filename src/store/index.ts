@@ -148,6 +148,7 @@ interface TonalStore {
   setGuitarVoicingIndex: (index: number) => void
   setProgressionSlot: (slotIndex: number, chordIndex: number | null) => void
   setLoopPlaying: (playing: boolean) => void
+  randomize: () => void
 }
 
 // Build the derived fields that the ScaleNavigator reads
@@ -481,4 +482,15 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
     }),
 
   setLoopPlaying: (playing) => set({ isLoopPlaying: playing }),
+
+  randomize: () => {
+    const familyIndex = Math.floor(Math.random() * SCALE_FAMILIES.length)
+    const family      = SCALE_FAMILIES[familyIndex]
+    const modeIndex   = Math.floor(Math.random() * family.modes.length)
+    const root        = Math.floor(Math.random() * 12)
+    const store = get()
+    store.setFamily(familyIndex)
+    store.setModeIndex(modeIndex)
+    store.setKey(root)
+  },
 }))

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type React from 'react'
 import { useLayoutStore, type SectionId } from './store/layout'
 import AppHeader from './components/AppHeader/AppHeader'
+import { useUrlSync } from './hooks/useUrlSync'
 import ScaleLogical from './components/ScaleNavigator/ScaleLogical'
 import ScaleExploratory from './components/ScaleNavigator/ScaleExploratory'
 import ScaleStrip from './components/ScaleStrip/index'
@@ -49,6 +50,7 @@ function useIsLandscape() {
 function App(): React.ReactElement {
   const { sectionOrder, sectionVisible } = useLayoutStore()
   const isLandscape = useIsLandscape()
+  useUrlSync()
 
   const leftEmpty  = LANDSCAPE_LEFT.every(id => !sectionVisible[id])
   const rightEmpty = LANDSCAPE_RIGHT.every(id => !sectionVisible[id])
