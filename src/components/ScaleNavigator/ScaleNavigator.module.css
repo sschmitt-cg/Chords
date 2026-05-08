@@ -147,9 +147,11 @@
   flex-shrink: 0;
 }
 
-/* ---- Landscape: hide labels and compact LCD to recover vertical space ---- */
+/* ---- Landscape on narrow viewports only: hide labels and compact LCD to recover vertical space.
+   Desktop windows are always wider than tall (landscape), but the knob labels should stay visible
+   there. Combining max-width with orientation scopes the rule to phone-sized landscape only. ---- */
 
-@media (orientation: landscape) {
+@media (orientation: landscape) and (max-width: 768px) {
   .panel { padding: 10px 14px 12px; }
   .knobLabel { display: none; }
   .lcd { min-height: 20px; font-size: 0.625rem; padding: 3px 4px; }
