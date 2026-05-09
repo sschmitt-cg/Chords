@@ -18,6 +18,7 @@ constraints, and current work status.
 | `INBOX.md` | Raw ideas routed here from the Apple Notes inbox — not authoritative |
 | `SCRATCH.md` | In-session working space for discussion and exploration before committing |
 | `.claude/commands/next-step.md` | Orchestration logic for the `/next-step` slash command |
+| `.claude/commands/auto-build.md` | Orchestration logic for the `/auto-build` slash command |
 
 ---
 
@@ -30,6 +31,12 @@ propose the change clearly and wait for explicit confirmation. Never edit them s
 
 `INBOX.md` and `SCRATCH.md` are working surfaces. They can be freely updated during
 sessions without confirmation.
+
+### Documentation maintenance
+`docs/user-guide.md` and `docs/admin-guide.md` are user-facing documents — keep them current alongside code changes:
+- When implementing a feature with user-visible behavior, update `docs/user-guide.md`.
+- When making configuration, environment variable, or deployment changes, update `docs/admin-guide.md`.
+- If either file still contains the stub template (check for the `> **Template:**` marker), propose a comprehensive docs update as a dedicated follow-on task rather than attempting it inline.
 
 ### Inbox workflow
 When the user asks to process the inbox, read `INBOX.md`, discuss how the items map
@@ -46,6 +53,10 @@ For small, unambiguous tasks this step can be skipped.
 ### When requirements are unclear
 Ask rather than assume. One short clarifying question is better than building
 the wrong thing.
+
+### Factual accuracy
+- **Claude in session:** Verify claims before asserting them. Do not rely on training data for specifics that change over time (library versions, API behavior, current events). Search for current information, check official docs, or explicitly flag uncertainty. Never fabricate citations, version numbers, URLs, or behavior descriptions.
+- **App runtime:** When the project presents factual data to end users, source it from a reliable, current source rather than a static snapshot or hardcoded value. Any code path that generates factual content via an LLM or AI model must include a runtime verification step before presenting it to the user — grounding against a trusted source, a fact-check pass, or explicit attribution. Never allow unverified model output to reach the user as fact. Code review must flag any fact-generation path that lacks this verification layer.
 
 ### TypeScript
 - Never use `any` without a comment on the same line explaining why.
