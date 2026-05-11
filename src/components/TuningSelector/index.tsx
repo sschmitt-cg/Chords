@@ -34,14 +34,20 @@ function tuningNoteLabels(tuning: GuitarTuning): string {
 
 interface TuningSelectorProps {
   onSelect?: () => void
+  onClose?: () => void
 }
 
-export default function TuningSelector({ onSelect }: TuningSelectorProps): React.ReactElement {
+export default function TuningSelector({ onSelect, onClose }: TuningSelectorProps): React.ReactElement {
   const { guitarTuning, setGuitarTuning } = useTonalStore()
 
   return (
     <div className={styles.wrapper}>
-      <div className={styles.header}>Tuning</div>
+      <div className={styles.header}>
+        <span>Tuning</span>
+        {onClose && (
+          <button className={styles.closeBtn} aria-label="Close tuning selector" onClick={onClose}>✕</button>
+        )}
+      </div>
       <div className={styles.presetList}>
         {PRESETS.map(preset => {
           const isActive = tuningMatches(guitarTuning, preset.tuning)

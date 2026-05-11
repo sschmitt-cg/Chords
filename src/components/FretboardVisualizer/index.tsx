@@ -128,37 +128,32 @@ export default function FretboardVisualizer(): React.ReactElement {
           className={styles.tuningModal}
           onClick={(e) => e.stopPropagation()}
         >
-          <TuningSelector onSelect={() => setTuningModalOpen(false)} />
-          <button
-            className={styles.tuningModalClose}
-            aria-label="Close tuning selector"
-            onClick={() => setTuningModalOpen(false)}
-          >
-            ✕
-          </button>
+          <TuningSelector onSelect={() => setTuningModalOpen(false)} onClose={() => setTuningModalOpen(false)} />
         </div>
       </div>
     )}
     <div className={styles.wrapper} aria-label="Guitar fretboard">
       <div className={styles.fretboardRow}>
-        <div className={styles.stringLabels} aria-label="Open string notes, tap to change tuning">
+        <button
+          className={styles.stringLabels}
+          aria-label="Tap to change tuning"
+          onClick={() => setTuningModalOpen(true)}
+        >
           {Array.from({ length: STRING_COUNT }, (_, stringIdx) => {
             const midi = guitarTuning[stringIdx]
             const pc = wrap(midi, 12)
             const name = SHARP_NAMES[pc]
             return (
-              <button
+              <span
                 key={stringIdx}
                 className={styles.stringLabel}
                 style={{ '--pc-color': pcColorVar(pc) } as React.CSSProperties}
-                aria-label={`String ${stringIdx + 1}: ${name}. Tap to change tuning.`}
-                onClick={() => setTuningModalOpen(true)}
               >
                 {name}
-              </button>
+              </span>
             )
           })}
-        </div>
+        </button>
       <div
         className={styles.shell}
         style={{
