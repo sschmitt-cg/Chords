@@ -3,9 +3,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 6px;
   min-height: 44px;
-  /* 44pt row height keeps layout stable whether or not buttons are rendered */
 }
 
 .btn {

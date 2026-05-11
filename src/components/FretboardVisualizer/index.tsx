@@ -128,7 +128,7 @@ export default function FretboardVisualizer(): React.ReactElement {
           className={styles.tuningModal}
           onClick={(e) => e.stopPropagation()}
         >
-          <TuningSelector />
+          <TuningSelector onSelect={() => setTuningModalOpen(false)} />
           <button
             className={styles.tuningModalClose}
             aria-label="Close tuning selector"
@@ -257,13 +257,15 @@ export default function FretboardVisualizer(): React.ReactElement {
       </div>
       </div>
 
-      <VoicingNavigator
-        description={description}
-        index={guitarVoicingIndex}
-        total={selectedRow ? voicings.length : 0}
-        onPrev={handlePrevVoicing}
-        onNext={handleNextVoicing}
-      />
+      <div className={styles.navOverlay}>
+        <VoicingNavigator
+          description={description}
+          index={guitarVoicingIndex}
+          total={selectedRow ? voicings.length : 0}
+          onPrev={handlePrevVoicing}
+          onNext={handleNextVoicing}
+        />
+      </div>
     </div>
     </>
   )

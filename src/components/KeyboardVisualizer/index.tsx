@@ -182,13 +182,15 @@ export default function KeyboardVisualizer(): React.ReactElement {
 
       </div>
 
-      <VoicingNavigator
-        description={description}
-        index={keyboardVoicingIndex}
-        total={selectedRow ? voicings.length : 0}
-        onPrev={handlePrevVoicing}
-        onNext={handleNextVoicing}
-      />
+      <div className={styles.navOverlay}>
+        <VoicingNavigator
+          description={description}
+          index={keyboardVoicingIndex}
+          total={selectedRow ? voicings.length : 0}
+          onPrev={handlePrevVoicing}
+          onNext={handleNextVoicing}
+        />
+      </div>
     </div>
   )
 }
