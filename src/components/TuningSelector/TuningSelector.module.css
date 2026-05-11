@@ -8,17 +8,40 @@
 }
 
 .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
   font-size: 0.5625rem;
   color: #8090c0;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-weight: 600;
-  margin-bottom: 10px;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  color: #8090c0;
+  font-size: 1rem;
+  cursor: pointer;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.1s;
+}
+
+.closeBtn:hover {
+  color: #c0cce8;
 }
 
 .presetList {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
 }
 
@@ -28,8 +51,7 @@
   align-items: flex-start;
   gap: 3px;
   padding: 8px 10px;
-  min-height: 44px;
-  min-width: 44px;
+  height: 60px;
   background: #111c50;
   border: 1px solid #2c3c78;
   border-radius: 8px;
@@ -52,7 +74,6 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: #c0cce8;
-  white-space: nowrap;
 }
 
 .presetBtnActive .presetName {

@@ -17,8 +17,8 @@ export const SECTION_LABELS: Record<SectionId, string> = {
 }
 
 // Sections that appear in the menu but are positionally fixed (not drag-reorderable).
-// Rendered at a fixed position relative to their coupled component (e.g. tuning-selector below fretboard).
-export const PINNED_SECTIONS: SectionId[] = ['tuning-selector']
+// tuning-selector was here but is now accessed directly from fretboard string labels.
+export const PINNED_SECTIONS: SectionId[] = []
 
 export const DEFAULT_ORDER: SectionId[] = ['scale-logical', 'scale-exploratory', 'circle', 'strip', 'keyboard', 'fretboard', 'harmony', 'metronome', 'tuner']
 
@@ -81,7 +81,7 @@ export const useLayoutStore = create<LayoutStore>()(
           if (state.sectionVisible['tuner'] === undefined) state.sectionVisible['tuner'] = true
         }
         if (version < 3) {
-          // Add tuning-selector as a pinned section (not in sectionOrder); hidden by default
+          // Migrate legacy sectionVisible record that may not include tuning-selector
           if (state.sectionVisible['tuning-selector'] === undefined) {
             state.sectionVisible['tuning-selector'] = false
           }
