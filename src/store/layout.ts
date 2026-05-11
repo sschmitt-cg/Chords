@@ -81,7 +81,7 @@ export const useLayoutStore = create<LayoutStore>()(
           if (state.sectionVisible['tuner'] === undefined) state.sectionVisible['tuner'] = true
         }
         if (version < 3) {
-          // Add tuning-selector as a pinned section (not in sectionOrder); hidden by default
+          // Migrate legacy sectionVisible record that may not include tuning-selector
           if (state.sectionVisible['tuning-selector'] === undefined) {
             state.sectionVisible['tuning-selector'] = false
           }

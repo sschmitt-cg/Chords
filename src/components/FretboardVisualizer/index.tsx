@@ -141,7 +141,6 @@ export default function FretboardVisualizer(): React.ReactElement {
     )}
     <div className={styles.wrapper} aria-label="Guitar fretboard">
       <div className={styles.fretboardRow}>
-        {/* Left column: open-string note names — clicking opens tuning selector */}
         <div className={styles.stringLabels} aria-label="Open string notes, tap to change tuning">
           {Array.from({ length: STRING_COUNT }, (_, stringIdx) => {
             const midi = guitarTuning[stringIdx]
