@@ -9,13 +9,33 @@ only when something is truly broken or a decision cannot be safely deferred.
 
 ## Pre-flight
 
-Check for existing session artifacts:
+### Pending items check
 
-- If `.build/BUILD_PLAN.md` exists: offer to resume the previous build or start
-  fresh. If resuming, skip to Phase 3 and continue from the first uncompleted
-  item in BUILD_PLAN.md.
-- If `.claude/settings.local.json` exists without a BUILD_PLAN.md: warn that a
-  stale permissions file exists and offer to clean it up before continuing.
+Before checking for a prior build plan, check whether persistent tracking files
+exist with unresolved content:
+
+- Run `ls .build/OPEN_QUESTIONS.md 2>/dev/null || echo absent` — if present, read
+  the Unresolved section and count items
+- Run `ls .build/TEST_TRACKER.md 2>/dev/null || echo absent` — if present, read
+  the Pending section and count items
+
+If either has content, report the count to the user:
+> "X open questions and Y pending tests remain from a prior build."
+
+Ask: "Would you like to review them now before starting, or carry them forward to
+be addressed at the end of this build?"
+
+- **Review now**: follow the `/test-companion` process to work through these
+  items. When the session is complete, return here and continue with the prior
+  build check below.
+- **Carry forward**: proceed — the items will persist and be consolidated with new
+  items at the end of this build.
+
+### Prior build check
+
+If `.build/BUILD_PLAN.md` exists, offer to resume the previous build or start
+fresh. If resuming, skip to Phase 3 and continue from the first uncompleted item
+in BUILD_PLAN.md.
 
 ---
 
@@ -85,6 +105,8 @@ Incorporate changes and confirm the final plan.
 
 ### 1g. Write `.build/BUILD_PLAN.md`
 
+Create the `.build/` directory if it does not exist.
+
 ```markdown
 # Build Plan
 
@@ -106,9 +128,6 @@ Incorporate changes and confirm the final plan.
 
 ## Prerequisites
 - [Any env setup, global installs, or manual steps to complete before starting]
-
-## Open Questions
-[Empty at start — populated during the build]
 ```
 
 ---
@@ -126,65 +145,9 @@ These are the only commands that may operate outside the project directory
 (e.g., `npm install -g`, `brew install`, database setup). All subsequent
 commands are scoped to the project.
 
-### 2b. Generate `.claude/settings.local.json`
+### 2b. Initialize tracking files
 
-Inspect the project to determine what commands the build will need, then write a
-tailored allow list. Check each of the following:
-
-- **Package manager**: presence of `pnpm-lock.yaml` or `pnpm-workspace.yaml` → pnpm;
-  else `package.json` → npm. Read `package.json` scripts to confirm the exact test,
-  lint, and typecheck command names.
-- **Python stack**: presence of `requirements.txt`, `pyproject.toml`, or `setup.py`.
-- **Virtual environment**: whether `.venv/` or `venv/` exists (check both).
-
-Build the allow list from these layers and write it to `.claude/settings.local.json`:
-
-**Always include** — universal git, filesystem, and gh operations:
-```
-"Bash(ls *)", "Bash(find *)", "Bash(cat *)",
-"Bash(git -C * status)", "Bash(git -C * add *)", "Bash(git -C * commit *)",
-"Bash(git -C * push *)", "Bash(git -C * pull)", "Bash(git -C * pull *)",
-"Bash(git -C * checkout *)", "Bash(git -C * branch *)", "Bash(git -C * diff *)",
-"Bash(git -C * log *)", "Bash(git -C * stash *)", "Bash(git -C * show *)",
-"Bash(git -C * remote *)",
-"Bash(gh pr create *)", "Bash(gh pr merge *)", "Bash(gh pr view *)",
-"Bash(gh pr list *)", "Bash(gh pr checks *)", "Bash(gh run *)", "Bash(gh issue *)"
-```
-
-**npm project**: also add
-```
-"Bash(npm install *)", "Bash(npm run *)", "Bash(npm test *)",
-"Bash(npm audit *)", "Bash(npx tsc *)", "Bash(npx eslint *)", "Bash(npx prettier *)", "Bash(npx create-*)"
-```
-
-**pnpm project**: also add
-```
-"Bash(pnpm install *)", "Bash(pnpm add *)", "Bash(pnpm run *)",
-"Bash(pnpm test *)", "Bash(pnpm exec *)", "Bash(npx tsc *)", "Bash(npx eslint *)", "Bash(npx prettier *)", "Bash(npx create-*)"
-```
-
-**Python project**: also add
-```
-"Bash(python -m pytest *)", "Bash(python3 -m pytest *)",
-"Bash(python3 -m mypy *)", "Bash(python3 -m ruff *)",
-"Bash(pip install *)", "Bash(pip3 install *)"
-```
-
-**Python with `.venv/`**: also add
-```
-"Bash(./.venv/bin/python *)", "Bash(./.venv/bin/python3 *)",
-"Bash(./.venv/bin/pip *)", "Bash(./.venv/bin/pytest *)",
-"Bash(./.venv/bin/mypy *)", "Bash(./.venv/bin/ruff *)"
-```
-
-**Python with `venv/`**: also add
-```
-"Bash(./venv/bin/python *)", "Bash(./venv/bin/python3 *)",
-"Bash(./venv/bin/pip *)", "Bash(./venv/bin/pytest *)",
-"Bash(./venv/bin/mypy *)", "Bash(./venv/bin/ruff *)"
-```
-
-### 2c. Initialize tracking files
+**Session artifacts** — create fresh each build:
 
 Create `.build/BUILD_QUESTIONS.md`:
 
@@ -197,7 +160,8 @@ Create `.build/BUILD_QUESTIONS.md`:
 
 ## Open Questions
 
-[Populated if a question arises during the build that is logged and deferred.]
+[One-line pointers to questions deferred during the build. Full entries are
+written to .build/OPEN_QUESTIONS.md in real time as each question arises.]
 ```
 
 Create `.build/BUILD_SUMMARY.md`:
@@ -213,6 +177,45 @@ Create `.build/BUILD_SUMMARY.md`:
 ## Items Remaining
 [Full sequence from BUILD_PLAN.md — items removed as they complete.]
 ```
+
+**Persistent tracking files** — create only if absent:
+
+Run `ls .build/OPEN_QUESTIONS.md 2>/dev/null || echo absent`:
+- If absent, create `.build/OPEN_QUESTIONS.md`:
+
+```markdown
+# Open Questions
+
+<!--
+Entry format (Unresolved section):
+- **Q**: [question text]
+  **Default used**: [what was chosen to unblock the build]
+  **Revisit condition**: [what would trigger revisiting this decision]
+  **Added**: Build [YYYY-MM-DD]
+-->
+
+## Unresolved
+
+## Resolved
+```
+
+Run `ls .build/TEST_TRACKER.md 2>/dev/null || echo absent`:
+- If absent, create `.build/TEST_TRACKER.md`:
+
+```markdown
+# Test Tracker
+
+<!-- Checkbox conventions: [ ] pending, [x] passed, [!] failed (known failure) -->
+
+## Pending
+
+## Completed
+```
+
+If either file has items in its Unresolved or Pending section when Phase 2 begins
+(whether because the user chose "carry forward" in pre-flight, or chose "review now"
+but didn't clear everything), append a note to the Status line in BUILD_SUMMARY.md:
+`## Status: In Progress — N open questions and M pending tests carried forward`
 
 ---
 
@@ -238,24 +241,24 @@ Open questions: [none, or any item-specific questions to resolve]
 - The contents of `.build/session-plan.md`
 - Relevant non-obvious files (entry points, type definitions, config)
 
+Do NOT use `isolation: "worktree"` when spawning sub-agents — they work in the
+main project directory on their feature branch.
+
 The implementation sub-agent must:
-1. **As its absolute first action**, write `.claude/settings.local.json` to its
-   current working directory. The orchestrator must supply the **literal JSON
-   content** (not a description of it) in the sub-agent's handoff prompt, copied
-   verbatim from what was written in Phase 2b. This is required because the
-   sub-agent may run in a git worktree that does not inherit the orchestrator's
-   project settings, and passing literal content prevents the sub-agent from
-   reconstructing a different (potentially more permissive) allow list.
-2. Read `docs/architecture.md` and `docs/project-vision.md` before writing code
-3. Run validation gates before and after all changes
-4. Update `BACKLOG.md` to mark the item complete
-5. If the work implements user-visible behavior, check whether `docs/user-guide.md`
+1. Read `docs/architecture.md` and `docs/project-vision.md` before writing code
+2. Run validation gates before and after all changes
+3. Update `BACKLOG.md` to mark the item complete
+4. If the work implements user-visible behavior, check whether `docs/user-guide.md`
    exists and is populated (no `> **Template:**` stub marker). If populated, update
    it to reflect the new behavior as part of this task. Same check for
    `docs/admin-guide.md` if the work touches config, environment variables, or
    deployment. Do not attempt to populate a stub inline.
-6. If the work adds or removes commands, changes the file/directory structure, or
+5. If the work adds or removes commands, changes the file/directory structure, or
    affects how the template is used, update `README.md` to reflect the current state.
+6. If any open question arises during implementation that cannot be resolved
+   autonomously, append it to `.build/OPEN_QUESTIONS.md` (Unresolved section) with
+   the question text, default used, revisit condition, and today's date; also log a
+   one-line pointer in `.build/BUILD_QUESTIONS.md`'s Open Questions section.
 7. **Do not open a PR** — return only: branch name, changed file list, 3-sentence summary
 
 **3c. Spawn the review sub-agent** (per Step 6 of `/next-step`).
@@ -286,8 +289,9 @@ Stop the loop and report to the user when:
 - The build runner context approaches its limit (see Notes)
 
 **Log and continue** (do not stop) when:
-- An open question arises that has a reasonable default answer — log it to
-  BUILD_QUESTIONS.md (Open Questions section) and proceed with the default
+- An open question arises that has a reasonable default answer — the sub-agent
+  handles this per instruction 6 above; the orchestrator does not need to act,
+  just continue
 - An item requires a minor refactor to a previously completed item that does
   not affect unrelated code — fold it into the current PR
 - CI fails with a mechanical fix (type error, lint, broken import) — fix
@@ -304,12 +308,18 @@ disk when needed rather than relying on accumulated context.
 
 ## Phase 4 — Wrap-up
 
-### 4a. Update BUILD_QUESTIONS.md
+### 4a. Finalize open questions
 
-Move all decisions made during the build into the "Decisions Made" section in
-sequence. Summarize all unresolved open questions at the bottom under "Open
-Questions". Each entry should note: what the question is, what default was used,
-and what condition would trigger revisiting it.
+Open questions were written to `.build/OPEN_QUESTIONS.md` in real time during
+Phase 3, so no migration is needed. Close out BUILD_QUESTIONS.md by replacing
+the "Open Questions" section body with:
+`[All items written to .build/OPEN_QUESTIONS.md in real time — see that file.]`
+
+As a defensive check: read BUILD_QUESTIONS.md's Open Questions section. Pointer
+entries are a single line (e.g., "Q: [title] → see OPEN_QUESTIONS.md"). If any
+entry spans multiple lines — indicating it's a full question that wasn't written
+to OPEN_QUESTIONS.md in real time — and the same question is not already present
+in OPEN_QUESTIONS.md's Unresolved section, migrate it now with today's date.
 
 ### 4b. Spawn a test-plan sub-agent
 
@@ -319,11 +329,50 @@ Give it:
 - `docs/user-guide.md` if it exists and is populated (no `> **Template:**` stub
   marker) — for user-facing flow coverage
 
-The sub-agent produces a comprehensive end-to-end test plan organized by user
-flow. It should cover happy paths, key edge cases, and any areas flagged during
-security review.
+The sub-agent produces test entries in TEST_TRACKER.md format, grouped by app
+location/screen. It should cover happy paths and key edge cases. Each entry must
+follow this format:
 
-### 4c. Complete BUILD_SUMMARY.md
+```markdown
+### [Area — e.g., "Login", "Dashboard", "Settings"]
+
+- [ ] [Test title]
+  **Steps:** 1. [step]. 2. [step].
+  **Expected:** [what the user should see or experience]
+  **Added:** Build [YYYY-MM-DD]
+```
+
+Append the output to the Pending section of `.build/TEST_TRACKER.md` — do not
+replace existing entries.
+
+### 4c. Consolidate tracking files
+
+Spawn a consolidation sub-agent. Give it:
+- Full contents of `.build/OPEN_QUESTIONS.md`
+- Full contents of `.build/TEST_TRACKER.md`
+- The list of items built in this build (from BUILD_SUMMARY.md Items Completed)
+
+The sub-agent rewrites both files in place:
+
+**For OPEN_QUESTIONS.md (Unresolved section only):**
+- Merge duplicate or near-duplicate questions into a single entry, combining
+  defaults and revisit conditions
+- Remove any question that was definitively answered by the work in this build
+- Do not touch the Resolved section
+
+**For TEST_TRACKER.md (Pending section only):**
+- Merge duplicate or overlapping tests into a single entry
+- Group remaining tests by app location/screen/user flow (e.g., "Login",
+  "Dashboard", "Settings"). Create a `### [Area]` heading for each group.
+- Within each group, order tests to minimize back-and-forth navigation — complete
+  everything testable in one location before moving to another
+- Across groups, order groups by natural user flow sequence (onboarding before
+  features, setup before use, happy path before edge cases)
+- Honor explicit dependency notes — if a test says "requires X first," preserve
+  that ordering even if it crosses group boundaries
+- Do not touch the Completed section
+
+### 4d. Complete BUILD_SUMMARY.md
 
 ```markdown
 # Build Summary
@@ -340,21 +389,19 @@ security review.
 [From BUILD_QUESTIONS.md — decisions made]
 
 ## Open Questions
-[From BUILD_QUESTIONS.md — unresolved, with defaults used]
+See `.build/OPEN_QUESTIONS.md` — [N] unresolved items
 
-## End-to-End Test Plan
-[From test-plan sub-agent]
+## Test Plan
+See `.build/TEST_TRACKER.md` — [N] pending tests
 ```
 
-### 4d. Cleanup
-
-Delete `.claude/settings.local.json`.
+### 4e. Final report
 
 Report to the user:
 - Build complete (or partial, with reason for stopping)
 - PR list with merge status
 - Link to `.build/BUILD_SUMMARY.md`
-- Any open questions requiring follow-up
+- Count of open questions and pending tests, with a prompt to run `/test-companion`
 
 ---
 
@@ -368,6 +415,6 @@ Report to the user:
   preserve full state for resuming).
 - **`.build/` is gitignored.** These files are session artifacts, not project
   history. Add `.build/` to `.gitignore` if not already present.
-- **Settings cleanup on crash.** If the build aborts unexpectedly,
-  `.claude/settings.local.json` may persist. The Pre-flight check will catch
-  this on the next run.
+- **Persistent files survive builds.** OPEN_QUESTIONS.md and TEST_TRACKER.md
+  accumulate across builds. BUILD_PLAN.md, BUILD_QUESTIONS.md, BUILD_SUMMARY.md,
+  and session-plan.md are per-build artifacts and may be overwritten.
