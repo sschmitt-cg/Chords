@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useTonalStore } from '../../store/index'
-import { pcColorVar, wrap } from '../../theory/index'
+import { pcColorVar, wrap, SHARP_NAMES } from '../../theory/index'
 import VoicingNavigator from '../VoicingNavigator/index'
+import TuningSelector from '../TuningSelector/index'
 import styles from './FretboardVisualizer.module.css'
 
 const FRET_COUNT = 13  // frets 0–12
@@ -25,6 +26,8 @@ export default function FretboardVisualizer(): React.ReactElement {
     setSelectedChord,
     setGuitarVoicingIndex,
   } = useTonalStore()
+
+  const [tuningModalOpen, setTuningModalOpen] = useState(false)
 
   const scalePcs = new Set(currentScale.pitchClasses)
 
@@ -112,7 +115,51 @@ export default function FretboardVisualizer(): React.ReactElement {
   }
 
   return (
+    <>
+    {tuningModalOpen && (
+      <div
+        className={styles.tuningOverlay}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Tuning selector"
+        onClick={() => setTuningModalOpen(false)}
+      >
+        <div
+          className={styles.tuningModal}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TuningSelector />
+          <button
+            className={styles.tuningModalClose}
+            aria-label="Close tuning selector"
+            onClick={() => setTuningModalOpen(false)}
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+    )}
     <div className={styles.wrapper} aria-label="Guitar fretboard">
+      <div className={styles.fretboardRow}>
+        {/* Left column: open-string note names — clicking opens tuning selector */}
+        <div className={styles.stringLabels} aria-label="Open string notes, tap to change tuning">
+          {Array.from({ length: STRING_COUNT }, (_, stringIdx) => {
+            const midi = guitarTuning[stringIdx]
+            const pc = wrap(midi, 12)
+            const name = SHARP_NAMES[pc]
+            return (
+              <button
+                key={stringIdx}
+                className={styles.stringLabel}
+                style={{ '--pc-color': pcColorVar(pc) } as React.CSSProperties}
+                aria-label={`String ${stringIdx + 1}: ${name}. Tap to change tuning.`}
+                onClick={() => setTuningModalOpen(true)}
+              >
+                {name}
+              </button>
+            )
+          })}
+        </div>
       <div
         className={styles.shell}
         style={{
@@ -209,6 +256,7 @@ export default function FretboardVisualizer(): React.ReactElement {
         })}
 
       </div>
+      </div>
 
       <VoicingNavigator
         description={description}
@@ -218,5 +266,6 @@ export default function FretboardVisualizer(): React.ReactElement {
         onNext={handleNextVoicing}
       />
     </div>
+    </>
   )
 }
