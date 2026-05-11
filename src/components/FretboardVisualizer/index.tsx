@@ -257,15 +257,13 @@ export default function FretboardVisualizer(): React.ReactElement {
       </div>
       </div>
 
-      <div className={styles.navOverlay}>
-        <VoicingNavigator
-          description={description}
-          index={guitarVoicingIndex}
-          total={selectedRow ? voicings.length : 0}
-          onPrev={handlePrevVoicing}
-          onNext={handleNextVoicing}
-        />
-      </div>
+      <VoicingNavigator
+        description={description}
+        index={guitarVoicingIndex}
+        total={selectedRow ? voicings.length : 0}
+        onPrev={handlePrevVoicing}
+        onNext={handleNextVoicing}
+      />
     </div>
     </>
   )
