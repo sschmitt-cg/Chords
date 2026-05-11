@@ -8,15 +8,6 @@ that runs straight through unless a decision is needed that you cannot resolve.
 
 ---
 
-## Pre-flight
-
-Check for `.claude/settings.local.json`. If the file exists, a previous session
-may not have cleaned up. Report to the user: "A session-permissions file from a
-previous run exists at `.claude/settings.local.json`. Delete it before
-continuing?" Stop and wait for confirmation before proceeding.
-
----
-
 ## Step 1 — Check conversation context
 
 Before looking anywhere else, review the current conversation thread for any
@@ -56,6 +47,17 @@ Check these sources in priority order, **stopping as soon as one yields a clear 
 ---
 
 ## Step 3 — Propose and confirm
+
+Before presenting the proposal, check for pending items from prior builds:
+- Run `ls .build/OPEN_QUESTIONS.md 2>/dev/null || echo absent` — if present, read
+  the file and count Unresolved items. **Hold this count** — Step 10 will compare
+  against it to detect any new questions added during implementation.
+- Run `ls .build/TEST_TRACKER.md 2>/dev/null || echo absent` — if present, count
+  items in the Pending section
+
+If either has content, include a brief note alongside the proposal:
+> "Note: X open questions and Y pending tests remain from prior builds.
+> Run `/test-companion` to address them."
 
 Present the proposed task (or 3 options) to the user in a short paragraph:
 - What the task is
@@ -106,94 +108,37 @@ Key files: [list files most relevant to this task]
 Open questions: [any unresolved questions, or "none"]
 ```
 
-**5b. Generate `.claude/settings.local.json`** tailored to this project's stack.
-
-Inspect the project the same way auto-build does: check for `pnpm-lock.yaml`,
-`package.json`, `requirements.txt`/`pyproject.toml`, `.venv/`, `venv/`.
-
-Build the allow list and write it to `.claude/settings.local.json`:
-
-**Always include** — universal git, filesystem, and gh operations:
-```
-"Bash(ls *)", "Bash(find *)", "Bash(cat *)",
-"Bash(git -C * status)", "Bash(git -C * add *)", "Bash(git -C * commit *)",
-"Bash(git -C * push *)", "Bash(git -C * pull)", "Bash(git -C * pull *)",
-"Bash(git -C * checkout *)", "Bash(git -C * branch *)", "Bash(git -C * diff *)",
-"Bash(git -C * log *)", "Bash(git -C * stash *)", "Bash(git -C * show *)",
-"Bash(git -C * remote *)",
-"Bash(gh pr create *)", "Bash(gh pr view *)", "Bash(gh pr list *)",
-"Bash(gh pr checks *)", "Bash(gh run *)", "Bash(gh issue *)"
-```
-
-**npm project**: also add
-```
-"Bash(npm install *)", "Bash(npm run *)", "Bash(npm test *)",
-"Bash(npm audit *)", "Bash(npx tsc *)", "Bash(npx eslint *)", "Bash(npx prettier *)", "Bash(npx create-*)"
-```
-
-**pnpm project**: also add
-```
-"Bash(pnpm install *)", "Bash(pnpm add *)", "Bash(pnpm run *)",
-"Bash(pnpm test *)", "Bash(pnpm exec *)", "Bash(npx tsc *)", "Bash(npx eslint *)", "Bash(npx prettier *)", "Bash(npx create-*)"
-```
-
-**Python project**: also add
-```
-"Bash(python -m pytest *)", "Bash(python3 -m pytest *)",
-"Bash(python3 -m mypy *)", "Bash(python3 -m ruff *)",
-"Bash(pip install *)", "Bash(pip3 install *)"
-```
-
-**Python with `.venv/`**: also add
-```
-"Bash(./.venv/bin/python *)", "Bash(./.venv/bin/python3 *)",
-"Bash(./.venv/bin/pip *)", "Bash(./.venv/bin/pytest *)",
-"Bash(./.venv/bin/mypy *)", "Bash(./.venv/bin/ruff *)"
-```
-
-**Python with `venv/`**: also add
-```
-"Bash(./venv/bin/python *)", "Bash(./venv/bin/python3 *)",
-"Bash(./venv/bin/pip *)", "Bash(./venv/bin/pytest *)",
-"Bash(./venv/bin/mypy *)", "Bash(./venv/bin/ruff *)"
-```
-
-Note: `gh pr merge *` is intentionally excluded — merges require explicit user confirmation in next-step.
-
-**5c. Spawn a focused implementation sub-agent** with this context:
+**5b. Spawn a focused implementation sub-agent** with this context:
 - The agreed task description
 - The branch name to work on
 - The contents of `.build/session-plan.md`
 - Relevant files the agent cannot reasonably discover on its own (non-obvious entry points, key type definitions, config files with non-standard locations)
 - Any constraints specific to this task not already covered by CLAUDE.md
 
+Do NOT use `isolation: "worktree"` when spawning the implementation sub-agent — it works in the main project directory on its feature branch.
+
 Do not include full conversation history in the handoff prompt.
 
 The implementation agent should:
-1. **As its absolute first action**, write `.claude/settings.local.json` to its
-   current working directory. The orchestrator must supply the **literal JSON
-   content** (not a description of it) in the sub-agent's handoff prompt, copied
-   verbatim from what was written in Step 5b. This is required because the
-   sub-agent may run in a git worktree that does not inherit the orchestrator's
-   project settings, and passing literal content prevents the sub-agent from
-   reconstructing a different (potentially more permissive) allow list.
-2. Read `docs/architecture.md` and `docs/project-vision.md` fully before writing
+1. Read `docs/architecture.md` and `docs/project-vision.md` fully before writing
    any code (`CLAUDE.md` is loaded automatically as project instructions)
-3. Run all validation gates (per CLAUDE.md) before changes to establish a clean baseline, and again after all changes are complete
-4. Follow commit conventions from CLAUDE.md
-5. Update `BACKLOG.md` to check off any completed items and add new items that
+2. Run all validation gates (per CLAUDE.md) before changes to establish a clean baseline, and again after all changes are complete
+3. Follow commit conventions from CLAUDE.md
+4. Update `BACKLOG.md` to check off any completed items and add new items that
    emerged from the work; update `docs/project-vision.md` or `docs/architecture.md`
    if new design principles, platform constraints, or architectural decisions were
-   established
-6. If the work implements user-visible behavior, check whether `docs/user-guide.md`
+   established; if any open questions arise that must be deferred, append them to
+   `.build/OPEN_QUESTIONS.md` (Unresolved section, creating the file if absent)
+   with the question text, default used, revisit condition, and today's date
+5. If the work implements user-visible behavior, check whether `docs/user-guide.md`
    exists and is populated (no `> **Template:**` stub marker). If populated, update
    it to reflect the new behavior as part of this task. Same check for
    `docs/admin-guide.md` if the work touches config, environment variables, or
    deployment. Do not attempt to populate a stub inline — that is handled separately
    in Step 10.
-7. If the work adds or removes commands, changes the file/directory structure, or
+6. If the work adds or removes commands, changes the file/directory structure, or
    affects how the template is used, update `README.md` to reflect the current state.
-8. **Do not open a PR** — report back with the branch name and a summary of
+7. **Do not open a PR** — report back with the branch name and a summary of
    all changed files when done
 
 ---
@@ -313,7 +258,12 @@ After each autonomous fix: record the failure and fix in one line, commit, push,
 Mention any stub docs that need a dedicated pass alongside the PR URL and let the
 user decide whether to act now or defer.
 
-**Cleanup:** Delete `.claude/settings.local.json` if it exists. Delete `.build/session-plan.md` if it exists.
+**Cleanup:** Delete `.build/session-plan.md` if it exists.
+
+**Pending items:** Re-read `.build/OPEN_QUESTIONS.md` and count Unresolved items.
+If the count is higher than it was in Step 3 (or greater than zero if the file
+didn't exist in Step 3), report the delta in the final summary alongside the PR URL
+(e.g., "1 new open question added — run `/test-companion` to address it").
 
 ---
 
@@ -321,5 +271,5 @@ user decide whether to act now or defer.
 
 - Token budget: each sub-agent starts with a fresh context window and has no memory of prior sub-agent runs.
 - The `.claude/` directory is version-controlled in this repo (except
-  `settings.json`, `settings.local.json`, and `.build/`, which are gitignored).
+  `settings.json` and `.build/`, which are gitignored).
   Changes to commands should be committed on a feature branch like any other code change.
