@@ -202,16 +202,13 @@
 .stringLabels {
   display: flex;
   flex-direction: column;
-  justify-content: space-around;
   flex-shrink: 0;
   padding: 6px 0;
-  gap: 0;
 }
 
 .stringLabel {
-  /* 44×44pt minimum touch target (Apple HIG) */
+  flex: 1;
   min-width: 2.75rem;
-  min-height: 2.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -220,7 +217,7 @@
   border: none;
   background: none;
   cursor: pointer;
-  border-radius: 8px;
+  border-radius: 4px;
   color: var(--pc-color);
   -webkit-tap-highlight-color: transparent;
   transition: background 0.1s;
