@@ -15,7 +15,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { useLayoutStore, SECTION_LABELS, type SectionId } from '../../store/layout'
+import { useLayoutStore, SECTION_LABELS, PINNED_SECTIONS, type SectionId } from '../../store/layout'
 import styles from './SectionMenu.module.css'
 
 interface SortableRowProps {
@@ -44,6 +44,25 @@ function SortableRow({ id }: SortableRowProps) {
           <circle cx="3" cy="13" r="1.5"/><circle cx="9" cy="13" r="1.5"/>
         </svg>
       </button>
+      <span className={styles.label}>{SECTION_LABELS[id]}</span>
+      <input
+        type="checkbox"
+        className={styles.checkbox}
+        checked={sectionVisible[id]}
+        onChange={(e) => setSectionVisible(id, e.target.checked)}
+        aria-label={`Show ${SECTION_LABELS[id]}`}
+      />
+    </div>
+  )
+}
+
+// Non-reorderable row for sections that are positionally fixed in the layout
+function PinnedRow({ id }: { id: SectionId }) {
+  const { sectionVisible, setSectionVisible } = useLayoutStore()
+  return (
+    <div className={styles.row}>
+      {/* No drag handle — pinned sections cannot be reordered */}
+      <span className={styles.pinnedSpacer} />
       <span className={styles.label}>{SECTION_LABELS[id]}</span>
       <input
         type="checkbox"
@@ -98,6 +117,12 @@ export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionM
           ))}
         </SortableContext>
       </DndContext>
+      {PINNED_SECTIONS.length > 0 && (
+        <div className={styles.pinnedSeparator} />
+      )}
+      {PINNED_SECTIONS.map(id => (
+        <PinnedRow key={id} id={id} />
+      ))}
       <div className={styles.footer}>
         <button className={styles.resetBtn} onClick={resetLayout}>Default Layout</button>
       </div>

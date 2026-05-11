@@ -42,8 +42,8 @@
   color: #8090c0;
 }
 
-/* Hide drag handles in landscape — layout is fixed there */
-@media (orientation: landscape) {
+/* Hide drag handles in landscape on mobile — layout is fixed there */
+@media (orientation: landscape) and (max-width: 768px) {
   .dragHandle {
     display: none;
   }
@@ -69,6 +69,19 @@
   background: rgba(102, 112, 232, 0.1);
 }
 
+.pinnedSeparator {
+  height: 0.5px;
+  background: #2c3c78;
+  margin: 4px 0;
+}
+
+/* Spacer that occupies the same width as a drag handle, keeping label alignment consistent */
+.pinnedSpacer {
+  display: flex;
+  width: 36px;
+  flex-shrink: 0;
+}
+
 .footer {
   border-top: 0.5px solid #2c3c78;
   margin-top: 4px;
@@ -83,7 +96,7 @@
   border: 0.5px solid #3a4888;
   border-radius: 8px;
   color: #8090c0;
-  font-size: 12px;
+  font-size: 0.75rem;
   cursor: pointer;
   text-align: center;
   transition: background 0.12s, color 0.12s;
