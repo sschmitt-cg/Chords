@@ -17,8 +17,8 @@
 }
 
 .presetList {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
 }
 
@@ -28,8 +28,7 @@
   align-items: flex-start;
   gap: 3px;
   padding: 8px 10px;
-  min-height: 44px;
-  min-width: 44px;
+  height: 60px;
   background: #111c50;
   border: 1px solid #2c3c78;
   border-radius: 8px;
@@ -52,7 +51,6 @@
   font-size: 0.75rem;
   font-weight: 600;
   color: #c0cce8;
-  white-space: nowrap;
 }
 
 .presetBtnActive .presetName {
