@@ -71,39 +71,45 @@ function App(): React.ReactElement {
       <audio id="audioOut" style={{ display: 'none' }} />
 
       {isLandscape ? (
-        <div className={styles.landscapeBody}>
-          <div className={styles.panelTop}>
-            <div className={styles.panelTopLeft}>
+        <div className={styles.landscapeBody} data-print-collapse>
+          <div className={styles.panelTop} data-print-collapse>
+            <div className={styles.panelTopLeft} data-print-collapse>
               {LANDSCAPE_TOP.filter(id => sectionVisible[id]).map(id => (
                 <div key={id} data-section={id}>{renderSection(id)}</div>
               ))}
             </div>
             {sectionVisible['circle'] && (
-              <div className={styles.panelTopCircle} data-section="circle">
+              <div className={styles.panelTopCircle} data-section="circle" data-print-collapse>
                 <CircleOfFifths />
               </div>
             )}
           </div>
-          <div className={[
-            styles.panelLeft,
-            leftEmpty ? styles.panelHidden : '',
-          ].join(' ')}>
+          <div
+            className={[
+              styles.panelLeft,
+              leftEmpty ? styles.panelHidden : '',
+            ].join(' ')}
+            data-print-collapse
+          >
             {LANDSCAPE_LEFT.filter(id => sectionVisible[id]).map(id => (
               <div key={id} data-section={id}>{renderSection(id)}</div>
             ))}
           </div>
-          <div className={[
-            styles.panelRight,
-            rightEmpty ? styles.panelHidden  : '',
-            leftEmpty  ? styles.panelFull    : '',
-          ].join(' ')}>
+          <div
+            className={[
+              styles.panelRight,
+              rightEmpty ? styles.panelHidden  : '',
+              leftEmpty  ? styles.panelFull    : '',
+            ].join(' ')}
+            data-print-collapse
+          >
             {LANDSCAPE_RIGHT.filter(id => sectionVisible[id]).map(id => (
               <div key={id} data-section={id}>{renderSection(id)}</div>
             ))}
           </div>
         </div>
       ) : (
-        <main className={styles.portraitContent}>
+        <main className={styles.portraitContent} data-print-collapse>
           {sectionOrder.filter(id => sectionVisible[id]).map(id => (
             <div key={id} data-section={id}>{renderSection(id)}</div>
           ))}

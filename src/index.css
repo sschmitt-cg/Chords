@@ -79,14 +79,11 @@ body {
     display: none !important;
   }
 
-  /* Collapse the landscape grid container and its inner panels so the print
-     engine paginates naturally regardless of the on-screen orientation. The
-     `[class*="panel"]` selector reaches App.module.css's hashed panel classes
-     (panelTop, panelTopLeft, panelTopCircle, panelLeft, panelRight) without
-     coupling to specific hashes. */
-  #root > div > div,
-  #root > div > main,
-  #root [class*="panel"] {
+  /* Flatten the landscape grid + nested panel flex containers so the print
+     engine paginates naturally regardless of on-screen orientation. Each
+     layout wrapper opts in via `data-print-collapse` in App.tsx, which keeps
+     this rule from leaking into unrelated component classes. */
+  [data-print-collapse] {
     display: block !important;
     grid-template-rows: none !important;
     grid-template-columns: none !important;
