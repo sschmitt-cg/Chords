@@ -53,8 +53,10 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
             <li>Use the menu (top right) to show or hide sections, and the share button to capture a snapshot of the current view.</li>
           </ol>
           <p>
-            Browsers require a user interaction before audio can play. The first
-            tap on the volume knob or a scale tile unlocks sound for the session.
+            Browsers require a user interaction before audio can play. The app
+            starts muted; tap the volume knob once to unmute and unlock sound
+            for the session. After that, scale tiles, chords, and the metronome
+            all play through.
           </p>
         </section>
 
@@ -152,8 +154,8 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
 
           <h3>Why don't I hear sound?</h3>
           <p>
-            Browsers block audio until you've interacted with the page. Tap the
-            volume knob or any scale tile once to unlock the synth.
+            The app starts muted. Tap the volume knob in the Scale Explorer to
+            unmute — this also unlocks the synth for the rest of the session.
           </p>
 
           <h3>Why is /v2 redirecting?</h3>

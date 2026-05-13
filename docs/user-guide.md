@@ -21,8 +21,9 @@ anyone curious about how music fits together.
 4. Use the menu (top right) to show or hide sections, and the share button to
    capture a snapshot of the current view.
 
-Browsers require a user interaction before audio can play. The first tap on
-the volume knob or a scale tile unlocks sound for the session.
+Browsers require a user interaction before audio can play. The app starts
+muted; tap the volume knob once to unmute and unlock sound for the session.
+After that, scale tiles, chords, and the metronome all play through.
 
 ## Features
 
@@ -94,8 +95,8 @@ mode, so pasting a link puts another viewer in the same state.
 ## FAQ
 
 **Why don't I hear sound?**
-Browsers block audio until you've interacted with the page. Tap the volume
-knob or any scale tile once to unlock the synth.
+The app starts muted. Tap the volume knob in the Scale Explorer to unmute —
+this also unlocks the synth for the rest of the session.
 
 **Why is /v2 redirecting?**
 The React app is now the primary site at the root URL. The old `/v2.html`
