@@ -147,6 +147,16 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
             itself encodes the key, family, and mode, so pasting a link puts
             another viewer in the same state.
           </p>
+
+          <h3>Printing</h3>
+          <p>
+            Use your browser's <strong>Print</strong> command (Cmd+P on macOS,
+            Ctrl+P on Windows) to produce a clean, single-page reference of the
+            current scale. The printout drops controls, the metronome, and the
+            tuner, and preserves the pitch-class colors on the scale strip,
+            harmony grid, keyboard, and fretboard — handy for teachers and
+            students who want a paper handout.
+          </p>
         </section>
 
         <section>

@@ -51,3 +51,67 @@ body {
   --text-muted: #a0aacc;
   --text-on-action: #ffffff;
 }
+
+/* ---- Print styles ----
+   Produces a clean single-page reference printout of the current view.
+   Strips chrome and interactive controls; preserves pitch-class colors.
+   Targets component DOM via data-section on App.tsx wrapper divs and
+   the `no-print` utility class on specific elements that lack a stable
+   global selector (CSS Modules hash component class names). */
+@media print {
+  /* Force browsers to honor pitch-class background colors — the whole point
+     of the printout is the colored note pills, keys, and frets. */
+  :root,
+  body,
+  #root {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    background: #ffffff !important;
+    color: #000000 !important;
+    min-height: 0 !important;
+  }
+
+  /* Hide interactive-only surfaces with no value on paper. */
+  header,
+  audio,
+  .no-print,
+  [data-section="metronome"],
+  [data-section="tuner"] {
+    display: none !important;
+  }
+
+  /* Collapse landscape multi-panel grid into a single-column block flow so
+     the print engine can paginate naturally regardless of viewport. */
+  #root > div > div,
+  #root > div > main {
+    display: block !important;
+    grid-template-rows: none !important;
+    grid-template-columns: none !important;
+    max-width: none !important;
+    max-height: none !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  /* Section wrappers — give each a small bottom gap and prevent splits. */
+  [data-section] {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 8pt;
+    width: 100% !important;
+    max-width: none !important;
+    overflow: visible !important;
+  }
+
+  /* Scale type down slightly so the common single-scale view fits one page. */
+  body {
+    font-size: 10pt;
+  }
+}
+
+@page {
+  size: auto;
+  margin: 0.5in;
+}

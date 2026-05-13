@@ -75,11 +75,11 @@ function App(): React.ReactElement {
           <div className={styles.panelTop}>
             <div className={styles.panelTopLeft}>
               {LANDSCAPE_TOP.filter(id => sectionVisible[id]).map(id => (
-                <div key={id}>{renderSection(id)}</div>
+                <div key={id} data-section={id}>{renderSection(id)}</div>
               ))}
             </div>
             {sectionVisible['circle'] && (
-              <div className={styles.panelTopCircle}>
+              <div className={styles.panelTopCircle} data-section="circle">
                 <CircleOfFifths />
               </div>
             )}
@@ -89,7 +89,7 @@ function App(): React.ReactElement {
             leftEmpty ? styles.panelHidden : '',
           ].join(' ')}>
             {LANDSCAPE_LEFT.filter(id => sectionVisible[id]).map(id => (
-              <div key={id}>{renderSection(id)}</div>
+              <div key={id} data-section={id}>{renderSection(id)}</div>
             ))}
           </div>
           <div className={[
@@ -98,14 +98,14 @@ function App(): React.ReactElement {
             leftEmpty  ? styles.panelFull    : '',
           ].join(' ')}>
             {LANDSCAPE_RIGHT.filter(id => sectionVisible[id]).map(id => (
-              <div key={id}>{renderSection(id)}</div>
+              <div key={id} data-section={id}>{renderSection(id)}</div>
             ))}
           </div>
         </div>
       ) : (
         <main className={styles.portraitContent}>
           {sectionOrder.filter(id => sectionVisible[id]).map(id => (
-            <div key={id}>{renderSection(id)}</div>
+            <div key={id} data-section={id}>{renderSection(id)}</div>
           ))}
         </main>
       )}

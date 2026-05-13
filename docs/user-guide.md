@@ -93,6 +93,14 @@ that support the native share sheet, the image is shared with the current URL;
 otherwise it downloads directly. The URL itself encodes the key, family, and
 mode, so pasting a link puts another viewer in the same state.
 
+### Printing
+
+Use your browser's **Print** command (Cmd+P on macOS, Ctrl+P on Windows) to
+produce a clean, single-page reference of the current scale. The printout
+drops controls, the metronome, and the tuner, and preserves the pitch-class
+colors on the scale strip, harmony grid, keyboard, and fretboard — handy for
+teachers and students who want a paper handout.
+
 ## FAQ
 
 **Why don't I hear sound?**
