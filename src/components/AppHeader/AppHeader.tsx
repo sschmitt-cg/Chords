@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
+import type React from 'react'
 import { flushSync } from 'react-dom'
 import * as htmlToImage from 'html-to-image'
 import SectionMenu from '../SectionMenu/SectionMenu'
@@ -10,7 +11,7 @@ interface AppHeaderProps {
   onOpenGuide: () => void
 }
 
-export default function AppHeader({ onOpenGuide }: AppHeaderProps) {
+export default function AppHeader({ onOpenGuide }: AppHeaderProps): React.ReactElement {
   const menuBtnRef   = useRef<HTMLButtonElement>(null)
   const shareBtnRef  = useRef<HTMLButtonElement>(null)
   const shareCardRef = useRef<HTMLDivElement>(null)
