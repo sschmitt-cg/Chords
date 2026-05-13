@@ -260,9 +260,8 @@ describe('computeGuitarVoicings — open-string preference in alternate tunings'
     const gRows = buildHarmonyRowsForScale(gMajor)
     const voicings = computeGuitarVoicings(gRows[0], 5, OPEN_G_TUNING)
     expect(voicings.length).toBeGreaterThan(0)
-    // Open G tuning: D-B-G-D-G-D — every string is a chord tone.
-    // The top voicing should ring at least 4 strings open.
-    expect(countOpenStrings(voicings[0].frets)).toBeGreaterThanOrEqual(4)
+    // Open G tuning: D-B-G-D-G-D — every string is a chord tone, so the top voicing must be all-open.
+    expect(voicings[0].frets).toEqual([0, 0, 0, 0, 0, 0])
   })
 
   it('Open D tuning, D major chord can be strummed all-open', () => {
@@ -270,8 +269,8 @@ describe('computeGuitarVoicings — open-string preference in alternate tunings'
     const dRows = buildHarmonyRowsForScale(dMajor)
     const voicings = computeGuitarVoicings(dRows[0], 5, OPEN_D_TUNING)
     expect(voicings.length).toBeGreaterThan(0)
-    // Open D tuning: D-A-F#-D-A-D — every string is a chord tone.
-    expect(countOpenStrings(voicings[0].frets)).toBeGreaterThanOrEqual(4)
+    // Open D tuning: D-A-F#-D-A-D — every string is a chord tone, so the top voicing must be all-open.
+    expect(voicings[0].frets).toEqual([0, 0, 0, 0, 0, 0])
   })
 
   it('Drop D tuning, D major chord uses the open low-D string', () => {

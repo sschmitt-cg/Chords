@@ -331,15 +331,16 @@ function computeAlgorithmicVoicings(
   const allPcs = new Set([...essential, ...optional])
   const essentialSet = new Set(essential)
 
-  // Order: muted first, then open string (fret 0) if it's a chord tone, then fretted positions ascending.
-  // The search explores in this order so open-string assignments are found before fretted ones,
-  // and combined with the open-string-favoring rank below, voicings that ring open survive the cap.
+  // Depth-first search picks options in array order, so fret=0 must come before the
+  // muted option — otherwise the per-stringSet result cap is exhausted by muted-prefixed
+  // assignments before any all-open candidate is reached.
   const stringOptions: StringOption[][] = tuning.map(openMidi => {
-    const opts: StringOption[] = [{ fret: null, pc: null }]
+    const opts: StringOption[] = []
     const openPc = wrap(openMidi, 12)
     if (allPcs.has(openPc)) {
       opts.push({ fret: 0, pc: openPc })
     }
+    opts.push({ fret: null, pc: null })
     for (let fret = 1; fret <= 12; fret++) {
       const pc = wrap(openMidi + fret, 12)
       if (allPcs.has(pc)) {
