@@ -37,10 +37,10 @@ the knob, or tap it to open a picker.
 ### Scale Explorer
 
 Three exploratory knobs: **BRIGHTNESS** scans every mode across all scale
-families from darkest to brightest, **TENSION** reorders that same full set
-by relative dissonance, and **VOLUME** controls the synth output (tap to mute
-or unmute). Both BRIGHTNESS and TENSION can shift the family as well as the
-mode.
+families from darkest to brightest and can shift the family as well as the
+mode, **TENSION** steps between three settings based on the number of
+augmented 2nds (unusually large gaps between adjacent scale notes), and
+**VOLUME** controls the synth output (tap to mute or unmute).
 
 ### Scale Strip
 

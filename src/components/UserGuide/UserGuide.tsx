@@ -75,11 +75,12 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
           <h3>Scale Explorer</h3>
           <p>
             Three exploratory knobs: <strong>BRIGHTNESS</strong> scans every
-            mode across all scale families from darkest to brightest,
-            <strong> TENSION</strong> reorders that same full set by relative
-            dissonance, and <strong>VOLUME</strong> controls the synth output
-            (tap to mute or unmute). Both BRIGHTNESS and TENSION can shift the
-            family as well as the mode.
+            mode across all scale families from darkest to brightest and can
+            shift the family as well as the mode, <strong>TENSION</strong>
+            steps between three settings based on the number of augmented
+            2nds (unusually large gaps between adjacent scale notes), and
+            <strong>VOLUME</strong> controls the synth output (tap to mute or
+            unmute).
           </p>
 
           <h3>Scale Strip</h3>
