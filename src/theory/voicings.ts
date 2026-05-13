@@ -142,10 +142,11 @@ interface CuratedShape {
   frets: (number | null)[]
 }
 
+// Fret index 0 = high-E string, index 5 = low-E string (matches GuitarTuning order).
 const CURATED_SHAPES: CuratedShape[] = [
-  { label: 'Open C',     rootPc: 0,  frets: [null, 3, 2, 0, 1, 0] },
+  { label: 'Open C',     rootPc: 0,  frets: [0, 1, 0, 2, 3, null] },
   { label: 'Open Cmaj7', rootPc: 0,  frets: [0, 0, 0, 2, 3, null] },
-  { label: 'Open G',     rootPc: 7,  frets: [3, 2, 0, 0, 0, 3] },
+  { label: 'Open G',     rootPc: 7,  frets: [3, 0, 0, 0, 2, 3] },
   { label: 'Open Gmaj7', rootPc: 7,  frets: [2, 0, 0, 0, 2, 3] },
   { label: 'Open D',     rootPc: 2,  frets: [2, 3, 2, 0, null, null] },
   { label: 'Open Dmaj7', rootPc: 2,  frets: [2, 2, 2, 0, null, null] },
@@ -158,7 +159,7 @@ const CURATED_SHAPES: CuratedShape[] = [
   { label: 'Open A7',    rootPc: 9,  frets: [0, 2, 0, 2, 0, null] },
   { label: 'Open G7',    rootPc: 7,  frets: [1, 0, 0, 0, 2, 3] },
   { label: 'Open D7',    rootPc: 2,  frets: [2, 1, 2, 0, null, null] },
-  { label: 'Open C7',    rootPc: 0,  frets: [null, 3, 2, 3, 1, 0] },
+  { label: 'Open C7',    rootPc: 0,  frets: [0, 1, 3, 2, 3, null] },
   { label: 'Open Emaj7', rootPc: 4,  frets: [0, 0, 1, 1, 2, 0] },
   { label: 'Open Amaj7', rootPc: 9,  frets: [0, 2, 1, 2, 0, null] },
   { label: 'Open Em7',   rootPc: 4,  frets: [0, 3, 0, 2, 2, 0] },
