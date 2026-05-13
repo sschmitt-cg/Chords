@@ -12,6 +12,7 @@ import FretboardVisualizer from './components/FretboardVisualizer/index'
 import CircleOfFifths from './components/CircleOfFifths/index'
 import Metronome from './components/Metronome/index'
 import ChromaticTuner from './components/Tuner/index'
+import UserGuide from './components/UserGuide/UserGuide'
 import styles from './App.module.css'
 
 // Landscape panel assignments — fixed regardless of portrait section order
@@ -52,14 +53,19 @@ function useIsLandscape() {
 function App(): React.ReactElement {
   const { sectionOrder, sectionVisible } = useLayoutStore()
   const isLandscape = useIsLandscape()
+  const [view, setView] = useState<'app' | 'guide'>('app')
   useUrlSync()
 
   const leftEmpty  = LANDSCAPE_LEFT.every(id => !sectionVisible[id])
   const rightEmpty = LANDSCAPE_RIGHT.every(id => !sectionVisible[id])
 
+  if (view === 'guide') {
+    return <UserGuide onBack={() => setView('app')} />
+  }
+
   return (
     <div className={styles.root}>
-      <AppHeader />
+      <AppHeader onOpenGuide={() => setView('guide')} />
 
       {/* iOS requires a real <audio> element to route Web Audio through WKWebView */}
       <audio id="audioOut" style={{ display: 'none' }} />
