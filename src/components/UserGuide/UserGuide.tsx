@@ -151,11 +151,11 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
           <h3>Printing</h3>
           <p>
             Use your browser's <strong>Print</strong> command (Cmd+P on macOS,
-            Ctrl+P on Windows) to produce a clean, single-page reference of the
-            current scale. The printout drops controls, the metronome, and the
-            tuner, and preserves the pitch-class colors on the scale strip,
-            harmony grid, keyboard, and fretboard — handy for teachers and
-            students who want a paper handout.
+            Ctrl+P on Windows) for a single-page handout. The printout keeps
+            the scale notes, diatonic chords, keyboard, and fretboard with
+            pitch-class colors and the root emphasized, and drops the knobs,
+            circle of fifths, metronome, and tuner. It's tuned for ink
+            economy and works in grayscale.
           </p>
         </section>
 

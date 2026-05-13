@@ -74,8 +74,34 @@ body {
   audio,
   .no-print,
   [data-section="metronome"],
-  [data-section="tuner"] {
+  [data-section="tuner"],
+  [data-section="scale-logical"],
+  [data-section="scale-exploratory"],
+  [data-section="circle"] {
     display: none !important;
+  }
+
+  /* Reveal the print-only title (hidden in normal display via App.module.css);
+     `data-print-header` lives on the wrapper in App.tsx. */
+  [data-print-header] {
+    display: block !important;
+    margin-bottom: 6pt;
+    padding-bottom: 4pt;
+    border-bottom: 1pt solid #999;
+  }
+
+  /* Strip screen-only shadows — they print as fuzzy smudges. */
+  * {
+    box-shadow: none !important;
+  }
+
+  /* Lighten the keyboard's inactive black keys: the screen view uses a heavy
+     dark gradient that wastes ink in print without aiding readability. Active
+     black keys (scale notes) carry an additional `role_*` class and are
+     excluded so their pitch-class color survives. */
+  [class*="keyBlack"]:not([class*="role_"]) {
+    background: #d4d8e3 !important;
+    border-color: #9aa0b4 !important;
   }
 
   /* Flatten the landscape grid + nested panel flex containers so the print

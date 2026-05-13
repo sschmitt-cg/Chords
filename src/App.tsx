@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type React from 'react'
 import { useLayoutStore, type SectionId } from './store/layout'
+import { useTonalStore } from './store/index'
 import AppHeader from './components/AppHeader/AppHeader'
 import { useUrlSync } from './hooks/useUrlSync'
 import ScaleLogical from './components/ScaleNavigator/ScaleLogical'
@@ -54,6 +55,9 @@ function App(): React.ReactElement {
   const { sectionOrder, sectionVisible } = useLayoutStore()
   const isLandscape = useIsLandscape()
   const [view, setView] = useState<'app' | 'guide'>('app')
+  const tonicLabel    = useTonalStore(s => s.currentTonicLabel)
+  const currentMode   = useTonalStore(s => s.currentMode)
+  const currentFamily = useTonalStore(s => s.currentFamily)
   useUrlSync()
 
   const leftEmpty  = LANDSCAPE_LEFT.every(id => !sectionVisible[id])
@@ -66,6 +70,13 @@ function App(): React.ReactElement {
   return (
     <div className={styles.root}>
       <AppHeader onOpenGuide={() => setView('guide')} />
+
+      {/* Print-only title — AppHeader is hidden in print, so the printout
+          needs its own scale identification at the top of the page. */}
+      <div className={styles.printHeader} data-print-header aria-hidden="true">
+        <span className={styles.printTitle}>{tonicLabel} {currentMode.name}</span>
+        <span className={styles.printSubtitle}>{currentFamily.name}</span>
+      </div>
 
       {/* iOS requires a real <audio> element to route Web Audio through WKWebView */}
       <audio id="audioOut" style={{ display: 'none' }} />
