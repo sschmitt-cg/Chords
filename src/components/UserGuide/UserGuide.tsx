@@ -165,21 +165,6 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
             saved links keep working.
           </p>
         </section>
-
-        <section>
-          <h2>Support</h2>
-          <p>
-            Issues, suggestions, and questions are welcome on GitHub:{' '}
-            <a
-              href="https://github.com/sschmitt-cg/Chords/issues"
-              target="_blank"
-              rel="noreferrer"
-            >
-              github.com/sschmitt-cg/Chords/issues
-            </a>
-            .
-          </p>
-        </section>
       </main>
     </div>
   )
