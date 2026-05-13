@@ -96,10 +96,9 @@ mode, so pasting a link puts another viewer in the same state.
 ### Printing
 
 Use your browser's **Print** command (Cmd+P on macOS, Ctrl+P on Windows) for
-a single-page handout. The printout keeps the scale notes, diatonic chords,
-keyboard, and fretboard with pitch-class colors and the root emphasized, and
-drops the knobs, circle of fifths, metronome, and tuner. It is tuned for
-ink economy and works in grayscale.
+a single-page handout that mirrors the share image — title, scale notes, a
+full keyboard and fretboard with the scale color-coded, and one row per
+diatonic triad with a mini keyboard and fretboard showing the chord shape.
 
 ## FAQ
 

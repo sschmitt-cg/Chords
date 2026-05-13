@@ -151,11 +151,10 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
           <h3>Printing</h3>
           <p>
             Use your browser's <strong>Print</strong> command (Cmd+P on macOS,
-            Ctrl+P on Windows) for a single-page handout. The printout keeps
-            the scale notes, diatonic chords, keyboard, and fretboard with
-            pitch-class colors and the root emphasized, and drops the knobs,
-            circle of fifths, metronome, and tuner. It's tuned for ink
-            economy and works in grayscale.
+            Ctrl+P on Windows) for a single-page handout that mirrors the share
+            image — title, scale notes, a full keyboard and fretboard with the
+            scale color-coded, and one row per diatonic triad with a mini
+            keyboard and fretboard showing the chord shape.
           </p>
         </section>
 
