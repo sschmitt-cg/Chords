@@ -1,4 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react'
+import type React from 'react'
 import { flushSync } from 'react-dom'
 import * as htmlToImage from 'html-to-image'
 import SectionMenu from '../SectionMenu/SectionMenu'
@@ -6,7 +7,11 @@ import ShareCard from '../ShareCard/ShareCard'
 import { useTonalStore } from '../../store/index'
 import styles from './AppHeader.module.css'
 
-export default function AppHeader() {
+interface AppHeaderProps {
+  onOpenGuide: () => void
+}
+
+export default function AppHeader({ onOpenGuide }: AppHeaderProps): React.ReactElement {
   const menuBtnRef   = useRef<HTMLButtonElement>(null)
   const shareBtnRef  = useRef<HTMLButtonElement>(null)
   const shareCardRef = useRef<HTMLDivElement>(null)
@@ -99,6 +104,19 @@ export default function AppHeader() {
         <div className={styles.inner}>
           <span className={styles.title}>Tonal Explorer</span>
           <div className={styles.actions}>
+            <button
+              className={styles.iconBtn}
+              aria-label="User guide"
+              onClick={onOpenGuide}
+            >
+              {/* Info icon — circular outline with lowercase 'i' */}
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <circle cx="9" cy="9" r="7" stroke="currentColor" strokeWidth="1.5"/>
+                <circle cx="9" cy="5.25" r="0.9" fill="currentColor"/>
+                <path d="M9 8.25v5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+            </button>
+
             <div className={styles.sharePopoverWrap}>
               <button
                 ref={shareBtnRef}

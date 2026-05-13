@@ -4,22 +4,25 @@ A browser-based music theory tool for exploring scales, modes, diatonic chords,
 and chord extensions through interactive visualizers (piano keyboard, guitar
 fretboard, harmony grid) and a built-in Web Audio synth.
 
-Live: **[tonalexplorer.com](https://tonalexplorer.com)** (legacy app) and
-**[tonalexplorer.com/v2.html](https://tonalexplorer.com/v2.html)** (new React app).
+Live: **[tonalexplorer.com](https://tonalexplorer.com)** (React app served at
+the root). The legacy `/v2.html` link redirects to `/`.
 
 ---
 
 ## Project layout
 
-This repo currently ships **two apps from the same `dist/`**:
+This repo ships the React app at the root and preserves the legacy vanilla app
+alongside it:
 
 | Path | What it is |
 |---|---|
-| `index.html` + `styles.css` + `script.js` | Legacy single-file vanilla app. Fully functional, preserved as the reference implementation. Do not modify. |
-| `v2.html` + `src/` | React 18 + TypeScript + Vite + Zustand rewrite. Active development. |
+| `index.html` + `src/` | React 18 + TypeScript + Vite + Zustand app. Production root. |
+| `index-legacy.html` + `styles.css` + `script.js` | Legacy single-file vanilla app. Fully functional, preserved as the reference implementation. Do not modify. |
+| `v2.html` | Minimal redirect stub to `/` — keeps the old v2 link working. |
 
 The `deploy.yml` workflow builds the React app with Vite, then copies the
-legacy files into `dist/` so both are served from the same GitHub Pages site.
+legacy files and the v2 redirect into `dist/` so all are served from the same
+GitHub Pages site.
 
 ## Quick start
 
@@ -33,8 +36,8 @@ npm install
 npm run dev        # React app on http://localhost:5173
 ```
 
-Open `index.html` directly in a browser (or via any static server) to run the
-legacy app.
+Open `index-legacy.html` directly in a browser (or via any static server) to
+run the legacy app.
 
 ## Scripts
 

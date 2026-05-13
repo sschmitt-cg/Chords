@@ -37,10 +37,11 @@ jobs:
       - name: Build React app
         run: npm run build
 
-      - name: Copy legacy app into dist
-        # index.html, styles.css, and script.js are not part of the Vite build,
-        # so we copy them manually so both apps are served from the same dist folder.
-        run: cp index.html styles.css script.js dist/
+      - name: Copy legacy app and v2 redirect into dist
+        # index-legacy.html, styles.css, script.js, and the v2 redirect stub are
+        # not part of the Vite build, so we copy them manually so the React app
+        # at / coexists with the preserved legacy app and a /v2.html redirect.
+        run: cp index-legacy.html styles.css script.js v2.html dist/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
