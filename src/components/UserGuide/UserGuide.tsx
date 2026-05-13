@@ -147,6 +147,15 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
             itself encodes the key, family, and mode, so pasting a link puts
             another viewer in the same state.
           </p>
+
+          <h3>Printing</h3>
+          <p>
+            Use your browser's <strong>Print</strong> command (Cmd+P on macOS,
+            Ctrl+P on Windows) for a single-page handout that mirrors the share
+            image — title, scale notes, a full keyboard and fretboard with the
+            scale color-coded, and one row per diatonic triad with a mini
+            keyboard and fretboard showing the chord shape.
+          </p>
         </section>
 
         <section>

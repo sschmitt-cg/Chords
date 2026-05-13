@@ -51,3 +51,42 @@ body {
   --text-muted: #a0aacc;
   --text-on-action: #ffffff;
 }
+
+@media print {
+  :root,
+  body,
+  #root {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    background: #ffffff !important;
+    min-height: 0 !important;
+  }
+
+  body {
+    color: #000000;
+  }
+
+  /* Hide every direct child of the app root except the dedicated print source.
+     The print source is AppHeader's off-screen ShareCard stash; in print, undo
+     its off-screen positioning so it appears in the natural page flow. The
+     override must use the same `#root > div >` prefix to outrank the hide
+     rule's specificity. */
+  #root > div > * {
+    display: none !important;
+  }
+  #root > div > [data-print-source] {
+    display: block !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+  }
+
+  * {
+    box-shadow: none !important;
+  }
+}
+
+@page {
+  size: auto;
+  margin: 0.4in;
+}

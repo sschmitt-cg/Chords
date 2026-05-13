@@ -84,19 +84,23 @@ function App(): React.ReactElement {
               </div>
             )}
           </div>
-          <div className={[
-            styles.panelLeft,
-            leftEmpty ? styles.panelHidden : '',
-          ].join(' ')}>
+          <div
+            className={[
+              styles.panelLeft,
+              leftEmpty ? styles.panelHidden : '',
+            ].join(' ')}
+          >
             {LANDSCAPE_LEFT.filter(id => sectionVisible[id]).map(id => (
               <div key={id}>{renderSection(id)}</div>
             ))}
           </div>
-          <div className={[
-            styles.panelRight,
-            rightEmpty ? styles.panelHidden  : '',
-            leftEmpty  ? styles.panelFull    : '',
-          ].join(' ')}>
+          <div
+            className={[
+              styles.panelRight,
+              rightEmpty ? styles.panelHidden  : '',
+              leftEmpty  ? styles.panelFull    : '',
+            ].join(' ')}
+          >
             {LANDSCAPE_RIGHT.filter(id => sectionVisible[id]).map(id => (
               <div key={id}>{renderSection(id)}</div>
             ))}

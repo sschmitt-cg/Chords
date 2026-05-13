@@ -180,4 +180,4 @@ parity. Open both side by side during testing.
 
 ## Maintenance
 
-- [ ] Security audit (last completed: never)
+- [ ] Security audit (last completed: 2026-05-13)

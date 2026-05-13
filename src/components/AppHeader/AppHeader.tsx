@@ -55,7 +55,7 @@ export default function AppHeader({ onOpenGuide }: AppHeaderProps): React.ReactE
     flushSync(() => setIsCapturing(true))
     try {
       const dataUrl = await htmlToImage.toPng(shareCardRef.current, {
-        backgroundColor: '#1a2660',
+        backgroundColor: '#ffffff',
         pixelRatio: 2,
       })
       const res  = await fetch(dataUrl)
@@ -191,8 +191,9 @@ export default function AppHeader({ onOpenGuide }: AppHeaderProps): React.ReactE
 
       {/* Off-screen capture host: fixed so it escapes parent clipping, left:-9999px
           keeps it invisible. The card itself has no position:fixed, so
-          html-to-image captures it at a clean (0,0) origin. */}
-      <div style={{ position: 'fixed', top: 0, left: '-9999px' }}>
+          html-to-image captures it at a clean (0,0) origin. The print stylesheet
+          targets [data-print-source] to make this card the entire printed page. */}
+      <div data-print-source style={{ position: 'fixed', top: 0, left: '-9999px' }}>
         <ShareCard ref={shareCardRef} />
       </div>
 

@@ -93,6 +93,13 @@ that support the native share sheet, the image is shared with the current URL;
 otherwise it downloads directly. The URL itself encodes the key, family, and
 mode, so pasting a link puts another viewer in the same state.
 
+### Printing
+
+Use your browser's **Print** command (Cmd+P on macOS, Ctrl+P on Windows) for
+a single-page handout that mirrors the share image — title, scale notes, a
+full keyboard and fretboard with the scale color-coded, and one row per
+diatonic triad with a mini keyboard and fretboard showing the chord shape.
+
 ## FAQ
 
 **Why don't I hear sound?**
