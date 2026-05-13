@@ -25,7 +25,7 @@ export default function VoicingNavigator({
     <div className={styles.nav} role="group" aria-label="Voicing navigator">
       {showButtons && (
         <button
-          className={`${styles.btn} no-print`}
+          className={styles.btn}
           onClick={onPrev}
           disabled={prevDisabled}
           aria-label="Previous voicing"
@@ -36,7 +36,7 @@ export default function VoicingNavigator({
       <span className={styles.label}>{description}</span>
       {showButtons && (
         <button
-          className={`${styles.btn} no-print`}
+          className={styles.btn}
           onClick={onNext}
           disabled={nextDisabled}
           aria-label="Next voicing"

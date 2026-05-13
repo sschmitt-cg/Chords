@@ -4,23 +4,6 @@
   min-height: 100dvh;
 }
 
-.printHeader {
-  display: none;
-}
-
-.printTitle {
-  display: block;
-  font-size: 18pt;
-  font-weight: 600;
-}
-
-.printSubtitle {
-  display: block;
-  font-size: 11pt;
-  font-weight: 400;
-  color: #555;
-}
-
 /* ---- Portrait layout ---- */
 
 .portraitContent {
