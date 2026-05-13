@@ -92,12 +92,10 @@ const ShareCard = forwardRef<HTMLDivElement>(
     return (
       <div ref={ref} className={styles.card}>
         <header className={styles.cardHeader}>
-          <h1 className={styles.title}>{tonicLabel} {currentMode.name}</h1>
-          <p className={styles.subtitle}>{currentFamily.name}</p>
-        </header>
-
-        <section className={styles.section}>
-          <div className={styles.sectionLabel}>Scale</div>
+          <div className={styles.headerTitleBlock}>
+            <h1 className={styles.title}>{tonicLabel} {currentMode.name}</h1>
+            <p className={styles.subtitle}>{currentFamily.name}</p>
+          </div>
           <div className={styles.scaleRow}>
             {currentScale.spelled.map((note, i) => {
               const pc = currentScale.pitchClasses[i]
@@ -113,15 +111,13 @@ const ShareCard = forwardRef<HTMLDivElement>(
               )
             })}
           </div>
-        </section>
+        </header>
 
         <section className={styles.section}>
-          <div className={styles.sectionLabel}>Keyboard</div>
           <FullKeyboard modeNoteSet={modeNoteSet} modeRootPc={modeRootPc} />
         </section>
 
         <section className={styles.section}>
-          <div className={styles.sectionLabel}>Fretboard</div>
           <FullFretboard
             tuning={guitarTuning}
             modeNoteSet={modeNoteSet}
@@ -131,7 +127,6 @@ const ShareCard = forwardRef<HTMLDivElement>(
         </section>
 
         <section className={styles.section}>
-          <div className={styles.sectionLabel}>Diatonic Triads</div>
           <div className={styles.triadTable}>
             {chordRows.map(cr => (
               <div key={cr.row.index} className={styles.triadRow}>
@@ -276,6 +271,20 @@ function FullFretboard({ tuning, modeNoteSet, modeRootPc, enharmonicPrefs }: Ful
     <div key="m-12b" className={styles.fretMarker} style={{ left: LABEL_W + 12 * FRET_W + FRET_W / 2 - 5, top: totalH / 2 + 6 }} />,
   )
 
+  const fretLines: React.ReactElement[] = []
+  // Vertical fret wires between each fretted column (f=2 = wire between fret 1
+  // and fret 2, up through f=12 = right edge of fret 12). The nut between fret
+  // 0 and fret 1 is drawn separately as a thicker bar.
+  for (let f = 2; f <= FRETS; f++) {
+    fretLines.push(
+      <div
+        key={`fw-${f}`}
+        className={styles.fretWire}
+        style={{ left: LABEL_W + f * FRET_W, top: 2, height: totalH - 4 }}
+      />
+    )
+  }
+
   const stringLines: React.ReactElement[] = []
   const stringLabels: React.ReactElement[] = []
   const noteDots: React.ReactElement[] = []
@@ -321,6 +330,7 @@ function FullFretboard({ tuning, modeNoteSet, modeRootPc, enharmonicPrefs }: Ful
 
   return (
     <div className={styles.fullFretboard} style={{ width: totalW, height: totalH }}>
+      {fretLines}
       <div className={styles.nut} style={{ left: LABEL_W + FRET_W - 2, height: totalH - 4, top: 2 }} />
       {markers}
       {stringLines}
