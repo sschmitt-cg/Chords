@@ -8,6 +8,13 @@ const rows = buildHarmonyRowsForScale(cMajorScale)
 
 const STANDARD_TUNING: GuitarTuning = [64, 59, 55, 50, 45, 40]
 const DROP_D_TUNING: GuitarTuning = [64, 59, 55, 50, 45, 38]
+const DADGAD_TUNING: GuitarTuning = [62, 57, 55, 50, 45, 38]
+const OPEN_G_TUNING: GuitarTuning = [62, 59, 55, 50, 43, 38]
+const OPEN_D_TUNING: GuitarTuning = [62, 57, 54, 50, 45, 38]
+
+function countOpenStrings(frets: (number | null)[]): number {
+  return frets.filter(f => f === 0).length
+}
 
 describe('computeKeyboardVoicings — triads', () => {
   it('returns 3 voicings for a major triad (root + 2 inversions)', () => {
@@ -208,6 +215,94 @@ describe('computeGuitarVoicings — alternate tuning', () => {
     // Verify Drop D string 5 (low string) open = D (pc 2), not E (pc 4)
     const openPc = DROP_D_TUNING[5] % 12
     expect(openPc).toBe(2)
+  })
+})
+
+describe('computeGuitarVoicings — curated shape correctness', () => {
+  it('returns an Open C shape for a C major chord in standard tuning', () => {
+    // rows[0] is C major in C ionian
+    const voicings = computeGuitarVoicings(rows[0], 5, STANDARD_TUNING)
+    // The "Open C" curated shape x32010 should be present (fret index 0=high-E, 5=low-E)
+    // → high-E:0, B:1, G:0, D:2, A:3, low-E:x → [0, 1, 0, 2, 3, null]
+    const hasOpenC = voicings.some(v =>
+      v.frets[0] === 0 && v.frets[1] === 1 && v.frets[2] === 0 &&
+      v.frets[3] === 2 && v.frets[4] === 3 && v.frets[5] === null
+    )
+    expect(hasOpenC).toBe(true)
+  })
+
+  it('returns an Open G shape for a G major chord in standard tuning', () => {
+    const gMajor = computeDisplayScale(7, 'ionian')
+    const gRows = buildHarmonyRowsForScale(gMajor)
+    const voicings = computeGuitarVoicings(gRows[0], 5, STANDARD_TUNING)
+    // Open G 320003 in low-to-high → high-E:3, B:0, G:0, D:0, A:2, low-E:3 → [3, 0, 0, 0, 2, 3]
+    const hasOpenG = voicings.some(v =>
+      v.frets[0] === 3 && v.frets[1] === 0 && v.frets[2] === 0 &&
+      v.frets[3] === 0 && v.frets[4] === 2 && v.frets[5] === 3
+    )
+    expect(hasOpenG).toBe(true)
+  })
+})
+
+describe('computeGuitarVoicings — open-string preference in alternate tunings', () => {
+  it('DADGAD D major prefers voicings with multiple open strings', () => {
+    const dMajor = computeDisplayScale(2, 'ionian')
+    const dRows = buildHarmonyRowsForScale(dMajor)
+    const voicings = computeGuitarVoicings(dRows[0], 5, DADGAD_TUNING)
+    expect(voicings.length).toBeGreaterThan(0)
+    // Top voicing in DADGAD for a D chord should ring at least 3 open strings
+    // (DADGAD's open strings are D-A-G-D-A-D; D and A are chord tones)
+    expect(countOpenStrings(voicings[0].frets)).toBeGreaterThanOrEqual(3)
+  })
+
+  it('Open G tuning, G major chord can be strummed all-open', () => {
+    const gMajor = computeDisplayScale(7, 'ionian')
+    const gRows = buildHarmonyRowsForScale(gMajor)
+    const voicings = computeGuitarVoicings(gRows[0], 5, OPEN_G_TUNING)
+    expect(voicings.length).toBeGreaterThan(0)
+    // Open G tuning: D-B-G-D-G-D — every string is a chord tone.
+    // The top voicing should ring at least 4 strings open.
+    expect(countOpenStrings(voicings[0].frets)).toBeGreaterThanOrEqual(4)
+  })
+
+  it('Open D tuning, D major chord can be strummed all-open', () => {
+    const dMajor = computeDisplayScale(2, 'ionian')
+    const dRows = buildHarmonyRowsForScale(dMajor)
+    const voicings = computeGuitarVoicings(dRows[0], 5, OPEN_D_TUNING)
+    expect(voicings.length).toBeGreaterThan(0)
+    // Open D tuning: D-A-F#-D-A-D — every string is a chord tone.
+    expect(countOpenStrings(voicings[0].frets)).toBeGreaterThanOrEqual(4)
+  })
+
+  it('Drop D tuning, D major chord uses the open low-D string', () => {
+    const dMajor = computeDisplayScale(2, 'ionian')
+    const dRows = buildHarmonyRowsForScale(dMajor)
+    const voicings = computeGuitarVoicings(dRows[0], 5, DROP_D_TUNING)
+    expect(voicings.length).toBeGreaterThan(0)
+    // The low-E string (index 5) is tuned to D in Drop D — it should be open
+    // in at least one of the top-ranked voicings.
+    const topThree = voicings.slice(0, 3)
+    const usesLowOpen = topThree.some(v => v.frets[5] === 0)
+    expect(usesLowOpen).toBe(true)
+  })
+
+  it('algorithmic voicings are ordered by open-string count descending', () => {
+    const dMajor = computeDisplayScale(2, 'ionian')
+    const dRows = buildHarmonyRowsForScale(dMajor)
+    const voicings = computeGuitarVoicings(dRows[0], 5, DADGAD_TUNING)
+    // Non-strict: each successive voicing has the same or fewer opens than the previous one.
+    for (let i = 1; i < voicings.length; i++) {
+      expect(countOpenStrings(voicings[i].frets)).toBeLessThanOrEqual(
+        countOpenStrings(voicings[i - 1].frets)
+      )
+    }
+  })
+
+  it('keeps a reasonable count of voicings (not overwhelming the UI)', () => {
+    const dMajor = computeDisplayScale(2, 'ionian')
+    const dRows = buildHarmonyRowsForScale(dMajor)
+    const voicings = computeGuitarVoicings(dRows[0], 5, DADGAD_TUNING)
+    expect(voicings.length).toBeLessThanOrEqual(12)
   })
 })
 
