@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tonal Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="page-header">
+            <div class="title-row">
+                <p class="eyebrow">Tonal Explorer</p>
+                <button id="soundToggle" class="sound-toggle is-muted" aria-label="Unmute">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16 8l4 4m0 0l-4 4m4-4H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <button id="infoButton" class="info-button" aria-label="About Tonal Explorer">i</button>
+            </div>
+        </header>
+
+        <section id="inputArea" class="panel controls-panel">
+            <div class="scale-stack">
+                <div class="pill-row">
+                    <div class="pill key-pill" id="keyPill" role="button" tabindex="0" aria-label="Select key">
+                        <span class="pill-label">Key</span>
+                        <span class="pill-right">
+                          <span class="pill-value" id="keyPillValue"></span>
+                        </span>
+                    </div>
+                    <button class="pill" id="modePill" aria-label="Select mode">
+                        <span class="pill-label">Mode</span>
+                        <span class="pill-value" id="modePillValue"></span>
+                    </button>
+                </div>
+                <div id="scaleStrip" class="scale-strip" aria-label="Scale strip">
+                    <div class="tile-viewport">
+                        <div id="scaleTiles" class="scale-tiles" aria-live="polite"></div>
+                    </div>
+                </div>
+                <div class="inline-actions">
+                    <button id="fifthUp" class="ghost">+5th</button>
+                    <button id="fifthDown" class="ghost">-5th</button>
+                    <button id="random" class="ghost">Randomize</button>
+                    <button id="metronomeBtn" class="ghost">Metronome</button>
+                    <button id="tunerBtn" class="ghost">Tuner</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="outputArea" class="output-panel">
+            <div id="mainContainer" class="main-grid">
+                <div id="keymodeStrip" class="harmony-strip" role="button" tabindex="0" aria-label="Open key and mode selector">
+                    <span id="keymodeStripLabel" class="harmony-strip-label">Key &amp; Mode</span>
+                    <span class="harmony-strip-hint">Tap to change key/mode</span>
+                </div>
+                <div id="instrumentContainer" class="card instruments-card">
+                    <div class="instrument-stack">
+                        <div id="keyboardVisualizer" class="instrument keyboard" aria-label="Keyboard visualizer"></div>
+                        <div id="fretboardVisualizer" class="instrument fretboard" aria-label="Guitar fretboard"></div>
+                    </div>
+                </div>
+                <div id="harmonyStrip" class="harmony-strip" role="button" tabindex="0" aria-label="Open Harmony Explorer">
+                    <span id="harmonyStripLabel">Harmony Explorer</span>
+                    <span class="harmony-strip-hint">Tap to explore chords in this key</span>
+                </div>
+                <div id="harmonyContainer" class="card harmony-card">
+                    <div class="harmony-grid-shell">
+                        <div class="harmony-grid" id="harmonyGrid" role="grid" aria-label="Harmony Explorer grid">
+                            <div class="harmony-grid-header" id="harmonyGridHeader"></div>
+                            <div class="harmony-grid-body" id="harmonyGridBody"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>  
+    </div>
+    <div id="wheelModal" class="wheel-modal hidden" role="dialog" aria-modal="true">
+        <div class="wheel-modal-backdrop"></div>
+        <div class="wheel-modal-content">
+            <div class="wheel-modal-header">
+                <h3 id="wheelModalTitle">Select</h3>
+                <button id="closeWheelModal" class="ghost micro" aria-label="Close">✕</button>
+            </div>
+            <div class="wheel-modal-list" id="wheelModalList" role="listbox" tabindex="-1"></div>
+        </div>
+    </div>
+    <div id="infoModal" class="wheel-modal hidden" role="dialog" aria-modal="true">
+        <div class="wheel-modal-backdrop"></div>
+        <div class="wheel-modal-content info-modal">
+            <div class="wheel-modal-header info-modal-header">
+                <h3 id="infoTitle">Tonal Explorer</h3>
+                <button id="closeInfoModal" class="ghost micro" aria-label="Close info">✕</button>
+            </div>
+            <div class="info-body" role="document">
+                <p class="subhead">Explore keys, modes, and harmonies without leaving the browser.</p>
+                <hr>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Sound</p>
+                    <ul>
+                        <li>Speaker button toggles sound (starts muted).</li>
+                        <li>Unmuting plays the current scale / note / chord.</li>
+                        <li>Changes to key/mode or selecting notes/chords play after a swipe lands.</li>
+                        <li>On iPhone/iPad, tap the speaker once to enable audio.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Key selection</p>
+                    <ul>
+                        <li>Tap the Key pill to choose a key.</li>
+                        <li>For enharmonic keys (e.g., C#/Db), tap the key label to switch spelling.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Mode selection</p>
+                    <ul>
+                        <li>Tap the Mode pill to pick a mode.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Swipe / drag on tiles</p>
+                    <ul>
+                        <li>Swipe left/right to rotate through modes.</li>
+                        <li>Swipe up/down to change key by semitone.</li>
+                        <li>Longer drags can shift multiple steps.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Note tiles</p>
+                    <ul>
+                        <li>Tap a note tile to filter chords rooted on that note and highlight only that note on keyboard/fretboard.</li>
+                        <li>Use All Chords to return to the full-scale view.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Harmony Explorer</p>
+                    <ul>
+                        <li>Tap a chord row to select it and highlight its tones.</li>
+                        <li>Tap tone headers (3/5/7/9/11/13) to change chord depth.</li>
+                        <li>Tap any tone cell in a row to preview that row at the tapped depth.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Keyboard &amp; fretboard</p>
+                    <ul>
+                        <li>Colors match the scale-degree tiles.</li>
+                        <li>Visualizers update as you change key/mode or select notes/chords.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Mobile panels</p>
+                    <ul>
+                        <li>Use the Key &amp; Mode strip to expand the key/mode controls.</li>
+                        <li>Use the Harmony Explorer strip to expand the chord grid.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Randomize</p>
+                    <ul>
+                        <li>Randomizes key and mode, updating tiles, visualizers, and chords.</li>
+                        <li>Use +5th / -5th to move the key by a perfect fifth.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Metronome</p>
+                    <ul>
+                        <li>Open the metronome to set tempo, time signature, and start/stop the click.</li>
+                        <li>Tap the tempo pad to set the BPM by feel.</li>
+                        <li>Enable the downbeat ping to emphasize beat 1.</li>
+                    </ul>
+                </div>
+                <div class="info-section">
+                    <p class="eyebrow subtle">Tuner</p>
+                    <ul>
+                        <li>Allow microphone access to detect pitch and show the nearest note.</li>
+                        <li>Use the A button for a reference tone.</li>
+                    </ul>
+                </div>
+                <hr>
+                <div class="info-section" style="text-align:center; padding-bottom: 4px;">
+                    <a href="./v2.html" style="font-size:0.85rem; color: inherit; opacity: 0.5; text-decoration: none; border-bottom: 1px solid currentColor;">V2 (In Progress) →</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="metronomeModal" class="wheel-modal hidden" role="dialog" aria-modal="true">
+        <div class="wheel-modal-backdrop"></div>
+        <div class="wheel-modal-content tool-modal">
+            <div class="wheel-modal-header">
+                <h3>Metronome</h3>
+                <button id="closeMetronome" class="ghost micro" aria-label="Close metronome">✕</button>
+            </div>
+            <div class="tool-body">
+                <div class="tempo-display">
+                    <button id="tempoDown" class="ghost micro" aria-label="Decrease tempo">-</button>
+                    <input id="tempoInput" type="number" min="30" max="260" step="1" value="120" aria-label="Tempo in BPM">
+                    <button id="tempoUp" class="ghost micro" aria-label="Increase tempo">+</button>
+                </div>
+                <div class="tempo-meta">
+                    <span class="tempo-label">BPM</span>
+                    <button id="tapTempo" class="ghost">Tap Tempo</button>
+                </div>
+                <div class="meter-row">
+                    <label for="meterSelect" class="tempo-label">Time Signature</label>
+                    <select id="meterSelect">
+                        <option value="4/4" selected>4/4</option>
+                        <option value="3/4">3/4</option>
+                        <option value="6/8">6/8</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div id="meterCustom" class="meter-custom is-hidden">
+                    <input id="meterTop" type="number" min="1" max="12" step="1" value="4" aria-label="Beats per bar">
+                    <span class="meter-slash">/</span>
+                    <input id="meterBottom" type="number" min="2" max="16" step="1" value="4" aria-label="Note value">
+                </div>
+                <div class="toggle-row">
+                    <label class="toggle">
+                        <input id="accentToggle" type="checkbox" checked>
+                        <span>Ping on beat 1</span>
+                    </label>
+                </div>
+                <div class="metronome-actions">
+                    <button id="metronomeStart" class="ghost">Start</button>
+                    <button id="metronomeStop" class="ghost">Stop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="tunerModal" class="wheel-modal hidden" role="dialog" aria-modal="true">
+        <div class="wheel-modal-backdrop"></div>
+        <div class="wheel-modal-content tool-modal">
+            <div class="wheel-modal-header">
+                <h3>Tuner</h3>
+                <button id="closeTuner" class="ghost micro" aria-label="Close tuner">✕</button>
+            </div>
+            <div class="tool-body tuner-body">
+                <div class="tuner-readout">
+                    <div id="tunerNote" class="tuner-note">--</div>
+                    <div id="tunerCents" class="tuner-cents">0 cents</div>
+                </div>
+                <div class="tuner-meter">
+                    <span class="meter-label">Flat</span>
+                    <div class="meter-track">
+                        <div id="tunerNeedle" class="meter-needle"></div>
+                    </div>
+                    <span class="meter-label">Sharp</span>
+                </div>
+                <div id="tunerStatus" class="tuner-status">Tap start to enable the mic.</div>
+                <div class="tuner-actions">
+                    <button id="tunerStart" class="ghost">Start Listening</button>
+                    <button id="tunerStop" class="ghost">Stop</button>
+                    <button id="tunerA" class="ghost">Play A</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <audio id="audioOut" playsinline></audio>
+    <script src="script.js"></script>
+</body>
+</html>
