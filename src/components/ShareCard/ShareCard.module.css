@@ -122,11 +122,12 @@
 
 .fretMarker {
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #9aa0b4;
-  opacity: 0.35;
+  background: #7c86ac;
+  border: 1px solid #4a5478;
+  opacity: 0.75;
 }
 
 .fretDot {

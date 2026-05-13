@@ -68,15 +68,14 @@ body {
 
   /* Hide every direct child of the app root except the dedicated print source.
      The print source is AppHeader's off-screen ShareCard stash; in print, undo
-     its off-screen positioning so it appears in the natural page flow. */
+     its off-screen positioning so it appears in the natural page flow. The
+     override must use the same `#root > div >` prefix to outrank the hide
+     rule's specificity. */
   #root > div > * {
     display: none !important;
   }
-  [data-print-source],
-  [data-print-source] * {
-    display: revert !important;
-  }
-  [data-print-source] {
+  #root > div > [data-print-source] {
+    display: block !important;
     position: static !important;
     left: auto !important;
     top: auto !important;

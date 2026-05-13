@@ -39,6 +39,24 @@ interface ChordRowData {
   guitarVoicing: GuitarVoicing | undefined
 }
 
+// computeGuitarVoicings returns curated open → E-shape barre → A-shape barre →
+// algorithmic. For Bm/C#m with no open shape, the first result is an E-shape
+// barre up at fret 7+, even though the A-shape barre at fret 2 is far friendlier.
+// For the handout we want the lowest-fret voicing.
+function pickHandoutGuitarVoicing(voicings: GuitarVoicing[]): GuitarVoicing | undefined {
+  if (voicings.length === 0) return undefined
+  return [...voicings].sort((a, b) => {
+    const pressedA = a.frets.filter((f): f is number => f !== null && f > 0)
+    const pressedB = b.frets.filter((f): f is number => f !== null && f > 0)
+    const minA = pressedA.length ? Math.min(...pressedA) : 0
+    const minB = pressedB.length ? Math.min(...pressedB) : 0
+    if (minA !== minB) return minA - minB
+    const openA = a.frets.filter(f => f === 0).length
+    const openB = b.frets.filter(f => f === 0).length
+    return openB - openA
+  })[0]
+}
+
 const ShareCard = forwardRef<HTMLDivElement>(
   function ShareCard(_props, ref) {
     const tonicLabel       = useTonalStore(s => s.currentTonicLabel)
@@ -67,7 +85,7 @@ const ShareCard = forwardRef<HTMLDivElement>(
         rootPc,
         chordName: chordNameForRow(row, 5),
         keyboardVoicing: computeKeyboardVoicings(row, 5)[0],
-        guitarVoicing: computeGuitarVoicings(row, 5, guitarTuning)[0],
+        guitarVoicing: pickHandoutGuitarVoicing(computeGuitarVoicings(row, 5, guitarTuning)),
       }
     })
 
@@ -247,15 +265,15 @@ function FullFretboard({ tuning, modeNoteSet, modeRootPc, enharmonicPrefs }: Ful
         key={`m-${f}`}
         className={styles.fretMarker}
         style={{
-          left: LABEL_W + f * FRET_W + FRET_W / 2 - 4,
-          top: totalH / 2 - 4,
+          left: LABEL_W + f * FRET_W + FRET_W / 2 - 5,
+          top: totalH / 2 - 5,
         }}
       />
     )
   }
   markers.push(
-    <div key="m-12a" className={styles.fretMarker} style={{ left: LABEL_W + 12 * FRET_W + FRET_W / 2 - 4, top: totalH / 2 - 14 }} />,
-    <div key="m-12b" className={styles.fretMarker} style={{ left: LABEL_W + 12 * FRET_W + FRET_W / 2 - 4, top: totalH / 2 + 6 }} />,
+    <div key="m-12a" className={styles.fretMarker} style={{ left: LABEL_W + 12 * FRET_W + FRET_W / 2 - 5, top: totalH / 2 - 16 }} />,
+    <div key="m-12b" className={styles.fretMarker} style={{ left: LABEL_W + 12 * FRET_W + FRET_W / 2 - 5, top: totalH / 2 + 6 }} />,
   )
 
   const stringLines: React.ReactElement[] = []
