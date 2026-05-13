@@ -100,7 +100,7 @@ export default function AppHeader({ onOpenGuide }: AppHeaderProps): React.ReactE
 
   return (
     <>
-      <header className={styles.header}>
+      <header className={`${styles.header} no-print`}>
         <div className={styles.inner}>
           <span className={styles.title}>Tonal Explorer</span>
           <div className={styles.actions}>

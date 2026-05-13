@@ -52,27 +52,26 @@ body {
   --text-on-action: #ffffff;
 }
 
-/* ---- Print styles ----
-   Produces a clean single-page reference printout of the current view.
-   Strips chrome and interactive controls; preserves pitch-class colors.
-   Targets component DOM via data-section on App.tsx wrapper divs and
-   the `no-print` utility class on specific elements that lack a stable
-   global selector (CSS Modules hash component class names). */
+/* Print rules live here, not in component .module.css files, because CSS
+   Modules hash class names — selectors must use stable global hooks
+   (`data-section` attributes on App.tsx wrappers, the `.no-print` utility
+   class, or attribute selectors like `[class*="panel"]` for the landscape
+   panel grid whose classes are otherwise unreachable globally). */
 @media print {
-  /* Force browsers to honor pitch-class background colors — the whole point
-     of the printout is the colored note pills, keys, and frets. */
   :root,
   body,
   #root {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
     background: #ffffff !important;
-    color: #000000 !important;
     min-height: 0 !important;
   }
 
-  /* Hide interactive-only surfaces with no value on paper. */
-  header,
+  body {
+    color: #000000;
+    font-size: 10pt;
+  }
+
   audio,
   .no-print,
   [data-section="metronome"],
@@ -80,10 +79,14 @@ body {
     display: none !important;
   }
 
-  /* Collapse landscape multi-panel grid into a single-column block flow so
-     the print engine can paginate naturally regardless of viewport. */
+  /* Collapse the landscape grid container and its inner panels so the print
+     engine paginates naturally regardless of the on-screen orientation. The
+     `[class*="panel"]` selector reaches App.module.css's hashed panel classes
+     (panelTop, panelTopLeft, panelTopCircle, panelLeft, panelRight) without
+     coupling to specific hashes. */
   #root > div > div,
-  #root > div > main {
+  #root > div > main,
+  #root [class*="panel"] {
     display: block !important;
     grid-template-rows: none !important;
     grid-template-columns: none !important;
@@ -95,7 +98,6 @@ body {
     gap: 0 !important;
   }
 
-  /* Section wrappers — give each a small bottom gap and prevent splits. */
   [data-section] {
     break-inside: avoid;
     page-break-inside: avoid;
@@ -103,11 +105,6 @@ body {
     width: 100% !important;
     max-width: none !important;
     overflow: visible !important;
-  }
-
-  /* Scale type down slightly so the common single-scale view fits one page. */
-  body {
-    font-size: 10pt;
   }
 }
 
