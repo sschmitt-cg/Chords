@@ -68,7 +68,8 @@ A guitar fretboard showing the active scale and selected chord voicing across
 twelve frets. **Tap any string label** on the left edge to open the tuning
 selector and switch to a preset alternate tuning (Open G, Open D, Drop D,
 DADGAD, and more). The voicing navigator cycles through curated open shapes
-and algorithmically generated fingerings.
+and algorithmically generated fingerings; in alternate tunings the app
+favors voicings that ring as many open strings as the tuning allows.
 
 ### Circle of Fifths
 
@@ -101,8 +102,3 @@ this also unlocks the synth for the rest of the session.
 **Why is /v2 redirecting?**
 The React app is now the primary site at the root URL. The old `/v2.html`
 address redirects to `/` so any saved links keep working.
-
-## Support
-
-Issues, suggestions, and questions are welcome on GitHub:
-[github.com/sschmitt-cg/Chords/issues](https://github.com/sschmitt-cg/Chords/issues).

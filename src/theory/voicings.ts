@@ -142,10 +142,11 @@ interface CuratedShape {
   frets: (number | null)[]
 }
 
+// Fret index 0 = high-E string, index 5 = low-E string (matches GuitarTuning order).
 const CURATED_SHAPES: CuratedShape[] = [
-  { label: 'Open C',     rootPc: 0,  frets: [null, 3, 2, 0, 1, 0] },
+  { label: 'Open C',     rootPc: 0,  frets: [0, 1, 0, 2, 3, null] },
   { label: 'Open Cmaj7', rootPc: 0,  frets: [0, 0, 0, 2, 3, null] },
-  { label: 'Open G',     rootPc: 7,  frets: [3, 2, 0, 0, 0, 3] },
+  { label: 'Open G',     rootPc: 7,  frets: [3, 0, 0, 0, 2, 3] },
   { label: 'Open Gmaj7', rootPc: 7,  frets: [2, 0, 0, 0, 2, 3] },
   { label: 'Open D',     rootPc: 2,  frets: [2, 3, 2, 0, null, null] },
   { label: 'Open Dmaj7', rootPc: 2,  frets: [2, 2, 2, 0, null, null] },
@@ -158,7 +159,7 @@ const CURATED_SHAPES: CuratedShape[] = [
   { label: 'Open A7',    rootPc: 9,  frets: [0, 2, 0, 2, 0, null] },
   { label: 'Open G7',    rootPc: 7,  frets: [1, 0, 0, 0, 2, 3] },
   { label: 'Open D7',    rootPc: 2,  frets: [2, 1, 2, 0, null, null] },
-  { label: 'Open C7',    rootPc: 0,  frets: [null, 3, 2, 3, 1, 0] },
+  { label: 'Open C7',    rootPc: 0,  frets: [0, 1, 3, 2, 3, null] },
   { label: 'Open Emaj7', rootPc: 4,  frets: [0, 0, 1, 1, 2, 0] },
   { label: 'Open Amaj7', rootPc: 9,  frets: [0, 2, 1, 2, 0, null] },
   { label: 'Open Em7',   rootPc: 4,  frets: [0, 3, 0, 2, 2, 0] },
@@ -248,10 +249,14 @@ function combinations<T>(arr: T[], k: number): T[][] {
 }
 
 // Playability: at most 4 fingers (barre at the minimum fret counts as 1),
-// fret span ≤ 4 (or ≤ 5 when a barre is present).
+// fret span ≤ 4 (or ≤ 5 when a barre is present). All-open voicings are valid
+// in tunings whose open strings already form chord tones (e.g. open-G strum).
 function isPlayable(frets: (number | null)[]): boolean {
-  const pressed = frets.filter((f): f is number => f !== null && f > 0)
-  if (pressed.length === 0) return false
+  const played = frets.filter((f): f is number => f !== null)
+  if (played.length === 0) return false
+
+  const pressed = played.filter(f => f > 0)
+  if (pressed.length === 0) return true
 
   const min = Math.min(...pressed)
   const max = Math.max(...pressed)
@@ -278,7 +283,7 @@ function searchAssignments(
   coveredEssential: Set<number>,
   results: (number | null)[][],
 ): void {
-  if (results.length >= 12) return
+  if (results.length >= 24) return
 
   if (depth === optionsForSet.length) {
     if ([...essentialSet].every(pc => coveredEssential.has(pc))) {
@@ -306,7 +311,7 @@ function searchAssignments(
     searchAssignments(optionsForSet, essentialSet, depth + 1, current, newCovered, results)
     current.pop()
 
-    if (results.length >= 12) return
+    if (results.length >= 24) return
   }
 }
 
@@ -326,9 +331,17 @@ function computeAlgorithmicVoicings(
   const allPcs = new Set([...essential, ...optional])
   const essentialSet = new Set(essential)
 
+  // Depth-first search picks options in array order, so fret=0 must come before the
+  // muted option — otherwise the per-stringSet result cap is exhausted by muted-prefixed
+  // assignments before any all-open candidate is reached.
   const stringOptions: StringOption[][] = tuning.map(openMidi => {
-    const opts: StringOption[] = [{ fret: null, pc: null }]
-    for (let fret = 0; fret <= 12; fret++) {
+    const opts: StringOption[] = []
+    const openPc = wrap(openMidi, 12)
+    if (allPcs.has(openPc)) {
+      opts.push({ fret: 0, pc: openPc })
+    }
+    opts.push({ fret: null, pc: null })
+    for (let fret = 1; fret <= 12; fret++) {
       const pc = wrap(openMidi + fret, 12)
       if (allPcs.has(pc)) {
         opts.push({ fret, pc })
@@ -337,8 +350,12 @@ function computeAlgorithmicVoicings(
     return opts
   })
 
-  const voicings: GuitarVoicing[] = []
+  const candidates: GuitarVoicing[] = []
   const minStrings = Math.min(6, Math.max(2, essential.length))
+
+  // Wider candidate pool so the open-string ranker can pick from a representative set.
+  // Final visible count is bounded by the caller via dedupe + ranking, not here.
+  const CANDIDATE_CAP = 80
 
   for (let numStrings = 6; numStrings >= minStrings; numStrings--) {
     const stringSets = combinations(Array.from({ length: 6 }, (_, i) => i), numStrings)
@@ -357,15 +374,39 @@ function computeAlgorithmicVoicings(
         const hasRoot = frets.some((f, si) => f !== null && wrap(tuning[si] + f, 12) === rootPc)
         if (!hasRoot) continue
 
-        voicings.push({ label: 'Voicing', frets })
-        if (voicings.length >= 20) break
+        candidates.push({ label: 'Voicing', frets })
+        if (candidates.length >= CANDIDATE_CAP) break
       }
-      if (voicings.length >= 20) break
+      if (candidates.length >= CANDIDATE_CAP) break
     }
-    if (voicings.length >= 6) break
+    if (candidates.length >= CANDIDATE_CAP) break
   }
 
-  return voicings
+  return rankAlgorithmicVoicings(candidates)
+}
+
+// Rank: more open strings first; ties broken by lower fret span, then lower minimum fret,
+// then more played strings (fuller voicing). Trim to a reasonable visible count.
+function rankAlgorithmicVoicings(voicings: GuitarVoicing[]): GuitarVoicing[] {
+  const ALGORITHMIC_VISIBLE_CAP = 10
+
+  const scored = voicings.map(v => {
+    const pressed = v.frets.filter((f): f is number => f !== null && f > 0)
+    const openCount = v.frets.filter(f => f === 0).length
+    const playedCount = v.frets.filter(f => f !== null).length
+    const span = pressed.length < 2 ? 0 : Math.max(...pressed) - Math.min(...pressed)
+    const minFret = pressed.length === 0 ? 0 : Math.min(...pressed)
+    return { voicing: v, openCount, playedCount, span, minFret }
+  })
+
+  scored.sort((a, b) => {
+    if (b.openCount !== a.openCount) return b.openCount - a.openCount
+    if (a.span !== b.span) return a.span - b.span
+    if (a.minFret !== b.minFret) return a.minFret - b.minFret
+    return b.playedCount - a.playedCount
+  })
+
+  return scored.slice(0, ALGORITHMIC_VISIBLE_CAP).map(s => s.voicing)
 }
 
 function dedupeGuitar(voicings: GuitarVoicing[]): GuitarVoicing[] {
