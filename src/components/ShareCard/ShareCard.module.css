@@ -1,123 +1,268 @@
-/* Share card — rendered off-screen for PNG export; must look good standalone */
+/* Unified share + print template — light, ink-friendly, high contrast. */
 
 .card {
-  width: 360px;
-  background: #1a2660;
-  border-radius: 16px;
-  padding: 28px 24px 20px;
-  color: #fff;
-  font-family: system-ui, -apple-system, sans-serif;
+  width: 640px;
+  background: #ffffff;
+  color: #0c1020;
+  padding: 28px 28px 20px;
+  font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
   box-sizing: border-box;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
 }
 
-/* Title row: e.g. "C Dorian" */
+.cardHeader {
+  border-bottom: 1px solid #d8dcff;
+  padding-bottom: 10px;
+  margin-bottom: 16px;
+}
+
 .title {
-  font-size: 1.625rem;
+  font-size: 22pt;
   font-weight: 700;
-  letter-spacing: 0.02em;
-  margin: 0 0 4px;
-  line-height: 1.2;
+  line-height: 1.1;
+  margin: 0 0 2px;
+  color: #0c1020;
 }
 
 .subtitle {
-  font-size: 0.75rem;
+  font-size: 10pt;
   font-weight: 500;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  margin: 0 0 20px;
+  color: #555a72;
+  margin: 0;
 }
 
-/* Scale notes strip */
-.scaleSection {
-  margin-bottom: 20px;
+.section {
+  margin-bottom: 18px;
 }
 
 .sectionLabel {
-  font-size: 0.625rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.45);
+  color: #7c86ac;
   margin-bottom: 8px;
 }
 
-.noteList {
+/* ---- Scale row ---- */
+
+.scaleRow {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
 }
 
-.notePill {
+.scalePill,
+.scalePillRoot {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 30px;
-  height: 30px;
-  padding: 0 6px;
-  border-radius: 8px;
-  font-size: 0.8125rem;
+  min-width: 34px;
+  height: 32px;
+  padding: 0 8px;
+  font-size: 11pt;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.scalePill {
+  border-radius: 6px;
+}
+
+.scalePillRoot {
+  border-radius: 0;
+  border: 2px solid #0c1020;
+}
+
+/* ---- Full keyboard ---- */
+
+.fullKeyboard {
+  position: relative;
+  margin: 0 auto;
+}
+
+.keyWhite,
+.keyBlack {
+  position: absolute;
+  top: 0;
+  border-style: solid;
+  box-sizing: border-box;
+}
+
+/* ---- Full fretboard ---- */
+
+.fullFretboard {
+  position: relative;
+}
+
+.nut {
+  position: absolute;
+  width: 4px;
+  background: #0c1020;
+}
+
+.stringLine {
+  position: absolute;
+  height: 1px;
+  background: #6b7398;
+}
+
+.stringLabel {
+  position: absolute;
+  font-size: 9pt;
   font-weight: 600;
-  /* background and color set via inline style using pcColorVar */
-  background: color-mix(in srgb, var(--pc-color) 30%, #1a2660);
-  color: color-mix(in srgb, var(--pc-color) 80%, #fff);
-  border: 1.5px solid color-mix(in srgb, var(--pc-color) 55%, transparent);
+  color: #0c1020;
+  text-align: right;
+  padding-right: 4px;
+  line-height: 18px;
 }
 
-/* Harmony rows table */
-.harmonySection {
-  margin-bottom: 20px;
+.fretMarker {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9aa0b4;
+  opacity: 0.35;
 }
 
-.harmonyRow {
+.fretDot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid #0c1020;
+  box-sizing: border-box;
+}
+
+.fretRootDot {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  border: 1.5px solid #0c1020;
+  box-sizing: border-box;
+}
+
+/* ---- Triad table ---- */
+
+.triadTable {
   display: flex;
-  align-items: center;
-  padding: 5px 0;
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.08);
-  gap: 10px;
-  min-height: 30px;
+  flex-direction: column;
 }
 
-.harmonyRow:last-child {
+.triadRow {
+  display: grid;
+  grid-template-columns: 38px 80px 1fr 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e4e7ff;
+}
+
+.triadRow:last-child {
   border-bottom: none;
 }
 
-.romanNumeral {
-  font-size: 0.8125rem;
+.roman {
+  font-size: 14pt;
   font-weight: 700;
-  width: 28px;
-  flex-shrink: 0;
-  /* color set via inline style */
 }
 
 .chordName {
-  font-size: 0.8125rem;
+  font-size: 11pt;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.85);
-  flex: 1;
+  color: #0c1020;
 }
 
-/* Footer with share URL */
+.triadKeyboard,
+.triadFretboard {
+  display: flex;
+  align-items: center;
+}
+
+/* ---- Mini keyboard ---- */
+
+.miniKeyboard {
+  position: relative;
+}
+
+/* ---- Mini fretboard ---- */
+
+.miniFretboard {
+  position: relative;
+}
+
+.miniNut {
+  position: absolute;
+  width: 2px;
+  background: #0c1020;
+}
+
+.miniFretLine {
+  position: absolute;
+  width: 1px;
+  background: #c8cef0;
+}
+
+.miniStringLine {
+  position: absolute;
+  height: 1px;
+  background: #6b7398;
+}
+
+.miniFretDot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid #0c1020;
+  box-sizing: border-box;
+}
+
+.miniFretRootDot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1.5px solid #0c1020;
+  box-sizing: border-box;
+}
+
+.headSymbol {
+  position: absolute;
+  font-size: 9pt;
+  font-weight: 700;
+  text-align: center;
+  color: #0c1020;
+  line-height: 1;
+}
+
+/* ---- Footer ---- */
+
 .footer {
-  padding-top: 14px;
-  border-top: 0.5px solid rgba(255, 255, 255, 0.12);
+  padding-top: 12px;
+  margin-top: 8px;
+  border-top: 1px solid #d8dcff;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .footerLabel {
-  font-size: 0.625rem;
-  font-weight: 500;
-  letter-spacing: 0.08em;
+  font-size: 7pt;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
-  white-space: nowrap;
+  color: #9aa0b4;
 }
 
 .footerUrl {
-  font-size: 0.625rem;
-  color: rgba(255, 255, 255, 0.5);
+  font-size: 8pt;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: #555a72;
   word-break: break-all;
-  font-family: monospace;
 }
