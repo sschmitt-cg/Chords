@@ -148,6 +148,7 @@ parity. Open both side by side during testing.
 - [ ] Vitest config uses `/// <reference types="vitest" />` triple-slash pattern (older); migrate to `import type { UserConfig } from 'vitest/config'` when upgrading Vitest
 - [ ] `computeRomans` test for non-7-note input tests an undocumented fallback — if the fallback behavior ever changes, this test will give a false signal; revisit when expanding theory test coverage
 - [ ] Voicing computation (`computeKeyboardVoicings` / `computeGuitarVoicings`) is recomputed on each chord/tuning/maxDegree change. Fast enough now, but not free. If profiling ever shows it as a bottleneck, consider a `Map` keyed by `(rootPc, quality, maxDegree, tuningSignature)` for memoization.
+- [x] Promote React app to root URL; legacy redirect stub at `/v2.html`; in-app User Guide page reachable via info icon in AppHeader
 
 ---
 
@@ -174,3 +175,9 @@ parity. Open both side by side during testing.
 - [ ] ScaleNavigator knob SVG colors (accent ticks, indicator dot) use hard-coded hex values — replace with CSS custom properties (e.g. --knob-accent) for design-system consistency
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
 - [x] iOS safe-area insets (`env(safe-area-inset-*)`) applied to header and all layout panels
+
+---
+
+## Maintenance
+
+- [ ] Security audit (last completed: never)
