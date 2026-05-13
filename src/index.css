@@ -53,10 +53,9 @@ body {
 }
 
 /* Print rules live here, not in component .module.css files, because CSS
-   Modules hash class names — selectors must use stable global hooks
-   (`data-section` attributes on App.tsx wrappers, the `.no-print` utility
-   class, or attribute selectors like `[class*="panel"]` for the landscape
-   panel grid whose classes are otherwise unreachable globally). */
+   Modules hash class names — selectors target stable global hooks instead
+   (`data-section` and `data-print-collapse` attributes on App.tsx wrappers,
+   plus the `.no-print` utility class on individual interactive elements). */
 @media print {
   :root,
   body,
