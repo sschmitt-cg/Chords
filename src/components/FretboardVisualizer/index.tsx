@@ -133,6 +133,7 @@ export default function FretboardVisualizer(): React.ReactElement {
       </div>
     )}
     <div className={styles.wrapper} aria-label="Guitar fretboard">
+      <div className={styles.scrollArea}>
       <div className={styles.fretboardRow}>
         <button
           className={styles.stringLabels}
@@ -249,6 +250,7 @@ export default function FretboardVisualizer(): React.ReactElement {
           )
         })}
 
+      </div>
       </div>
       </div>
 
