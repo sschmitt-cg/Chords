@@ -69,21 +69,24 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
             center, <strong>FAMILY</strong> chooses the scale family (Major,
             Melodic Minor, Harmonic Minor, Harmonic Major, Double Harmonic), and
             <strong> MODE</strong> picks one of the seven modes within that
-            family. Drag the knob, or tap its LCD to open a picker.
+            family. Drag the knob, or tap it to open a picker.
           </p>
 
           <h3>Scale Explorer</h3>
           <p>
-            Three exploratory knobs: <strong>BRIGHTNESS</strong> sorts the
-            current family's modes from darkest to brightest,
-            <strong> TENSION</strong> reorders them by relative dissonance, and
-            <strong> VOLUME</strong> controls the synth output (tap to mute or
+            Three exploratory knobs: <strong>BRIGHTNESS</strong> scans every
+            mode across all scale families from darkest to brightest and can
+            shift the family as well as the mode, <strong>TENSION</strong>
+            steps between three settings based on the number of augmented
+            2nds (unusually large gaps between adjacent scale notes), and
+            <strong>VOLUME</strong> controls the synth output (tap to mute or
             unmute).
           </p>
 
           <h3>Scale Strip</h3>
           <p>
-            A chromatic row of twelve note tiles for the current key, with
+            A row of note tiles for the current key — all twelve chromatic
+            tiles on desktop; on phones, non-scale notes are hidden — with
             active scale degrees highlighted and excluded notes dimmed. Roman
             numerals beneath each active tile show the diatonic chord quality
             for that degree. Tap a tile to play it; the description below the

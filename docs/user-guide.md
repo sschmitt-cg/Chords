@@ -32,18 +32,21 @@ After that, scale tiles, chords, and the metronome all play through.
 Three analog-style knobs: **ROOT** sets the tonal center, **FAMILY** chooses
 the scale family (Major, Melodic Minor, Harmonic Minor, Harmonic Major, Double
 Harmonic), and **MODE** picks one of the seven modes within that family. Drag
-the knob, or tap its LCD to open a picker.
+the knob, or tap it to open a picker.
 
 ### Scale Explorer
 
-Three exploratory knobs: **BRIGHTNESS** sorts the current family's modes from
-darkest to brightest, **TENSION** reorders them by relative dissonance, and
+Three exploratory knobs: **BRIGHTNESS** scans every mode across all scale
+families from darkest to brightest and can shift the family as well as the
+mode, **TENSION** steps between three settings based on the number of
+augmented 2nds (unusually large gaps between adjacent scale notes), and
 **VOLUME** controls the synth output (tap to mute or unmute).
 
 ### Scale Strip
 
-A chromatic row of twelve note tiles for the current key, with active scale
-degrees highlighted and excluded notes dimmed. Roman numerals beneath each
+A row of note tiles for the current key — all twelve chromatic tiles on
+desktop; on phones, non-scale notes are hidden — with active scale degrees
+highlighted and excluded notes dimmed. Roman numerals beneath each
 active tile show the diatonic chord quality for that degree. Tap a tile to
 play it; the description below the strip names the current mode in context.
 
