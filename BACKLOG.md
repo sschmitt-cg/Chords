@@ -44,8 +44,10 @@ Phase 7 (below) covers the Capacitor build and submission steps that follow.
   applied to cents readings; buffer resets on note transition (different name+octave)
   or silence so attacks and string changes stay responsive; visible needle/cents
   flutter on held notes is suppressed without lag.
-- [ ] **ScaleStrip — horizontal swipe to shift mode** (same notes, new tonal center;
-  mobile replacement for MODE knob in portrait)
+- [x] **ScaleStrip — horizontal swipe to shift mode** — pointer-event gesture on the
+  strip rotates the tonal center across scale degrees (same notes, new root).
+  Threshold 40px, max 800ms, dominant-axis gate; the synthetic click is swallowed
+  when the gesture qualifies as a swipe so tile taps remain reliable.
 - [ ] **ScaleStrip — vertical drag to transpose root chromatically** (all notes move
   together; mobile replacement for ROOT knob in portrait; long-press to enter drag
   mode is the recommended approach for scroll-conflict avoidance)
@@ -196,7 +198,7 @@ item above is the gate.
 - [x] ScaleNavigator ROOT knob/LCD — now tracks tonal center (modeRootPc) rather than family root; all navigation actions preserve the audible tonic
 - [x] ScaleNavigator MODE picker — selecting from popup preserves tonal center; knob drag still shifts root chromatically
 - [x] ScaleNavigator pickers — all popups scroll to center the current selection on open
-- [ ] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile)
+- [x] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile) — shipped: pointer-event gesture, threshold 40px / 800ms, swipe-left = next mode
 - [ ] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile; scroll-conflict is the engineering challenge to solve, e.g. long-press to enter drag mode or a dedicated drag handle)
 - [x] ScaleNavigator knob labels hidden on desktop — `@media (orientation: landscape)` always fires on desktop (window is always wider than tall); scope to narrow/touch viewports only
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
