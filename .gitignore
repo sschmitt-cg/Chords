@@ -11,3 +11,5 @@ dist/
 .claude/*.lock
 
 .build/
+INBOX.md
+SCRATCH.md
