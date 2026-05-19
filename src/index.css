@@ -50,6 +50,14 @@ body {
   --action-warning: #e87d3e;
   --text-muted: #a0aacc;
   --text-on-action: #ffffff;
+
+  /* ScaleNavigator knob palette — used directly by SVG stroke/fill attributes */
+  --knob-accent: #6670e8;
+  --knob-accent-bright: #9098f8;
+  --knob-tick-inactive: #2a3878;
+  --knob-body: #223070;
+  --knob-body-border: #384888;
+  --knob-pivot: #1a2660;
 }
 
 @media print {
