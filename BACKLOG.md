@@ -204,10 +204,10 @@ item above is the gate.
 - [x] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile) — shipped: long-press (~250ms) arms transpose mode, vertical drag = ~24px/semitone; long-press timer cancels if pre-arm motion exceeds 8px so swipes still work
 - [x] ScaleNavigator knob labels hidden on desktop — `@media (orientation: landscape)` always fires on desktop (window is always wider than tall); scope to narrow/touch viewports only
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
-- [ ] ScaleNavigator — haptic feedback on knob step (where supported)
+- [x] ScaleNavigator — haptic feedback on knob step (where supported) — `navigator.vibrate(10)` fires on each step crossing in KnobUnit/WheelUnit/VolumeKnobUnit; no-op on devices without the API
 - [x] ScaleNavigator — persist navigator group visibility independently of orientation changes — handled by shareable URL encoding app state
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
-- [ ] ScaleNavigator knob SVG colors (accent ticks, indicator dot) use hard-coded hex values — replace with CSS custom properties (e.g. --knob-accent) for design-system consistency
+- [x] ScaleNavigator knob SVG colors (accent ticks, indicator dot) use hard-coded hex values — replaced with `--knob-accent`, `--knob-accent-bright`, `--knob-tick-inactive`, `--knob-body`, `--knob-body-border`, `--knob-pivot` tokens defined in `src/index.css`
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
 - [x] iOS safe-area insets (`env(safe-area-inset-*)`) applied to header and all layout panels
 
