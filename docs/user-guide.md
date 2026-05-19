@@ -50,6 +50,10 @@ highlighted and excluded notes dimmed. Roman numerals beneath each
 active tile show the diatonic chord quality for that degree. Tap a tile to
 play it; the description below the strip names the current mode in context.
 
+Swipe the strip horizontally to rotate the tonal center across the scale's
+notes — same seven pitches, different note as "home." This is the mobile
+equivalent of the **MODE** knob in the Scale Explorer.
+
 ### Harmony Grid
 
 Seven rows — one per scale degree — with columns for triad, 7th, 9th, 11th,
