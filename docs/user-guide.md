@@ -54,6 +54,12 @@ Swipe the strip horizontally to rotate the tonal center across the scale's
 notes — same seven pitches, different note as "home." This is the mobile
 equivalent of the **MODE** knob in the Scale Explorer.
 
+Long-press the strip (about a quarter second) to arm transpose mode — the
+strip outlines in the accent color — and then drag vertically to retune the
+root chromatically. Drag up to raise the root, drag down to lower it; all
+notes move together with intervals preserved. This is the mobile equivalent
+of the **ROOT** knob.
+
 ### Harmony Grid
 
 Seven rows — one per scale degree — with columns for triad, 7th, 9th, 11th,

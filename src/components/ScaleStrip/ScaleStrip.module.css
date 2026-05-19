@@ -11,6 +11,16 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+/* Active during long-press → vertical drag transpose; gives a visible cue that the
+   gesture is armed and any vertical movement now retunes the root chromatically. */
+.transposing {
+  border-color: var(--action-primary, #4f5dff);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6),
+              0 0 0 2px color-mix(in srgb, var(--action-primary, #4f5dff) 30%, transparent),
+              0 12px 28px rgba(8,12,38,0.12);
 }
 
 /* Proportional container — tiles and labels positioned absolutely */
