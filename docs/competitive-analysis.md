@@ -1,6 +1,6 @@
 # Competitive Analysis
 
-Status: **research — April 2026**
+Status: **research — April 2026; feature matrix partially updated May 2026**
 Scope: browser-based music theory / tonal exploration tools in the same
 category as Tonal Explorer.
 
@@ -213,8 +213,8 @@ Best-guess as of April 2026. "—" = not a primary feature.
 | Scale / mode reference | ✅ (35 modes × 5 families) | ✅ (modes page) | ✅ | ✅ |
 | Harmony grid / chord extensions | ✅ | partial | ✅ (chord palette) | ✅ (matrix) |
 | Web Audio synth | ✅ | ✅ | ✅ | ✅ |
-| **Circle of Fifths** | ❌ | ✅ | — | — |
-| **Shareable URLs** | ❌ | — | ✅ | — |
+| **Circle of Fifths** | ✅ | ✅ | — | — |
+| **Shareable URLs** | ✅ | — | ✅ | — |
 | **MIDI input** | ❌ | — | ✅ | — |
 | Metronome | planned | — | ✅ | — |
 | Chromatic tuner | planned | ✅ | — | ✅ |
@@ -255,9 +255,9 @@ These are real differentiators we should not lose sight of:
 
 Ordered roughly by impact × effort (high impact, low effort first):
 
-1. **No shareable URLs.** This is a ~one-afternoon feature that
+1. ~~**No shareable URLs.**~~ (shipped) This is a ~one-afternoon feature that
    Hookpad has turned into a viral loop. Biggest quick win.
-2. **No Circle of Fifths visualizer.** Category-table-stakes among
+2. ~~**No Circle of Fifths visualizer.**~~ (shipped) Category-table-stakes among
    reference tools. muted.io's most recognizable surface.
 3. **No MIDI input.** Uniquely differentiating — none of the three
    competitors offer it as a primary feature. Biggest "wow" potential
@@ -281,10 +281,10 @@ impact-per-effort ratio and fill the sharpest competitive gaps. Each
 is being proposed as a separate GitHub issue with a detailed
 implementation plan:
 
-1. **Shareable URLs.** Encode key + family + mode + enharmonic
+1. ~~**Shareable URLs.**~~ (shipped) Encode key + family + mode + enharmonic
    preferences (and eventually progression) in the URL hash so any
    screen state has a permanent link. Low effort, wide reach.
-2. **Interactive Circle of Fifths.** A new top-level visualizer
+2. ~~**Interactive Circle of Fifths.**~~ (shipped) A new top-level visualizer
    section that mirrors muted.io's signature tool but leans into Tonal
    Explorer's unified store — clicking a wedge drives the entire app.
 3. **Web MIDI input support.** Let users play their connected MIDI
