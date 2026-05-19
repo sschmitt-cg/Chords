@@ -33,6 +33,34 @@ parity. Open both side by side during testing.
 
 ---
 
+## App Store Launch — Active Milestone
+
+All items in this section must be complete before running `npx cap add ios`.
+Phase 7 (below) covers the Capacitor build and submission steps that follow.
+
+### Pre-Capacitor Polish
+
+- [ ] **Tuner — stability pass:** reduce pitch reading jitter; apply IIR low-pass
+  filter or a short min-hold window before updating the needle and cents display;
+  target: needle settles cleanly on a held note within ~200ms with no flutter.
+- [ ] **ScaleStrip — horizontal swipe to shift mode** (same notes, new tonal center;
+  mobile replacement for MODE knob in portrait)
+- [ ] **ScaleStrip — vertical drag to transpose root chromatically** (all notes move
+  together; mobile replacement for ROOT knob in portrait; long-press to enter drag
+  mode is the recommended approach for scroll-conflict avoidance)
+- [ ] **General polish pass:** review all open Bugs/Polish items; decide what ships
+  at launch vs. what defers. Minimum bar: nothing broken or visually jarring on an
+  iPhone 15 Pro in both orientations.
+
+### Notes on remaining Bugs/Polish items
+
+Some open Bugs/Polish items below are quick wins that should be folded into the
+general polish pass before launch. Others (animated tile transitions, haptic
+feedback, knob SVG colors) are cosmetic and deferrable. The general polish pass
+item above is the gate.
+
+---
+
 ## Phase 1 — Core Migration (React + TypeScript)
 
 - [x] Scaffold React + Vite + TypeScript + Zustand project
@@ -118,6 +146,8 @@ parity. Open both side by side during testing.
 ---
 
 ## Phase 7 — iOS App (Capacitor)
+
+*Prerequisite: all "App Store Launch — Active Milestone" items above are complete.*
 
 - [ ] Install and configure Capacitor (`@capacitor/core`, `@capacitor/ios`)
 - [ ] Bottom tab bar navigation (Explore / Practice / Visualize / Tools)
