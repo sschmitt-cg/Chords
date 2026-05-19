@@ -40,9 +40,10 @@ Phase 7 (below) covers the Capacitor build and submission steps that follow.
 
 ### Pre-Capacitor Polish
 
-- [ ] **Tuner — stability pass:** reduce pitch reading jitter; apply IIR low-pass
-  filter or a short min-hold window before updating the needle and cents display;
-  target: needle settles cleanly on a held note within ~200ms with no flutter.
+- [x] **Tuner — stability pass:** 5-sample median-hold window (~80ms at 60fps RAF)
+  applied to cents readings; buffer resets on note transition (different name+octave)
+  or silence so attacks and string changes stay responsive; visible needle/cents
+  flutter on held notes is suppressed without lag.
 - [ ] **ScaleStrip — horizontal swipe to shift mode** (same notes, new tonal center;
   mobile replacement for MODE knob in portrait)
 - [ ] **ScaleStrip — vertical drag to transpose root chromatically** (all notes move
