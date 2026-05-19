@@ -98,6 +98,13 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
             This is the mobile equivalent of the <strong>MODE</strong> knob
             in the Scale Explorer.
           </p>
+          <p>
+            Long-press the strip (about a quarter second) to arm transpose
+            mode — the strip outlines in the accent color — then drag
+            vertically to retune the root chromatically. Drag up to raise,
+            down to lower; all notes move together with intervals preserved.
+            This is the mobile equivalent of the <strong>ROOT</strong> knob.
+          </p>
 
           <h3>Harmony Grid</h3>
           <p>
