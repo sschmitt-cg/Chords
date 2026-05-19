@@ -6,6 +6,34 @@ item interactively, and updates both files in real time after each response.
 
 ---
 
+## Pre-step — Sweep externally-checked items
+
+A separate web-based test helper (in the user's master-control-room project) marks
+items in `.build/TEST_TRACKER.md` by toggling `- [ ]` to `- [x]` in the Pending
+section, but it does not move them to Completed. Before any other work in this
+command, reconcile that state.
+
+If `.build/TEST_TRACKER.md` exists:
+
+1. Scan the Pending section for entries beginning with `- [x] `.
+2. For each match, collect the checkbox line **and all immediately-following
+   indented continuation lines** (the `**Steps:**`, `**Expected:**`, `**Added:**`
+   lines that belong to the same entry). The block ends at the next non-indented
+   line, the next checkbox at the same level, or end of section.
+3. Remove the entire block from Pending.
+4. Append a single line to the Completed section in the form:
+   `[x] [title] — passed [today's date]`
+   (Use the test title from the checkbox line. Today's date in `YYYY-MM-DD`.)
+5. If removing the block leaves an `### [Area]` heading with no remaining
+   checkbox entries, leave the heading in place — it may be repopulated by a
+   later build. Phase 4c of `/auto-build` handles structural cleanup.
+6. Write the updated file to disk before proceeding.
+
+This sweep also applies whenever `/auto-build` or `/next-step` count pending
+tests during pre-flight; those commands reference this procedure.
+
+---
+
 ## Step 1 — Load pending items
 
 Check whether actionable content exists:
