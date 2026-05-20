@@ -85,11 +85,12 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
 
           <h3>Scale Strip</h3>
           <p>
-            A row of note tiles for the current key — all twelve chromatic
-            tiles on desktop; on phones, non-scale notes are hidden — with
-            active scale degrees highlighted and excluded notes dimmed. Roman
-            numerals beneath each active tile show the diatonic chord quality
-            for that degree. Tap a tile to play it; the description below the
+            A row of note tiles for the current key. The seven scale tones
+            are full-sized buttons; the five non-scale chromatic positions
+            collapse into narrow dotted separators that visually mark the
+            half-step gaps between adjacent scale tones. Roman numerals
+            beneath each active tile show the diatonic chord quality for
+            that degree. Tap a tile to play it; the description below the
             strip names the current mode in context.
           </p>
           <p>
@@ -99,11 +100,11 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
             in the Scale Explorer.
           </p>
           <p>
-            Long-press the strip (about a quarter second) to arm transpose
-            mode — the strip outlines in the accent color — then drag
-            vertically to retune the root chromatically. Drag up to raise,
-            down to lower; all notes move together with intervals preserved.
-            This is the mobile equivalent of the <strong>ROOT</strong> knob.
+            Drag the strip vertically to retune the root chromatically — the
+            strip outlines in the accent color and a chip shows how many
+            half-steps you've shifted. Drag up to raise, down to lower; all
+            notes move together with intervals preserved. This is the mobile
+            equivalent of the <strong>ROOT</strong> knob.
           </p>
 
           <h3>Harmony Grid</h3>

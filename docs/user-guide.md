@@ -44,21 +44,22 @@ augmented 2nds (unusually large gaps between adjacent scale notes), and
 
 ### Scale Strip
 
-A row of note tiles for the current key — all twelve chromatic tiles on
-desktop; on phones, non-scale notes are hidden — with active scale degrees
-highlighted and excluded notes dimmed. Roman numerals beneath each
-active tile show the diatonic chord quality for that degree. Tap a tile to
-play it; the description below the strip names the current mode in context.
+A row of note tiles for the current key. The seven scale tones are
+full-sized buttons; the five non-scale chromatic positions collapse into
+narrow dotted separators that visually mark the half-step gaps between
+adjacent scale tones. Roman numerals beneath each active tile show the
+diatonic chord quality for that degree. Tap a tile to play it; the
+description below the strip names the current mode in context.
 
 Swipe the strip horizontally to rotate the tonal center across the scale's
 notes — same seven pitches, different note as "home." This is the mobile
 equivalent of the **MODE** knob in the Scale Explorer.
 
-Long-press the strip (about a quarter second) to arm transpose mode — the
-strip outlines in the accent color — and then drag vertically to retune the
-root chromatically. Drag up to raise the root, drag down to lower it; all
-notes move together with intervals preserved. This is the mobile equivalent
-of the **ROOT** knob.
+Drag the strip vertically to retune the root chromatically — the strip
+outlines in the accent color and a chip shows how many half-steps you've
+shifted. Drag up to raise the root, drag down to lower it; all notes move
+together with intervals preserved. This is the mobile equivalent of the
+**ROOT** knob.
 
 ### Harmony Grid
 
