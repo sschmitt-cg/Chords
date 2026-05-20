@@ -1,9 +1,10 @@
 // ScaleStrip — chromatic 12-position rotating carousel.
-// Each cycle holds 12 chromatic slots; the 7 scale-tone slots are wide enough
-// to meet the 44pt touch-target minimum, and the 5 non-scale slots collapse
-// into narrow dotted spacers that show how many half-steps are skipped between
-// scale tones. Three cycles are rendered so a tile sliding off one edge is
-// immediately replaced by its rotated copy from the opposite side.
+// Each cycle holds 12 chromatic slots. In portrait, the 7 scale-tone slots are
+// wide enough to meet the 44pt touch-target minimum and the 5 non-scale slots
+// collapse into narrow dotted spacers; in landscape the viewport is wide enough
+// that every slot can be full-size, so the dashed-bordered ghost tiles return.
+// Three cycles are rendered so a tile sliding off one edge is immediately
+// replaced by its rotated copy from the opposite side.
 //
 // Gestures:
 //   • Horizontal drag rotates the mode within the current family (same notes,
@@ -16,7 +17,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useTonalStore } from '../../store/index'
 import { useAudio } from '../../hooks/useAudio'
-import { computeRomans, pcColorVar, wrap } from '../../theory/index'
+import { computeRomans, pcColorVar, wrap, pcName } from '../../theory/index'
 import styles from './ScaleStrip.module.css'
 
 const AXIS_LOCK_PX = 8
@@ -51,24 +52,41 @@ type CycleLayout = {
   cycleWidth: number
 }
 
-function buildCycleLayout(scaleToneOffsets: readonly number[], viewportWidth: number): CycleLayout {
-  const scaleToneSet = new Set(scaleToneOffsets)
+function buildCycleLayout(
+  scaleToneOffsets: readonly number[],
+  viewportWidth: number,
+  isLandscape: boolean,
+): CycleLayout {
   const totalGaps = (CYCLE_SIZE - 1) * CAROUSEL_GAP_PX
   const ghostCount = CYCLE_SIZE - scaleToneOffsets.length
   const scaleCount = scaleToneOffsets.length
-  // Solve for the ghost width that gives scale tiles exactly the 44pt target,
-  // then clamp ghosts into [MIN, MAX]. On narrow viewports the clamp forces
-  // scale tiles below 44; on wide ones the clamp keeps ghosts visually present.
-  const targetGhostW = ghostCount > 0
-    ? (viewportWidth - totalGaps - SCALE_TONE_TARGET_PX * scaleCount) / ghostCount
-    : 0
-  const ghostW = Math.max(GHOST_SLOT_MIN_PX, Math.min(GHOST_SLOT_MAX_PX, targetGhostW))
-  const scaleW = Math.max(1, (viewportWidth - totalGaps - ghostCount * ghostW) / scaleCount)
+
+  let widthForChromOffset: (c: number) => number
+
+  if (isLandscape) {
+    // Landscape: every slot is the same width — restores the pre-#141 look on
+    // wider viewports where the 44pt rule isn't a binding constraint.
+    const tileW = Math.max(1, (viewportWidth - totalGaps) / CYCLE_SIZE)
+    widthForChromOffset = () => tileW
+  } else {
+    // Portrait: solve for the ghost width that gives scale tiles exactly the
+    // 44pt target, then clamp ghosts into [MIN, MAX]. On narrow viewports the
+    // clamp forces scale tiles below 44; on wide ones the clamp keeps ghosts
+    // visually present.
+    const targetGhostW = ghostCount > 0
+      ? (viewportWidth - totalGaps - SCALE_TONE_TARGET_PX * scaleCount) / ghostCount
+      : 0
+    const ghostW = Math.max(GHOST_SLOT_MIN_PX, Math.min(GHOST_SLOT_MAX_PX, targetGhostW))
+    const scaleW = Math.max(1, (viewportWidth - totalGaps - ghostCount * ghostW) / scaleCount)
+    const scaleToneSet = new Set(scaleToneOffsets)
+    widthForChromOffset = (c: number) => (scaleToneSet.has(c) ? scaleW : ghostW)
+  }
+
   const widthWithinCycle: number[] = []
   const leftWithinCycle: number[] = []
   let cursor = 0
   for (let c = 0; c < CYCLE_SIZE; c++) {
-    const w = scaleToneSet.has(c) ? scaleW : ghostW
+    const w = widthForChromOffset(c)
     widthWithinCycle.push(w)
     leftWithinCycle.push(cursor)
     cursor += w + (c < CYCLE_SIZE - 1 ? CAROUSEL_GAP_PX : 0)
@@ -132,6 +150,7 @@ export default function ScaleStrip() {
     modeIndex,
     currentMode,
     currentFamily,
+    enharmonicPrefs,
     selectedNotePc,
     selectedChordIndex,
     setSelectedNote,
@@ -157,6 +176,9 @@ export default function ScaleStrip() {
   const pendingSnapRef = useRef<{ modeDelta: number } | null>(null)
   const [isSnapping, setIsSnapping] = useState(false)
   const [viewportWidth, setViewportWidth] = useState(0)
+  const [isLandscape, setIsLandscape] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(orientation: landscape)').matches,
+  )
 
   // The mode's scale-tone offsets in chromatic terms relative to the current root.
   // These determine which slots are wide tiles vs narrow ghost spacers.
@@ -166,8 +188,8 @@ export default function ScaleStrip() {
   )
 
   const cycleLayout = useMemo(
-    () => (viewportWidth > 0 ? buildCycleLayout(scaleToneOffsets, viewportWidth) : null),
-    [scaleToneOffsets, viewportWidth],
+    () => (viewportWidth > 0 ? buildCycleLayout(scaleToneOffsets, viewportWidth, isLandscape) : null),
+    [scaleToneOffsets, viewportWidth, isLandscape],
   )
 
   // Measure the viewport; the cycle is sized to span exactly one viewport width.
@@ -183,6 +205,16 @@ export default function ScaleStrip() {
     const ro = new ResizeObserver(measure)
     ro.observe(vp)
     return () => ro.disconnect()
+  }, [])
+
+  // Track orientation so the carousel can swap between the portrait
+  // collapsed-ghost layout and the landscape full-width layout.
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(orientation: landscape)')
+    const handler = (e: MediaQueryListEvent) => setIsLandscape(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
   }, [])
 
   // Anchor the track so the middle (primary) cycle aligns with the viewport.
@@ -400,7 +432,8 @@ export default function ScaleStrip() {
   }
 
   // Build the 36-slot carousel. Slot widths come from the per-mode cycle layout.
-  // Ghost slots render no glyph, so we only compute names/romans for scale tones.
+  // Ghost names are needed in landscape (rendered as labeled dashed tiles) but
+  // not in portrait (collapsed to a dotted spacer); we compute them either way.
   const carouselSlots = useMemo(() => {
     const out = []
     for (let i = 0; i < CAROUSEL_TILE_COUNT; i++) {
@@ -410,12 +443,12 @@ export default function ScaleStrip() {
       const isScaleTone = scaleIdx !== -1
       const isPrimary = i >= CAROUSEL_PRIMARY_OFFSET && i < CAROUSEL_PRIMARY_OFFSET + CYCLE_SIZE
       const isRoot = isPrimary && chromOffset === 0
-      const name = isScaleTone ? currentScale.spelled[scaleIdx] : ''
+      const name = isScaleTone ? currentScale.spelled[scaleIdx] : pcName(pc, enharmonicPrefs)
       const roman = isScaleTone ? romans[scaleIdx] : ''
       out.push({ i, chromOffset, pc, name, roman, isScaleTone, isPrimary, isRoot })
     }
     return out
-  }, [currentModeNotes, currentModeRootPc, currentScale, romans])
+  }, [currentModeNotes, currentModeRootPc, currentScale, enharmonicPrefs, romans])
 
   const annotation = modeIndex === 0
     ? `Mode 1: ${currentMode.name} — root mode of the ${currentFamily.name} family.`
@@ -467,16 +500,20 @@ export default function ScaleStrip() {
               )
             }
 
-            // Primary-cycle ghost (chromatic non-scale tone) — narrow dotted spacer.
+            // Primary-cycle ghost (chromatic non-scale tone) — full dashed
+            // tile with note name in landscape, narrow dotted spacer in portrait.
             if (isPrimary) {
               return (
                 <div key={i} className={styles.carouselGhostTile} style={widthStyle} aria-hidden="true">
-                  <span className={styles.ghostMark} />
+                  {isLandscape
+                    ? <span className={styles.inactiveName}>{name}</span>
+                    : <span className={styles.ghostMark} />}
                 </div>
               )
             }
 
-            // Side-cycle copy — muted scale tile or narrow ghost spacer.
+            // Side-cycle copy — muted scale tile or muted ghost (full or collapsed
+            // based on orientation, matching the primary cycle).
             return (
               <div
                 key={i}
@@ -493,6 +530,8 @@ export default function ScaleStrip() {
                     <span className={styles.noteName}>{name}</span>
                     <span className={styles.colorBar} />
                   </>
+                ) : isLandscape ? (
+                  <span className={styles.inactiveName}>{name}</span>
                 ) : (
                   <span className={styles.ghostMark} />
                 )}

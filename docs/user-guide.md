@@ -45,11 +45,14 @@ augmented 2nds (unusually large gaps between adjacent scale notes), and
 ### Scale Strip
 
 A row of note tiles for the current key. The seven scale tones are
-full-sized buttons; the five non-scale chromatic positions collapse into
-narrow dotted separators that visually mark the half-step gaps between
-adjacent scale tones. Roman numerals beneath each active tile show the
-diatonic chord quality for that degree. Tap a tile to play it; the
-description below the strip names the current mode in context.
+full-sized buttons. In portrait orientation, the five non-scale chromatic
+positions collapse into narrow dotted separators that visually mark the
+half-step gaps between adjacent scale tones; in landscape there is room
+for every chromatic position, so non-scale notes return as full-width
+dashed-border tiles with their note names. Roman numerals beneath each
+active tile show the diatonic chord quality for that degree. Tap a tile
+to play it; the description below the strip names the current mode in
+context.
 
 Swipe the strip horizontally to rotate the tonal center across the scale's
 notes — same seven pitches, different note as "home." This is the mobile

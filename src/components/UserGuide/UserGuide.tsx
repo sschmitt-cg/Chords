@@ -86,9 +86,12 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
           <h3>Scale Strip</h3>
           <p>
             A row of note tiles for the current key. The seven scale tones
-            are full-sized buttons; the five non-scale chromatic positions
-            collapse into narrow dotted separators that visually mark the
-            half-step gaps between adjacent scale tones. Roman numerals
+            are full-sized buttons. In portrait orientation, the five
+            non-scale chromatic positions collapse into narrow dotted
+            separators that visually mark the half-step gaps between
+            adjacent scale tones; in landscape there is room for every
+            chromatic position, so non-scale notes return as full-width
+            dashed-border tiles with their note names. Roman numerals
             beneath each active tile show the diatonic chord quality for
             that degree. Tap a tile to play it; the description below the
             strip names the current mode in context.

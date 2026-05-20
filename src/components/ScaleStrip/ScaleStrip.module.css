@@ -99,16 +99,19 @@
 }
 
 /* ---- Ghost slot (chromatic non-scale tone) ----
-   Narrow spacer slot that visually marks a half-step between scale tones. No
-   glyph; count the visible spacers between two scale tiles to read off the
-   semitone gap. The vertical dotted line is rendered via an inner element so
-   the slot's own box stays empty and pointer-transparent. */
+   Portrait: a narrow spacer that visually marks a half-step between scale
+   tones — no glyph; count the visible spacers between two scale tiles to read
+   the semitone gap.
+   Landscape: a full-width dashed-border tile with the note name, since the
+   viewport has enough room to keep every chromatic position present without
+   crowding the scale tones. */
 
 .carouselGhostTile {
   position: relative;
   flex: 0 0 auto;
   height: 100%;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: transparent;
@@ -119,6 +122,13 @@
   width: 0;
   height: 60%;
   border-left: 1px dashed #b8c2e0;
+}
+
+.inactiveName {
+  font-size: 13px;
+  font-weight: 400;
+  color: #a0a8c8;
+  text-align: center;
 }
 
 /* Side-cycle copies — same shape as their primary counterpart but muted so the
@@ -201,11 +211,16 @@
   min-height: 14px;
 }
 
-/* ---- Landscape: hide annotation to recover vertical space ---- */
+/* ---- Landscape: hide annotation to recover vertical space, and render ghost
+   slots as full dashed-border tiles (the JS layout makes them full-width). ---- */
 
 @media (orientation: landscape) {
   .strip { padding: 6px 10px; }
   .annotation { display: none; }
+  .carouselGhostTile {
+    border: 1px dashed #b8c2e0;
+    border-radius: 10px;
+  }
 }
 
 /* ---- Reduced-motion: skip the lift transition and snap animation ---- */
