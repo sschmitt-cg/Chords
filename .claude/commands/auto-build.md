@@ -16,8 +16,10 @@ exist with unresolved content:
 
 - Run `ls .build/OPEN_QUESTIONS.md 2>/dev/null || echo absent` — if present, read
   the Unresolved section and count items
-- Run `ls .build/TEST_TRACKER.md 2>/dev/null || echo absent` — if present, read
-  the Pending section and count items
+- Run `ls .build/TEST_TRACKER.md 2>/dev/null || echo absent` — if present, first
+  run the "Pre-step — Sweep externally-checked items" procedure defined at the
+  top of `.claude/commands/test-companion.md` to move any `- [x]` entries from
+  Pending to Completed, then read the Pending section and count items
 
 If either has content, report the count to the user:
 > "X open questions and Y pending tests remain from a prior build."
@@ -233,45 +235,53 @@ Approach: [2–3 sentences on implementation strategy for this specific item]
 Key files: [files most relevant to this item]
 Decisions: [any decisions from BUILD_PLAN.md relevant to this item]
 Open questions: [none, or any item-specific questions to resolve]
+Verify: [a concrete, observable condition that is true when this task is complete — e.g., "PR is open, all CI checks pass, and the feature behaves as described in the task"]
 ```
 
-**3b. Spawn the implementation sub-agent.** Give it:
-- The item description from BUILD_PLAN.md
-- The branch name to create (`feature/<item-slug>`)
-- The contents of `.build/session-plan.md`
-- Relevant non-obvious files (entry points, type definitions, config)
+**3b. Confirm the goal condition**
 
-Do NOT use `isolation: "worktree"` when spawning sub-agents — they work in the
-main project directory on their feature branch.
+Present the `Verify:` field from `.build/session-plan.md` to the user:
 
-The implementation sub-agent must:
-1. Read `docs/architecture.md` and `docs/project-vision.md` before writing code
-2. Run validation gates before and after all changes
-3. Update `BACKLOG.md` to mark the item complete
-4. If the work implements user-visible behavior, check whether `docs/user-guide.md`
-   exists and is populated (no `> **Template:**` stub marker). If populated, update
-   it to reflect the new behavior as part of this task. Same check for
-   `docs/admin-guide.md` if the work touches config, environment variables, or
-   deployment. Do not attempt to populate a stub inline.
-5. If the work adds or removes commands, changes the file/directory structure, or
-   affects how the template is used, update `README.md` to reflect the current state.
-6. If any open question arises during implementation that cannot be resolved
-   autonomously, append it to `.build/OPEN_QUESTIONS.md` (Unresolved section) with
-   the question text, default used, revisit condition, and today's date; also log a
-   one-line pointer in `.build/BUILD_QUESTIONS.md`'s Open Questions section.
-7. **Do not open a PR** — return only: branch name, changed file list, 3-sentence summary
+> "Here's the goal condition I'll use to know when this task is done:
+> [Verify: contents]
+> Does this correctly capture done? Adjust if needed."
 
-**3c. Spawn the review sub-agent** (per Step 6 of `/next-step`).
+Update `.build/session-plan.md` if the user refines it.
 
-**3d. Spawn the security sub-agent** (per Step 7 of `/next-step`).
+**3c. Invoke /goal**
 
-**3e. Open PR and monitor CI** (per Steps 8–9 of `/next-step`, up to 5 rounds each).
+`/goal` is a Stop-hook wrapper — after each turn, a fast evaluator checks the condition against the conversation transcript. It does not add orchestration; the agent runs whatever the condition tells it to run. So bundle the full sequence into the condition itself.
 
-**3f. Docs and stub check** (per Step 10 of `/next-step`).
+Run `/goal` with this template (substitute `[Verify: contents]` from session-plan.md):
 
-**3g. Merge and continue.** Once CI passes:
+```
+/goal Implement and ship the item described in .build/session-plan.md.
+Sequence:
+1. Read CLAUDE.md, docs/architecture.md, and docs/project-vision.md before any code changes.
+2. Run typecheck, lint, and tests to establish a clean baseline.
+3. Implement per the Approach in session-plan.md on branch feature/<item-slug>. Follow commit conventions from CLAUDE.md.
+4. Re-run typecheck, lint, and tests; fix any failures introduced.
+5. Update BACKLOG.md to mark the item complete; if user-visible behavior changed and docs/user-guide.md is populated (no "> **Template:**" marker), update it; same for docs/admin-guide.md on config/env/deploy changes; README.md if commands or structure changed.
+6. If any open question arises that cannot be resolved autonomously, append it to .build/OPEN_QUESTIONS.md (Unresolved section) with question, default used, revisit condition, and today's date; also log a one-line pointer in .build/BUILD_QUESTIONS.md Open Questions section.
+7. Spawn a review sub-agent: reads docs/architecture.md and every changed file, checks for violations of CLAUDE.md and architecture.md constraints. Fix autonomously for clear rule violations or mechanical style; stop only for genuine design decisions. Up to 5 rounds.
+8. Spawn a security sub-agent: checks every changed file for exposed secrets, injection (SQL, shell, XSS, path traversal), sensitive data in logs, insecure defaults (TLS, CORS, auth), known CVEs (npm audit / pip-audit). Fix autonomously where unambiguous; stop and ask otherwise.
+9. Open the PR: `gh pr create --base dev`, using the three-section test plan format from CLAUDE.md (CI / Automated / Manual).
+10. Monitor CI with `gh pr checks <number>`; fix mechanical failures (type, lint, broken import, failing test from these changes) autonomously; stop only when root cause needs a design decision. Up to 5 rounds.
+
+Stop and return control to the user any time a step requires a decision you cannot resolve autonomously.
+
+Done when: [Verify: contents from session-plan.md]
+
+Stop after 40 turns if the condition has not been met.
+```
+
+When the goal clears (condition met or turn cap hit), proceed to 3d.
+
+**3d. Docs and stub check** (per Step 6 of `/next-step`).
+
+**3e. Merge and continue.** Once CI passes:
 - Run `gh pr merge <number> --merge --delete-branch`
-- Run `git checkout main`
+- Run `git checkout dev`
 - Run `git pull`
 - Append to `.build/BUILD_SUMMARY.md`:
   ```
@@ -299,10 +309,11 @@ Stop the loop and report to the user when:
 
 ### Context discipline
 
-Sub-agents return only: branch name, changed file list, 3-sentence summary.
-After each merge, write completion status to BUILD_SUMMARY.md and treat the
-files as the source of truth. Re-read BUILD_PLAN.md and BUILD_SUMMARY.md from
-disk when needed rather than relying on accumulated context.
+After each `/goal` completes for an item, write completion status to BUILD_SUMMARY.md
+(branch name, PR number, 3-sentence summary) and treat the tracking files as the
+source of truth. Re-read BUILD_PLAN.md and BUILD_SUMMARY.md from disk when needed
+rather than relying on accumulated context. The orchestrator does not need to
+carry forward implementation detail between items.
 
 ---
 

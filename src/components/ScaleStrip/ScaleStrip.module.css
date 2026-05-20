@@ -1,4 +1,4 @@
-/* ScaleStrip — chromatic 12-position proportional layout */
+/* ScaleStrip — 12-semitone rotating carousel */
 
 .strip {
   padding: 8px 12px;
@@ -11,24 +11,57 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  /* Clip rotating tiles to the card boundary so they slide off the edge cleanly
+     instead of overflowing into adjacent UI. */
+  overflow: hidden;
+  transition: box-shadow 0.15s, border-color 0.15s;
 }
 
-/* Proportional container — tiles and labels positioned absolutely */
-.container {
+/* Active during long-press → vertical drag transpose; gives a visible cue that the
+   gesture is armed and any vertical movement now retunes the root chromatically. */
+.transposing {
+  border-color: var(--action-primary, #4f5dff);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6),
+              0 0 0 2px color-mix(in srgb, var(--action-primary, #4f5dff) 30%, transparent),
+              0 12px 28px rgba(8,12,38,0.12);
+}
+
+/* Active only during the post-release snap: animates the track's translateX to
+   the snap target. During a live drag this class is absent so the finger
+   tracks the tiles 1:1. */
+.snapping {
+  transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ---- Carousel viewport + track ----
+   The viewport clips the strip width; the track holds 36 tiles (3 × 12-semitone
+   cycles) in a single flex row and translates as a unit so a tile sliding off
+   one edge is immediately replaced by its rotated copy from the opposite cycle. */
+
+.viewport {
   position: relative;
+  width: 100%;
   height: 80px;
   overflow: hidden;
-  width: 100%;
 }
 
-/* ---- Active tile (scale tone) ---- */
-
-.activeTile {
+.carouselTrack {
   position: absolute;
-  width: 52px;
-  height: 68px;
-  top: 6px;
-  z-index: 1;
+  top: 0;
+  left: 0;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  will-change: transform;
+}
+
+/* ---- Scale-tone tile (carousel cell at a pitch class in the current scale) ---- */
+
+.carouselTile {
+  position: relative;
+  flex: 0 0 auto;
+  height: 100%;
   background: #ffffff;
   border: 0.5px solid #c0c8e8;
   border-radius: 10px;
@@ -43,22 +76,45 @@
   box-shadow: 0 3px 8px rgba(8,12,38,0.13), 0 1px 3px rgba(8,12,38,0.09);
 }
 
-.activeTile:hover {
+.carouselTile:hover {
   background: #f4f5ff;
 }
 
-.activeTile:active {
+.carouselTile:active {
   transform: scale(0.95);
 }
 
-.activeTileRoot {
+.carouselTileRoot {
   border: 2px solid var(--pc-color);
-  z-index: 2;
 }
 
-.activeTileSelected {
+.carouselTileSelected {
   background: color-mix(in srgb, var(--pc-color) 14%, #ffffff);
   border-color: var(--pc-color);
+}
+
+/* ---- Ghost tile (chromatic non-scale tone in the carousel) ---- */
+
+.carouselGhostTile {
+  position: relative;
+  flex: 0 0 auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px dashed #b8c2e0;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+/* Side-cycle copies — same shape as their primary counterpart but muted so the
+   active row stays the visual focus. */
+.carouselTileMuted {
+  opacity: 0.55;
+  pointer-events: none;
+  cursor: default;
 }
 
 .roman {
@@ -86,27 +142,22 @@
   flex-shrink: 0;
 }
 
-/* ---- Inactive tile (chromatic non-scale tone) — same size as active, dotted border ---- */
-
-.inactiveTile {
-  position: absolute;
-  width: 52px;
-  height: 68px;
-  top: 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: 1px dashed #b8c2e0;
-  border-radius: 10px;
-}
-
 .inactiveName {
   font-size: 13px;
   font-weight: 400;
   color: #a0a8c8;
   text-align: center;
+}
+
+/* ---- Long-press armed state: lift + glow on every tile signals the whole row
+       is "picked up" and ready for vertical drag-transpose. ---- */
+
+.transposing .carouselTile,
+.transposing .carouselGhostTile {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(8,12,38,0.18),
+              0 0 0 2px color-mix(in srgb, var(--action-primary, #4f5dff) 40%, transparent);
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 
 /* ---- Annotation line ---- */
@@ -117,31 +168,6 @@
   color: #7c86ac;
   margin: 0;
   min-height: 14px;
-}
-
-/* ---- Portrait ≤720px: flex layout eliminates overlap from semitone-adjacent scale tones ---- */
-
-@media (max-width: 720px) {
-  .container {
-    display: flex;
-    align-items: stretch;
-    gap: 3px;
-    overflow: visible;
-  }
-
-  .activeTile {
-    position: relative;
-    left: 0 !important; /* overrides inline proportional positioning */
-    top: 0;
-    flex: 1;
-    min-width: 0;
-    width: auto;
-    height: 100%;
-  }
-
-  .inactiveTile {
-    display: none;
-  }
 }
 
 /* ---- Landscape: hide annotation to recover vertical space ---- */

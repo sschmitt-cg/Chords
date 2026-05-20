@@ -14,7 +14,7 @@ parity. Open both side by side during testing.
 - [x] Key selector (all 12 keys, enharmonic toggle e.g. C# ↔ Db) — auto-handled: `computeDisplayScaleFromFamily` picks sharp vs flat by accidental count; diatonic spelling assigns unique letters per degree; no manual toggle needed
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
 - [x] Scale strip — correct note spelling for every key/mode combination
-- [ ] Scale strip — swipe/drag gestures (horizontal = mode shift, vertical = chromatic transposition; see Bugs/Polish for design notes)
+- [x] Scale strip — swipe/drag gestures: horizontal swipe rotates tonal center across scale degrees, long-press (~250ms) + vertical drag transposes root chromatically (~24px/semitone)
 - [x] Harmony Grid — 7 rows, correct chord names at triads through 13ths (sus2/sus4/b5 added; exotic fallbacks show root only)
 - [x] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions; header click resets per-row overrides
 - [x] Harmony Grid — per-row extension: clicking ghost note extends that row; clicking active note reduces to that degree
@@ -30,6 +30,39 @@ parity. Open both side by side during testing.
 - [x] Mobile layout — responsive: portrait stacks vertically, landscape uses side-by-side panels
 - [x] Mobile layout — touch targets all ≥ 44pt (PR #89): HarmonyGrid columns, picker rows, reset button; LCD displays non-interactive; layout compacted (portrait 12px gaps, landscape 8px, max-width 1100px); keyboard/fretboard equal height in landscape; ScaleStrip flex layout in portrait eliminates tile overlap
 - [x] ScaleNavigator — split into two independent first-class sections: "Key & Mode" (`scale-logical`: ROOT/FAMILY/MODE knobs) and "Scale Explorer" (`scale-exploratory`: BRIGHTNESS/TENSION/VOLUME knobs); each has its own `SectionId`, visibility toggle, and drag-reorder slot in SectionMenu; "Key & Mode" hidden by default on mobile portrait, "Scale Explorer" visible by default
+
+---
+
+## App Store Launch — Active Milestone
+
+All items in this section must be complete before running `npx cap add ios`.
+Phase 7 (below) covers the Capacitor build and submission steps that follow.
+
+### Pre-Capacitor Polish
+
+- [x] **Tuner — stability pass:** 5-sample median-hold window (~80ms at 60fps RAF)
+  applied to cents readings; buffer resets on note transition (different name+octave)
+  or silence so attacks and string changes stay responsive; visible needle/cents
+  flutter on held notes is suppressed without lag.
+- [x] **ScaleStrip — horizontal swipe to shift mode** — pointer-event gesture on the
+  strip rotates the tonal center across scale degrees (same notes, new root).
+  Threshold 40px, max 800ms, dominant-axis gate; the synthetic click is swallowed
+  when the gesture qualifies as a swipe so tile taps remain reliable.
+- [x] **ScaleStrip — vertical drag to transpose root chromatically** — long-press
+  (~250ms) arms transpose mode (highlighted with an action-primary outline);
+  vertical drag then shifts root by `setKey(startRoot ± semitones)` at ~24px/semitone.
+  Horizontal motion ignored once armed; pre-arm motion past 8px cancels and falls
+  back to the swipe-or-tap path.
+- [ ] **General polish pass:** review all open Bugs/Polish items; decide what ships
+  at launch vs. what defers. Minimum bar: nothing broken or visually jarring on an
+  iPhone 15 Pro in both orientations.
+
+### Notes on remaining Bugs/Polish items
+
+Some open Bugs/Polish items below are quick wins that should be folded into the
+general polish pass before launch. Others (animated tile transitions, haptic
+feedback, knob SVG colors) are cosmetic and deferrable. The general polish pass
+item above is the gate.
 
 ---
 
@@ -119,6 +152,8 @@ parity. Open both side by side during testing.
 
 ## Phase 7 — iOS App (Capacitor)
 
+*Prerequisite: all "App Store Launch — Active Milestone" items above are complete.*
+
 - [ ] Install and configure Capacitor (`@capacitor/core`, `@capacitor/ios`)
 - [ ] Bottom tab bar navigation (Explore / Practice / Visualize / Tools)
 - [ ] Safe area insets (`env(safe-area-inset-*)`) applied throughout
@@ -165,14 +200,14 @@ parity. Open both side by side during testing.
 - [x] ScaleNavigator ROOT knob/LCD — now tracks tonal center (modeRootPc) rather than family root; all navigation actions preserve the audible tonic
 - [x] ScaleNavigator MODE picker — selecting from popup preserves tonal center; knob drag still shifts root chromatically
 - [x] ScaleNavigator pickers — all popups scroll to center the current selection on open
-- [ ] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile)
-- [ ] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile; scroll-conflict is the engineering challenge to solve, e.g. long-press to enter drag mode or a dedicated drag handle)
+- [x] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile) — shipped: pointer-event gesture, threshold 40px / 800ms, swipe-left = next mode
+- [x] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile) — shipped: long-press (~250ms) arms transpose mode, vertical drag = ~24px/semitone; long-press timer cancels if pre-arm motion exceeds 8px so swipes still work
 - [x] ScaleNavigator knob labels hidden on desktop — `@media (orientation: landscape)` always fires on desktop (window is always wider than tall); scope to narrow/touch viewports only
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
-- [ ] ScaleNavigator — haptic feedback on knob step (where supported)
+- [x] ScaleNavigator — haptic feedback on knob step (where supported) — `navigator.vibrate(10)` fires on each step crossing in KnobUnit/WheelUnit/VolumeKnobUnit; no-op on devices without the API
 - [x] ScaleNavigator — persist navigator group visibility independently of orientation changes — handled by shareable URL encoding app state
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
-- [ ] ScaleNavigator knob SVG colors (accent ticks, indicator dot) use hard-coded hex values — replace with CSS custom properties (e.g. --knob-accent) for design-system consistency
+- [x] ScaleNavigator knob SVG colors (accent ticks, indicator dot) use hard-coded hex values — replaced with `--knob-accent`, `--knob-accent-bright`, `--knob-tick-inactive`, `--knob-body`, `--knob-body-border`, `--knob-pivot` tokens defined in `src/index.css`
 - [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
 - [x] iOS safe-area insets (`env(safe-area-inset-*)`) applied to header and all layout panels
 

@@ -6,6 +6,14 @@ import styles from './ScaleNavigator.module.css'
 
 export const DRAG_THRESHOLD_PX = 22
 
+// Fire a brief haptic pulse on devices that support it. Used when a knob crosses a step
+// so the user gets tactile confirmation without us watching for individual interaction events.
+function hapticTick(): void {
+  if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+    navigator.vibrate(10)
+  }
+}
+
 // ------------------------------------------------------------------
 // Circular SVG Knob — full 360°, step 0 at top
 // ------------------------------------------------------------------
@@ -30,7 +38,7 @@ export function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }:
     const isCurrent = i === step
     ticks.push(
       <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke={isCurrent ? '#6670e8' : '#2a3878'}
+        stroke={isCurrent ? 'var(--knob-accent)' : 'var(--knob-tick-inactive)'}
         strokeWidth={isCurrent ? 3 : 1.5}
         strokeLinecap="round"
       />
@@ -45,11 +53,11 @@ export function Knob({ step, total, onPointerDown, onPointerMove, onPointerUp }:
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
     >
       {ticks}
-      <circle cx={36} cy={36} r={22} fill="#223070" />
-      <circle cx={36} cy={36} r={21} fill="none" stroke="#384888" strokeWidth={0.5} />
-      <line x1={36} y1={36} x2={indX} y2={indY} stroke="#6670e8" strokeWidth={2} strokeLinecap="round" />
-      <circle cx={indX} cy={indY} r={2.5} fill="#9098f8" />
-      <circle cx={36} cy={36} r={3} fill="#1a2660" />
+      <circle cx={36} cy={36} r={22} fill="var(--knob-body)" />
+      <circle cx={36} cy={36} r={21} fill="none" stroke="var(--knob-body-border)" strokeWidth={0.5} />
+      <line x1={36} y1={36} x2={indX} y2={indY} stroke="var(--knob-accent)" strokeWidth={2} strokeLinecap="round" />
+      <circle cx={indX} cy={indY} r={2.5} fill="var(--knob-accent-bright)" />
+      <circle cx={36} cy={36} r={3} fill="var(--knob-pivot)" />
     </svg>
   )
 }
@@ -76,7 +84,7 @@ export function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointe
     const isFilled = i <= step
     ticks.push(
       <line key={i} x1={x1} y1={y1} x2={x2} y2={y2}
-        stroke={isCurrent ? '#9098f8' : isFilled ? '#6670e8' : '#2a3878'}
+        stroke={isCurrent ? 'var(--knob-accent-bright)' : isFilled ? 'var(--knob-accent)' : 'var(--knob-tick-inactive)'}
         strokeWidth={isCurrent ? 3 : isFilled ? 2 : 1.5}
         strokeLinecap="round"
       />
@@ -91,11 +99,11 @@ export function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointe
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
     >
       {ticks}
-      <circle cx={36} cy={36} r={22} fill="#223070" />
-      <circle cx={36} cy={36} r={21} fill="none" stroke="#384888" strokeWidth={0.5} />
-      <line x1={36} y1={36} x2={indX} y2={indY} stroke="#6670e8" strokeWidth={2} strokeLinecap="round" />
-      <circle cx={indX} cy={indY} r={2.5} fill="#9098f8" />
-      <circle cx={36} cy={36} r={3} fill="#1a2660" />
+      <circle cx={36} cy={36} r={22} fill="var(--knob-body)" />
+      <circle cx={36} cy={36} r={21} fill="none" stroke="var(--knob-body-border)" strokeWidth={0.5} />
+      <line x1={36} y1={36} x2={indX} y2={indY} stroke="var(--knob-accent)" strokeWidth={2} strokeLinecap="round" />
+      <circle cx={indX} cy={indY} r={2.5} fill="var(--knob-accent-bright)" />
+      <circle cx={36} cy={36} r={3} fill="var(--knob-pivot)" />
     </svg>
   )
 }
@@ -188,7 +196,10 @@ export function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onC
     if (Math.abs(delta) > 4) { dragged.current = true; e.preventDefault() }
     const steps = Math.round(delta / DRAG_THRESHOLD_PX)
     const newValue = ((dragStartValue.current + steps) % total + total) % total
-    if (newValue !== step) onChange(newValue)
+    if (newValue !== step) {
+      hapticTick()
+      onChange(newValue)
+    }
   }, [step, total, onChange])
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
@@ -246,7 +257,10 @@ export function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, ar
     if (Math.abs(delta) > 4) { dragged.current = true; e.preventDefault() }
     const steps = Math.round(delta / DRAG_THRESHOLD_PX)
     const newValue = Math.max(0, Math.min(total - 1, dragStartValue.current + steps))
-    if (newValue !== step) onChange(newValue)
+    if (newValue !== step) {
+      hapticTick()
+      onChange(newValue)
+    }
   }, [step, total, onChange])
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
@@ -297,7 +311,10 @@ export function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeK
     if (Math.abs(delta) > 4) { dragged.current = true; e.preventDefault() }
     const steps = Math.round(delta / DRAG_THRESHOLD_PX)
     const newStep = Math.max(0, Math.min(TOTAL - 1, dragStartStep.current + steps))
-    if (newStep * 5 !== volume) onVolumeChange(newStep * 5)
+    if (newStep * 5 !== volume) {
+      hapticTick()
+      onVolumeChange(newStep * 5)
+    }
   }, [volume, onVolumeChange])
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {

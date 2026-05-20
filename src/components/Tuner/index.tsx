@@ -10,6 +10,18 @@ const MIN_SAMPLES = 30
 // Upper bound on lag; longer lags would alias below ~47 Hz, below the lowest bass guitar string
 const MAX_SAMPLES = 1024
 
+// Cents-smoothing ring buffer length; at ~60fps this covers ~80ms — enough to suppress
+// single-frame outliers without lagging the needle on real pitch changes.
+const CENTS_SMOOTHING_WINDOW = 5
+
+function medianCents(samples: readonly number[]): number {
+  const sorted = [...samples].sort((a, b) => a - b)
+  const mid = sorted.length >> 1
+  return sorted.length % 2 === 0
+    ? Math.round((sorted[mid - 1] + sorted[mid]) / 2)
+    : sorted[mid]
+}
+
 function detectPitch(buffer: Float32Array<ArrayBuffer>, sampleRate: number): number | null {
   // RMS power gate — skip if signal is nearly silent
   let rms = 0
@@ -152,6 +164,9 @@ export default function ChromaticTuner(): React.ReactElement {
   const rafRef       = useRef<number | null>(null)
   // Float32Array<ArrayBuffer> required by getFloatTimeDomainData; new Float32Array() always uses ArrayBuffer
   const bufferRef    = useRef<Float32Array<ArrayBuffer> | null>(null)
+  // Ring buffer of recent cents readings, reset on note transition or silence to keep transitions responsive
+  const centsBufferRef = useRef<number[]>([])
+  const lastNoteKeyRef = useRef<string | null>(null)
 
   const stopTuner = useCallback(() => {
     if (rafRef.current !== null) {
@@ -204,6 +219,8 @@ export default function ChromaticTuner(): React.ReactElement {
     ctxRef.current      = ctx
     analyserRef.current = analyser
     bufferRef.current   = new Float32Array(analyser.fftSize) as Float32Array<ArrayBuffer>
+    centsBufferRef.current = []
+    lastNoteKeyRef.current = null
 
     setStatus('running')
 
@@ -214,7 +231,22 @@ export default function ChromaticTuner(): React.ReactElement {
 
       analyserNode.getFloatTimeDomainData(buf)
       const hz = detectPitch(buf, ctx.sampleRate)
-      setNote(hz !== null ? freqToNoteInfo(hz) : null)
+      if (hz === null) {
+        centsBufferRef.current = []
+        lastNoteKeyRef.current = null
+        setNote(null)
+      } else {
+        const raw = freqToNoteInfo(hz)
+        const noteKey = `${raw.name}${raw.octave}`
+        if (noteKey !== lastNoteKeyRef.current) {
+          centsBufferRef.current = []
+          lastNoteKeyRef.current = noteKey
+        }
+        const buffer = centsBufferRef.current
+        buffer.push(raw.cents)
+        if (buffer.length > CENTS_SMOOTHING_WINDOW) buffer.shift()
+        setNote({ ...raw, cents: medianCents(buffer) })
+      }
 
       rafRef.current = requestAnimationFrame(tick)
     }
