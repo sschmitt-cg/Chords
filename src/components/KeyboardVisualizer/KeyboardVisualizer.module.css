@@ -18,20 +18,6 @@
   gap: 3px;
 }
 
-@media (orientation: landscape) {
-  .wrapper {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    padding: 8px;
-  }
-  .shell {
-    flex: 1;
-    height: auto;
-    min-height: 0;
-  }
-}
 
 /* ---- White keys ---- */
 
