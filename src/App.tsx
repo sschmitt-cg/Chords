@@ -77,24 +77,14 @@ function App(): React.ReactElement {
           {(!leftColEmpty || !rightColEmpty) && (
             <div className={styles.panelBottom}>
               {!leftColEmpty && (
-                <div
-                  className={[
-                    styles.panelCol,
-                    rightColEmpty ? styles.panelColFull : '',
-                  ].join(' ')}
-                >
+                <div className={styles.panelCol}>
                   {LANDSCAPE_LEFT_COL.filter(id => sectionVisible[id]).map(id => (
                     <div key={id} className={styles.cell}>{renderSection(id)}</div>
                   ))}
                 </div>
               )}
               {!rightColEmpty && (
-                <div
-                  className={[
-                    styles.panelCol,
-                    leftColEmpty ? styles.panelColFull : '',
-                  ].join(' ')}
-                >
+                <div className={styles.panelCol}>
                   {LANDSCAPE_RIGHT_COL.filter(id => sectionVisible[id]).map(id => (
                     <div key={id} className={styles.cell}>{renderSection(id)}</div>
                   ))}

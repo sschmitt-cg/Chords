@@ -86,8 +86,12 @@
     overflow: hidden;
   }
 
+  /* Each column is pinned to ~50% of the bottom-area width (minus half the
+     8px row gap) regardless of whether its sibling is visible. This keeps
+     instruments at a consistent proportional size — hiding the right column
+     no longer makes the left column span full width and balloon the keys. */
   .panelCol {
-    flex: 1;
+    flex: 0 0 calc(50% - 4px);
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -106,11 +110,5 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
-  }
-
-  /* When the opposite column is entirely empty, the surviving column spans
-     full width (matches the prior panelFull behavior). */
-  .panelColFull {
-    flex: 1 1 100%;
   }
 }
