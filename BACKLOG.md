@@ -200,8 +200,9 @@ item above is the gate.
 - [x] ScaleNavigator ROOT knob/LCD — now tracks tonal center (modeRootPc) rather than family root; all navigation actions preserve the audible tonic
 - [x] ScaleNavigator MODE picker — selecting from popup preserves tonal center; knob drag still shifts root chromatically
 - [x] ScaleNavigator pickers — all popups scroll to center the current selection on open
-- [x] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile) — shipped: pointer-event gesture, threshold 40px / 800ms, swipe-left = next mode
-- [x] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile) — shipped: long-press (~250ms) arms transpose mode, vertical drag = ~24px/semitone; long-press timer cancels if pre-arm motion exceeds 8px so swipes still work
+- [x] ScaleStrip — horizontal swipe to shift mode (same scale notes, new root — like sliding along the strip to reframe which note is home; replaces MODE knob on mobile) — shipped: pointer-event gesture, snap-to-closest scale-tone on release; variable-width carousel layout (PR after #141)
+- [x] ScaleStrip — vertical drag to transpose root chromatically (all notes move together, intervals preserved — like sliding a capo; replaces ROOT knob on mobile) — shipped: dominant-axis detection arms vertical drag immediately, ~24px/semitone, floating semitone-delta indicator (PR after #141)
+- [x] ScaleStrip — mobile gesture & touch-target fixes (#141): vertical drag transposes immediately via dominant-axis detection (no long-press); `touch-action: none` stops page-scroll hijack; scale tiles widened to ≥44pt by collapsing non-scale slots into 10pt dotted spacers; floating "+N st" chip visualizes the half-step movement during drag.
 - [x] ScaleNavigator knob labels hidden on desktop — `@media (orientation: landscape)` always fires on desktop (window is always wider than tall); scope to narrow/touch viewports only
 - [ ] ScaleStrip — animate tile transitions when family or mode changes
 - [x] ScaleNavigator — haptic feedback on knob step (where supported) — `navigator.vibrate(10)` fires on each step crossing in KnobUnit/WheelUnit/VolumeKnobUnit; no-op on devices without the API

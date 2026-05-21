@@ -1,13 +1,17 @@
 /* ScaleStrip — 12-semitone rotating carousel */
 
 .strip {
+  position: relative;
   padding: 8px 12px;
   background: var(--surface-1, #fff);
   border: 1px solid var(--card-border, #d9def2);
   border-radius: 14px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 12px 28px rgba(8,12,38,0.12);
   user-select: none;
-  touch-action: pan-y;
+  /* The strip owns all gestures inside its bounds — vertical drag transposes
+     the root, horizontal drag rotates the mode. Without `touch-action: none`
+     the browser pre-empts vertical pointer events to scroll the page. */
+  touch-action: none;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -17,8 +21,9 @@
   transition: box-shadow 0.15s, border-color 0.15s;
 }
 
-/* Active during long-press → vertical drag transpose; gives a visible cue that the
-   gesture is armed and any vertical movement now retunes the root chromatically. */
+/* Armed during a vertical-axis drag (transpose mode); gives a visible cue that
+   the gesture is engaged and any further vertical movement retunes the root
+   chromatically. */
 .transposing {
   border-color: var(--action-primary, #4f5dff);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.6),
@@ -52,7 +57,7 @@
   height: 100%;
   display: flex;
   align-items: stretch;
-  gap: 3px;
+  gap: 2px;
   will-change: transform;
 }
 
@@ -93,7 +98,13 @@
   border-color: var(--pc-color);
 }
 
-/* ---- Ghost tile (chromatic non-scale tone in the carousel) ---- */
+/* ---- Ghost slot (chromatic non-scale tone) ----
+   Portrait: a narrow spacer that visually marks a half-step between scale
+   tones — no glyph; count the visible spacers between two scale tiles to read
+   the semitone gap.
+   Landscape: a full-width dashed-border tile with the note name, since the
+   viewport has enough room to keep every chromatic position present without
+   crowding the scale tones. */
 
 .carouselGhostTile {
   position: relative;
@@ -104,9 +115,20 @@
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px dashed #b8c2e0;
-  border-radius: 10px;
   pointer-events: none;
+}
+
+.ghostMark {
+  width: 0;
+  height: 60%;
+  border-left: 1px dashed #b8c2e0;
+}
+
+.inactiveName {
+  font-size: 13px;
+  font-weight: 400;
+  color: #a0a8c8;
+  text-align: center;
 }
 
 /* Side-cycle copies — same shape as their primary counterpart but muted so the
@@ -142,22 +164,41 @@
   flex-shrink: 0;
 }
 
-.inactiveName {
-  font-size: 13px;
-  font-weight: 400;
-  color: #a0a8c8;
-  text-align: center;
+/* ---- Transpose-delta indicator ----
+   Floating chip that appears during the long vertical drag, showing how many
+   semitones up/down the root has shifted relative to where the drag began. */
+
+.transposeDelta {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--action-primary, #4f5dff) 92%, #ffffff);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  box-shadow: 0 6px 14px rgba(8,12,38,0.22);
+  z-index: 2;
 }
 
-/* ---- Long-press armed state: lift + glow on every tile signals the whole row
-       is "picked up" and ready for vertical drag-transpose. ---- */
+/* ---- Transpose-armed state: lift + glow on every tile signals the whole row
+       is "picked up" and ready for vertical drag-transpose. Ghost spacers are
+       pointer-transparent and have no shadow of their own, so the lift applies
+       only to scale-tone tiles. ---- */
 
-.transposing .carouselTile,
-.transposing .carouselGhostTile {
+.transposing .carouselTile {
   transform: translateY(-3px);
   box-shadow: 0 8px 16px rgba(8,12,38,0.18),
               0 0 0 2px color-mix(in srgb, var(--action-primary, #4f5dff) 40%, transparent);
   transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+
+.transposing .ghostMark {
+  border-color: color-mix(in srgb, var(--action-primary, #4f5dff) 50%, #b8c2e0);
 }
 
 /* ---- Annotation line ---- */
@@ -170,9 +211,25 @@
   min-height: 14px;
 }
 
-/* ---- Landscape: hide annotation to recover vertical space ---- */
+/* ---- Landscape: hide annotation to recover vertical space, and render ghost
+   slots as full dashed-border tiles (the JS layout makes them full-width). ---- */
 
 @media (orientation: landscape) {
   .strip { padding: 6px 10px; }
   .annotation { display: none; }
+  .carouselGhostTile {
+    border: 1px dashed #b8c2e0;
+    border-radius: 10px;
+  }
+}
+
+/* ---- Reduced-motion: skip the lift transition and snap animation ---- */
+
+@media (prefers-reduced-motion: reduce) {
+  .transposing .carouselTile {
+    transition: none;
+  }
+  .snapping {
+    transition: none;
+  }
 }
