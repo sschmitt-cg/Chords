@@ -42,8 +42,9 @@
   color: #8090c0;
 }
 
-/* Hide drag handles in landscape on mobile — layout is fixed there */
-@media (orientation: landscape) and (max-width: 768px) {
+/* Hide drag handles in landscape — section order has no effect there because
+   the landscape layout uses fixed panel assignments. Checkbox toggles still work. */
+@media (orientation: landscape) {
   .dragHandle {
     display: none;
   }

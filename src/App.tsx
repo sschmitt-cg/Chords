@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import type React from 'react'
 import { useLayoutStore, type SectionId } from './store/layout'
 import AppHeader from './components/AppHeader/AppHeader'
 import { useUrlSync } from './hooks/useUrlSync'
+import { useIsLandscape } from './hooks/useIsLandscape'
 import ScaleLogical from './components/ScaleNavigator/ScaleLogical'
 import ScaleExploratory from './components/ScaleNavigator/ScaleExploratory'
 import ScaleStrip from './components/ScaleStrip/index'
@@ -15,11 +16,13 @@ import ChromaticTuner from './components/Tuner/index'
 import UserGuide from './components/UserGuide/UserGuide'
 import styles from './App.module.css'
 
-// Landscape panel assignments — fixed regardless of portrait section order
-// circle is rendered separately to the right of the navigator+strip column
-const LANDSCAPE_TOP: SectionId[]   = ['scale-logical', 'scale-exploratory', 'strip']
-const LANDSCAPE_LEFT: SectionId[]  = ['keyboard', 'fretboard']
-const LANDSCAPE_RIGHT: SectionId[] = ['harmony', 'metronome', 'tuner']
+// Landscape panel assignments — fixed regardless of portrait section order.
+// Below the top row (scale nav + circle) the bottom area is two flex columns.
+// Each child renders at its natural height; hidden children are removed and
+// remaining ones flow up to fill the gap.
+const LANDSCAPE_TOP: SectionId[]         = ['scale-logical', 'scale-exploratory', 'strip']
+const LANDSCAPE_LEFT_COL: SectionId[]    = ['keyboard', 'fretboard', 'metronome']
+const LANDSCAPE_RIGHT_COL: SectionId[]   = ['harmony', 'tuner']
 
 function renderSection(id: SectionId): React.ReactElement | null {
   switch (id) {
@@ -37,27 +40,14 @@ function renderSection(id: SectionId): React.ReactElement | null {
   }
 }
 
-function useIsLandscape() {
-  const [isLandscape, setIsLandscape] = useState(
-    () => window.matchMedia('(orientation: landscape)').matches
-  )
-  useEffect(() => {
-    const mq = window.matchMedia('(orientation: landscape)')
-    const handler = (e: MediaQueryListEvent) => setIsLandscape(e.matches)
-    mq.addEventListener('change', handler)
-    return () => mq.removeEventListener('change', handler)
-  }, [])
-  return isLandscape
-}
-
 function App(): React.ReactElement {
   const { sectionOrder, sectionVisible } = useLayoutStore()
   const isLandscape = useIsLandscape()
   const [view, setView] = useState<'app' | 'guide'>('app')
   useUrlSync()
 
-  const leftEmpty  = LANDSCAPE_LEFT.every(id => !sectionVisible[id])
-  const rightEmpty = LANDSCAPE_RIGHT.every(id => !sectionVisible[id])
+  const leftColEmpty  = LANDSCAPE_LEFT_COL.every(id => !sectionVisible[id])
+  const rightColEmpty = LANDSCAPE_RIGHT_COL.every(id => !sectionVisible[id])
 
   if (view === 'guide') {
     return <UserGuide onBack={() => setView('app')} />
@@ -84,27 +74,24 @@ function App(): React.ReactElement {
               </div>
             )}
           </div>
-          <div
-            className={[
-              styles.panelLeft,
-              leftEmpty ? styles.panelHidden : '',
-            ].join(' ')}
-          >
-            {LANDSCAPE_LEFT.filter(id => sectionVisible[id]).map(id => (
-              <div key={id}>{renderSection(id)}</div>
-            ))}
-          </div>
-          <div
-            className={[
-              styles.panelRight,
-              rightEmpty ? styles.panelHidden  : '',
-              leftEmpty  ? styles.panelFull    : '',
-            ].join(' ')}
-          >
-            {LANDSCAPE_RIGHT.filter(id => sectionVisible[id]).map(id => (
-              <div key={id}>{renderSection(id)}</div>
-            ))}
-          </div>
+          {(!leftColEmpty || !rightColEmpty) && (
+            <div className={styles.panelBottom}>
+              {!leftColEmpty && (
+                <div className={styles.panelCol}>
+                  {LANDSCAPE_LEFT_COL.filter(id => sectionVisible[id]).map(id => (
+                    <div key={id} className={styles.cell}>{renderSection(id)}</div>
+                  ))}
+                </div>
+              )}
+              {!rightColEmpty && (
+                <div className={styles.panelCol}>
+                  {LANDSCAPE_RIGHT_COL.filter(id => sectionVisible[id]).map(id => (
+                    <div key={id} className={styles.cell}>{renderSection(id)}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       ) : (
         <main className={styles.portraitContent}>
