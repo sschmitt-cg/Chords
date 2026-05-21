@@ -1,8 +1,17 @@
 // ScaleStrip — chromatic 12-position rotating carousel.
-// One cycle = 12 semitone slots (7 scale tones + 5 dotted ghost markers).
-// Three cycles are rendered so a tile sliding off one edge is immediately replaced
-// by its rotated copy from the opposite side. Horizontal drag rotates the mode
-// within the current family; long-press + vertical drag transposes the root.
+// Each cycle holds 12 chromatic slots. In portrait, the 7 scale-tone slots are
+// wide enough to meet the 44pt touch-target minimum and the 5 non-scale slots
+// collapse into narrow dotted spacers; in landscape the viewport is wide enough
+// that every slot can be full-size, so the dashed-bordered ghost tiles return.
+// Three cycles are rendered so a tile sliding off one edge is immediately
+// replaced by its rotated copy from the opposite side.
+//
+// Gestures:
+//   • Horizontal drag rotates the mode within the current family (same notes,
+//     new tonal center). On release we snap to the scale tone whose center is
+//     closest to the carousel anchor.
+//   • Vertical drag transposes the root chromatically. The dominant axis is
+//     detected from the first ~8 px of motion — no long-press required.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
@@ -11,47 +20,126 @@ import { useAudio } from '../../hooks/useAudio'
 import { computeRomans, pcColorVar, wrap, pcName } from '../../theory/index'
 import styles from './ScaleStrip.module.css'
 
-// Horizontal swipe shifts the mode within the current family — same notes, new tonal center.
-// Live drag follows the finger; on release we snap to the nearest scale tone (skipping
-// ghost semitones), so dragging "one whole step" or "one half step" both feel correct.
-const SWIPE_AXIS_LOCK_PX = 8
+const AXIS_LOCK_PX = 8
 const SNAP_TRANSITION_MS = 260
-
-// Long-press → drag-transpose: holding the strip in place for 250ms arms vertical drag.
-// Drag-up raises the root by ~one semitone every 24px; horizontal drift is ignored once
-// the mode is armed so transpose can't be hijacked by an accidental swipe.
-const LONG_PRESS_MS = 250
-const LONG_PRESS_CANCEL_PX = 8
 const SEMITONE_PIXELS = 24
 
 // Carousel layout
 const CYCLE_SIZE = 12                                   // semitone slots per cycle
 const CAROUSEL_CYCLES = 3                               // pre-render 3 cycles so wrap-around is seamless
 const CAROUSEL_TILE_COUNT = CAROUSEL_CYCLES * CYCLE_SIZE // 36
-const CAROUSEL_PRIMARY_OFFSET = CYCLE_SIZE              // middle cycle starts at index 12
-const CAROUSEL_GAP_PX = 3
+const CAROUSEL_PRIMARY_OFFSET = CYCLE_SIZE              // primary cycle starts at slot index 12
+const CAROUSEL_GAP_PX = 2
 
-// Find the mode-index delta (within the current family) whose root lands closest to
-// the user's chromatic-shift target. Returns both the integer modeIndex delta to
-// commit and the exact semitone shift it represents — the snap animates the track
-// by that many semitone slots before committing.
-function findClosestModeShift(
+// Variable-width layout: scale-tone slots aim for the 44pt touch-target minimum
+// (Apple HIG, see docs/architecture.md), non-scale slots collapse into thin dotted
+// separators. Together with the gaps these must sum to exactly the viewport width
+// so the carousel's 3-cycle wrap-around stays seamless.
+//
+// The ghost slot width is chosen responsively so scale tiles hit the 44pt target
+// on a 375pt-wide viewport and above; on narrower devices the ghost width is
+// floored and scale tiles fall slightly short — acceptable degradation.
+const SCALE_TONE_TARGET_PX = 44
+const GHOST_SLOT_MIN_PX = 4
+const GHOST_SLOT_MAX_PX = 10
+
+type Axis = 'horizontal' | 'vertical'
+
+// Cycle layout: per-chromatic-offset left edge and width inside one cycle.
+type CycleLayout = {
+  leftWithinCycle: number[]   // length 12
+  widthWithinCycle: number[]  // length 12
+  cycleWidth: number
+}
+
+function buildCycleLayout(
+  scaleToneOffsets: readonly number[],
+  viewportWidth: number,
+  isLandscape: boolean,
+): CycleLayout {
+  const totalGaps = (CYCLE_SIZE - 1) * CAROUSEL_GAP_PX
+  const ghostCount = CYCLE_SIZE - scaleToneOffsets.length
+  const scaleCount = scaleToneOffsets.length
+
+  let widthForChromOffset: (c: number) => number
+
+  if (isLandscape) {
+    // Landscape: every slot is the same width — restores the pre-#141 look on
+    // wider viewports where the 44pt rule isn't a binding constraint.
+    const tileW = Math.max(1, (viewportWidth - totalGaps) / CYCLE_SIZE)
+    widthForChromOffset = () => tileW
+  } else {
+    // Portrait: solve for the ghost width that gives scale tiles exactly the
+    // 44pt target, then clamp ghosts into [MIN, MAX]. On narrow viewports the
+    // clamp forces scale tiles below 44; on wide ones the clamp keeps ghosts
+    // visually present.
+    const targetGhostW = ghostCount > 0
+      ? (viewportWidth - totalGaps - SCALE_TONE_TARGET_PX * scaleCount) / ghostCount
+      : 0
+    const ghostW = Math.max(GHOST_SLOT_MIN_PX, Math.min(GHOST_SLOT_MAX_PX, targetGhostW))
+    const scaleW = Math.max(1, (viewportWidth - totalGaps - ghostCount * ghostW) / scaleCount)
+    const scaleToneSet = new Set(scaleToneOffsets)
+    widthForChromOffset = (c: number) => (scaleToneSet.has(c) ? scaleW : ghostW)
+  }
+
+  const widthWithinCycle: number[] = []
+  const leftWithinCycle: number[] = []
+  let cursor = 0
+  for (let c = 0; c < CYCLE_SIZE; c++) {
+    const w = widthForChromOffset(c)
+    widthWithinCycle.push(w)
+    leftWithinCycle.push(cursor)
+    cursor += w + (c < CYCLE_SIZE - 1 ? CAROUSEL_GAP_PX : 0)
+  }
+  // Include a trailing gap so adjacent cycles in the rendered track tile cleanly
+  // (matches the inter-slot gap inside a cycle).
+  const cycleWidth = cursor + CAROUSEL_GAP_PX
+  return { leftWithinCycle, widthWithinCycle, cycleWidth }
+}
+
+// Compute the chromatic offset (semitones from current root) for each mode delta in [-N, +N].
+// Returns paired arrays for fast lookup during snap-target search.
+function buildModeDeltaTable(
   intervals: readonly number[],
   currentModeIdx: number,
-  desiredShift: number,
-): { delta: number; shift: number } {
-  const currentOffset = intervals.slice(0, currentModeIdx).reduce((s, v) => s + v, 0)
-  let best = { delta: 0, shift: 0, dist: Infinity }
-  // Cover up to ±1 octave of mode movement — more than enough for any single swipe.
+): { deltas: number[]; chromShifts: number[] } {
+  const currentOffsetSum = intervals.slice(0, currentModeIdx).reduce((s, v) => s + v, 0)
+  const deltas: number[] = []
+  const chromShifts: number[] = []
   for (let delta = -intervals.length; delta <= intervals.length; delta++) {
     const wrappedIdx = wrap(currentModeIdx + delta, intervals.length)
     const cyclesAcross = Math.floor((currentModeIdx + delta) / intervals.length)
-    const offset = intervals.slice(0, wrappedIdx).reduce((s, v) => s + v, 0) + cyclesAcross * 12
-    const shift = offset - currentOffset
-    const dist = Math.abs(shift - desiredShift)
-    if (dist < best.dist) best = { delta, shift, dist }
+    const offsetSum = intervals.slice(0, wrappedIdx).reduce((s, v) => s + v, 0) + cyclesAcross * 12
+    deltas.push(delta)
+    chromShifts.push(offsetSum - currentOffsetSum)
   }
-  return { delta: best.delta, shift: best.shift }
+  return { deltas, chromShifts }
+}
+
+// Find the mode delta whose target scale-tone is visually closest to where the
+// user's drag landed, given the current variable-width cycle layout. We align
+// the left edge of the destination slot to viewport X = 0 (the same place the
+// current root sits at anchor), so the post-commit reset to anchor is seamless.
+function findClosestSnapTarget(
+  intervals: readonly number[],
+  currentModeIdx: number,
+  layout: CycleLayout,
+  trackTranslate: number,
+  anchorTranslate: number,
+): { delta: number; snapTranslate: number } {
+  const primaryCycleStart = -anchorTranslate
+  const { deltas, chromShifts } = buildModeDeltaTable(intervals, currentModeIdx)
+  let best = { delta: 0, snapTranslate: anchorTranslate, dist: Infinity }
+  for (let i = 0; i < deltas.length; i++) {
+    const c = chromShifts[i]
+    const cyclesAcross = Math.floor(c / 12)
+    const cIn = c - cyclesAcross * 12
+    const targetLeftTrackX = primaryCycleStart + cyclesAcross * layout.cycleWidth + layout.leftWithinCycle[cIn]
+    const snapTranslate = -targetLeftTrackX
+    const dist = Math.abs(snapTranslate - trackTranslate)
+    if (dist < best.dist) best = { delta: deltas[i], snapTranslate, dist }
+  }
+  return best
 }
 
 export default function ScaleStrip() {
@@ -73,41 +161,45 @@ export default function ScaleStrip() {
   const { playScale, playNote } = useAudio()
 
   // Gesture state — refs so renders don't churn and handlers can read/write freely.
-  const gestureStartRef = useRef<{ x: number; y: number; time: number } | null>(null)
+  const gestureStartRef = useRef<{ x: number; y: number } | null>(null)
+  const axisRef = useRef<Axis | null>(null)
   const suppressClickRef = useRef(false)
-  const longPressTimerRef = useRef<number | null>(null)
   const dragModeRef = useRef<{ startY: number; startRootPc: number; lastSemitones: number } | null>(null)
   const [isDragTransposing, setIsDragTransposing] = useState(false)
+  const [transposeDelta, setTransposeDelta] = useState(0)
 
-  // Horizontal-swipe state.
+  // Horizontal-swipe / track state.
   const viewportRef = useRef<HTMLDivElement>(null)
   const trackRef = useRef<HTMLDivElement>(null)
-  const isHorizontalSwipeRef = useRef(false)
-  const slotPitchRef = useRef(0)
   const initialTranslateRef = useRef(0)
   const snapTimeoutRef = useRef<number | null>(null)
   const pendingSnapRef = useRef<{ modeDelta: number } | null>(null)
   const [isSnapping, setIsSnapping] = useState(false)
-  const [carouselTileWidth, setCarouselTileWidth] = useState(0)
+  const [viewportWidth, setViewportWidth] = useState(0)
+  const [isLandscape, setIsLandscape] = useState(() =>
+    typeof window !== 'undefined' && window.matchMedia('(orientation: landscape)').matches,
+  )
 
-  // Measure the carousel: tile width = (viewport - 11 gaps) / 12, anchor the track so
-  // the middle cycle (slots 12..23) sits exactly within the viewport.
+  // The mode's scale-tone offsets in chromatic terms relative to the current root.
+  // These determine which slots are wide tiles vs narrow ghost spacers.
+  const scaleToneOffsets = useMemo(
+    () => currentModeNotes.map(pc => wrap(pc - currentModeRootPc, 12)).sort((a, b) => a - b),
+    [currentModeNotes, currentModeRootPc],
+  )
+
+  const cycleLayout = useMemo(
+    () => (viewportWidth > 0 ? buildCycleLayout(scaleToneOffsets, viewportWidth, isLandscape) : null),
+    [scaleToneOffsets, viewportWidth, isLandscape],
+  )
+
+  // Measure the viewport; the cycle is sized to span exactly one viewport width.
   useLayoutEffect(() => {
     const vp = viewportRef.current
     if (!vp) return
-
     const measure = () => {
       const w = vp.offsetWidth
       if (w <= 0) return
-      const tileW = (w - (CYCLE_SIZE - 1) * CAROUSEL_GAP_PX) / CYCLE_SIZE
-      const slotPitch = tileW + CAROUSEL_GAP_PX
-      const anchor = -CAROUSEL_PRIMARY_OFFSET * slotPitch
-      setCarouselTileWidth(tileW)
-      slotPitchRef.current = slotPitch
-      initialTranslateRef.current = anchor
-      if (trackRef.current && !isHorizontalSwipeRef.current && !pendingSnapRef.current) {
-        trackRef.current.style.transform = `translateX(${anchor}px)`
-      }
+      setViewportWidth(w)
     }
     measure()
     const ro = new ResizeObserver(measure)
@@ -115,26 +207,53 @@ export default function ScaleStrip() {
     return () => ro.disconnect()
   }, [])
 
-  // External mode/root changes (pickers, knobs, etc.) — reset the carousel to anchor.
+  // Track orientation so the carousel can swap between the portrait
+  // collapsed-ghost layout and the landscape full-width layout.
   useEffect(() => {
-    if (trackRef.current && !isHorizontalSwipeRef.current && !pendingSnapRef.current) {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(orientation: landscape)')
+    const handler = (e: MediaQueryListEvent) => setIsLandscape(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  // Anchor the track so the middle (primary) cycle aligns with the viewport.
+  // The track is laid out at translate=0 with cycle 0 at track-X 0, cycle 1
+  // (primary) at track-X cycleWidth, cycle 2 at track-X 2*cycleWidth. So an
+  // anchor translate of -cycleWidth puts slot 0 of the primary cycle at
+  // viewport X = 0.
+  useLayoutEffect(() => {
+    if (!cycleLayout) return
+    const anchor = -cycleLayout.cycleWidth
+    initialTranslateRef.current = anchor
+    if (trackRef.current && axisRef.current !== 'horizontal' && !pendingSnapRef.current) {
+      trackRef.current.style.transform = `translateX(${anchor}px)`
+    }
+  }, [cycleLayout])
+
+  // External mode/root changes (pickers, knobs, vertical-drag transpose) — reset
+  // the carousel to anchor. If a snap is still pending when the change arrives,
+  // it came from outside the snap pipeline, so abandon the snap to keep the
+  // queued setModeIndex from overwriting the external change with a stale delta.
+  useEffect(() => {
+    if (pendingSnapRef.current) {
+      if (snapTimeoutRef.current !== null) {
+        clearTimeout(snapTimeoutRef.current)
+        snapTimeoutRef.current = null
+      }
+      pendingSnapRef.current = null
+      setIsSnapping(false)
+    }
+    if (trackRef.current && axisRef.current !== 'horizontal') {
       trackRef.current.style.transform = `translateX(${initialTranslateRef.current}px)`
     }
   }, [modeIndex, currentModeRootPc])
 
   useEffect(() => {
     return () => {
-      if (longPressTimerRef.current !== null) clearTimeout(longPressTimerRef.current)
       if (snapTimeoutRef.current !== null) clearTimeout(snapTimeoutRef.current)
     }
   }, [])
-
-  function clearLongPress() {
-    if (longPressTimerRef.current !== null) {
-      clearTimeout(longPressTimerRef.current)
-      longPressTimerRef.current = null
-    }
-  }
 
   function applyTranslate(px: number) {
     const t = trackRef.current
@@ -160,16 +279,9 @@ export default function ScaleStrip() {
 
   function onPointerDown(e: React.PointerEvent) {
     finalizePendingSnap()
-    gestureStartRef.current = { x: e.clientX, y: e.clientY, time: performance.now() }
-    isHorizontalSwipeRef.current = false
+    gestureStartRef.current = { x: e.clientX, y: e.clientY }
+    axisRef.current = null
     setIsSnapping(false)
-    const startRootPc = currentModeRootPc
-    const startY = e.clientY
-    longPressTimerRef.current = window.setTimeout(() => {
-      dragModeRef.current = { startY, startRootPc, lastSemitones: 0 }
-      setIsDragTransposing(true)
-      longPressTimerRef.current = null
-    }, LONG_PRESS_MS)
   }
 
   function onPointerMove(e: React.PointerEvent) {
@@ -178,7 +290,7 @@ export default function ScaleStrip() {
     const dx = e.clientX - start.x
     const dy = e.clientY - start.y
 
-    // Once the long-press has armed transpose mode, ignore everything except vertical delta.
+    // Once transpose is armed, only vertical delta matters.
     const drag = dragModeRef.current
     if (drag) {
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -186,24 +298,34 @@ export default function ScaleStrip() {
       if (semitones !== drag.lastSemitones) {
         drag.lastSemitones = semitones
         setKey(((drag.startRootPc + semitones) % 12 + 12) % 12)
+        setTransposeDelta(semitones)
       }
       return
     }
 
-    // Pre-arm phase: any non-trivial motion cancels the long-press timer.
-    if (longPressTimerRef.current !== null &&
-        (Math.abs(dx) > LONG_PRESS_CANCEL_PX || Math.abs(dy) > LONG_PRESS_CANCEL_PX)) {
-      clearLongPress()
-    }
-
-    if (!isHorizontalSwipeRef.current &&
-        Math.abs(dx) > SWIPE_AXIS_LOCK_PX &&
-        Math.abs(dx) > Math.abs(dy)) {
+    // Dominant-axis detection — once cumulative motion exceeds the lock threshold,
+    // commit to whichever axis is currently larger.
+    if (axisRef.current === null) {
+      const absDx = Math.abs(dx)
+      const absDy = Math.abs(dy)
+      if (absDx < AXIS_LOCK_PX && absDy < AXIS_LOCK_PX) return
       e.currentTarget.setPointerCapture(e.pointerId)
-      isHorizontalSwipeRef.current = true
+      if (absDx >= absDy) {
+        axisRef.current = 'horizontal'
+      } else {
+        axisRef.current = 'vertical'
+        dragModeRef.current = {
+          startY: e.clientY,
+          startRootPc: currentModeRootPc,
+          lastSemitones: 0,
+        }
+        setIsDragTransposing(true)
+        setTransposeDelta(0)
+        return
+      }
     }
 
-    if (isHorizontalSwipeRef.current) {
+    if (axisRef.current === 'horizontal') {
       applyTranslate(initialTranslateRef.current + dx)
     }
   }
@@ -221,36 +343,32 @@ export default function ScaleStrip() {
   function onPointerUp(e: React.PointerEvent) {
     const start = gestureStartRef.current
     gestureStartRef.current = null
-    clearLongPress()
 
     if (dragModeRef.current) {
       dragModeRef.current = null
       setIsDragTransposing(false)
+      setTransposeDelta(0)
       suppressClickRef.current = true
+      axisRef.current = null
       return
     }
 
     if (!start) return
-    if (!isHorizontalSwipeRef.current) return
-
-    const dx = e.clientX - start.x
-    const slotPitch = slotPitchRef.current
-    if (slotPitch <= 0) {
-      isHorizontalSwipeRef.current = false
-      animateBackToAnchor()
+    if (axisRef.current !== 'horizontal' || !cycleLayout) {
+      axisRef.current = null
       return
     }
 
-    // Translate the drag pixels into semitones of root shift. Drag-LEFT (dx<0) means
-    // the track moved left, so what was at slot +k is now at slot 0 — the new root is
-    // k semitones above the current one. Hence the sign flip.
-    const desiredShift = -Math.round(dx / slotPitch)
-    const { delta: modeDelta, shift: validShift } = findClosestModeShift(
+    const dx = e.clientX - start.x
+    const trackTranslate = initialTranslateRef.current + dx
+    const { delta: modeDelta, snapTranslate } = findClosestSnapTarget(
       currentFamily.intervals,
       modeIndex,
-      desiredShift,
+      cycleLayout,
+      trackTranslate,
+      initialTranslateRef.current,
     )
-    isHorizontalSwipeRef.current = false
+    axisRef.current = null
 
     if (modeDelta === 0) {
       animateBackToAnchor()
@@ -259,13 +377,12 @@ export default function ScaleStrip() {
 
     suppressClickRef.current = true
 
-    // Snap target: translate the track to where the new root visually sits at slot 0.
-    // Because the track is rotation-invariant (3 identical cycles), the new mode at
-    // anchor renders identically to the old mode at this offset — so resetting the
-    // translate to anchor after committing the mode change is seamless.
+    // Animate the track to the target translate, then commit the mode change and
+    // snap back to the anchor (which now renders identically because the new
+    // mode rotation places the chosen scale tone at slot 0).
     pendingSnapRef.current = { modeDelta }
     setIsSnapping(true)
-    applyTranslate(initialTranslateRef.current - validShift * slotPitch)
+    applyTranslate(snapTranslate)
     snapTimeoutRef.current = window.setTimeout(() => {
       snapTimeoutRef.current = null
       const pending = pendingSnapRef.current
@@ -282,15 +399,15 @@ export default function ScaleStrip() {
 
   function onPointerCancel() {
     gestureStartRef.current = null
-    clearLongPress()
     if (dragModeRef.current) {
       dragModeRef.current = null
       setIsDragTransposing(false)
+      setTransposeDelta(0)
     }
-    if (isHorizontalSwipeRef.current) {
-      isHorizontalSwipeRef.current = false
+    if (axisRef.current === 'horizontal') {
       animateBackToAnchor()
     }
+    axisRef.current = null
   }
 
   function onClickCapture(e: React.MouseEvent) {
@@ -314,10 +431,9 @@ export default function ScaleStrip() {
     }
   }
 
-  // Build the 36-slot carousel. Each slot is a chromatic position relative to the
-  // current modeRootPc; scale tones get full styling, non-scale tones become dotted
-  // ghosts. Only the middle (primary) cycle is interactive — side cycles are visual
-  // fillers for the rotation.
+  // Build the 36-slot carousel. Slot widths come from the per-mode cycle layout.
+  // Ghost names are needed in landscape (rendered as labeled dashed tiles) but
+  // not in portrait (collapsed to a dotted spacer); we compute them either way.
   const carouselSlots = useMemo(() => {
     const out = []
     for (let i = 0; i < CAROUSEL_TILE_COUNT; i++) {
@@ -329,7 +445,7 @@ export default function ScaleStrip() {
       const isRoot = isPrimary && chromOffset === 0
       const name = isScaleTone ? currentScale.spelled[scaleIdx] : pcName(pc, enharmonicPrefs)
       const roman = isScaleTone ? romans[scaleIdx] : ''
-      out.push({ i, pc, name, roman, isScaleTone, isPrimary, isRoot })
+      out.push({ i, chromOffset, pc, name, roman, isScaleTone, isPrimary, isRoot })
     }
     return out
   }, [currentModeNotes, currentModeRootPc, currentScale, enharmonicPrefs, romans])
@@ -337,6 +453,10 @@ export default function ScaleStrip() {
   const annotation = modeIndex === 0
     ? `Mode 1: ${currentMode.name} — root mode of the ${currentFamily.name} family.`
     : `Mode ${modeIndex + 1}: ${currentMode.name}. Same ${currentFamily.name} notes — tonal center shifts.`
+
+  const transposeLabel = transposeDelta === 0
+    ? '±0'
+    : `${transposeDelta > 0 ? '+' : '−'}${Math.abs(transposeDelta)} st`
 
   return (
     <div
@@ -352,11 +472,12 @@ export default function ScaleStrip() {
           ref={trackRef}
           className={[styles.carouselTrack, isSnapping ? styles.snapping : ''].join(' ').trim()}
         >
-          {carouselTileWidth > 0 && carouselSlots.map(({ i, pc, name, roman, isScaleTone, isPrimary, isRoot }) => {
+          {cycleLayout && carouselSlots.map(({ i, chromOffset, pc, name, roman, isScaleTone, isPrimary, isRoot }) => {
             const isSelected = isPrimary && isScaleTone && selectedNotePc === pc
+            const slotWidth = cycleLayout.widthWithinCycle[chromOffset]
             const widthStyle: React.CSSProperties = isScaleTone
-              ? { width: `${carouselTileWidth}px`, '--pc-color': pcColorVar(pc) } as React.CSSProperties
-              : { width: `${carouselTileWidth}px` }
+              ? { width: `${slotWidth}px`, '--pc-color': pcColorVar(pc) } as React.CSSProperties
+              : { width: `${slotWidth}px` }
 
             if (isPrimary && isScaleTone) {
               return (
@@ -379,21 +500,20 @@ export default function ScaleStrip() {
               )
             }
 
-            // Primary-cycle ghost (chromatic non-scale tone) — dotted, no interaction.
+            // Primary-cycle ghost (chromatic non-scale tone) — full dashed
+            // tile with note name in landscape, narrow dotted spacer in portrait.
             if (isPrimary) {
               return (
-                <div
-                  key={i}
-                  className={styles.carouselGhostTile}
-                  style={widthStyle}
-                  aria-hidden="true"
-                >
-                  <span className={styles.inactiveName}>{name}</span>
+                <div key={i} className={styles.carouselGhostTile} style={widthStyle} aria-hidden="true">
+                  {isLandscape
+                    ? <span className={styles.inactiveName}>{name}</span>
+                    : <span className={styles.ghostMark} />}
                 </div>
               )
             }
 
-            // Side-cycle copy — same look as primary but muted, no interaction.
+            // Side-cycle copy — muted scale tile or muted ghost (full or collapsed
+            // based on orientation, matching the primary cycle).
             return (
               <div
                 key={i}
@@ -410,13 +530,18 @@ export default function ScaleStrip() {
                     <span className={styles.noteName}>{name}</span>
                     <span className={styles.colorBar} />
                   </>
-                ) : (
+                ) : isLandscape ? (
                   <span className={styles.inactiveName}>{name}</span>
+                ) : (
+                  <span className={styles.ghostMark} />
                 )}
               </div>
             )
           })}
         </div>
+        {isDragTransposing && (
+          <div className={styles.transposeDelta} aria-live="polite">{transposeLabel}</div>
+        )}
       </div>
 
       <p className={styles.annotation}>{annotation}</p>
