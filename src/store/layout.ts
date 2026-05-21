@@ -44,7 +44,7 @@ function defaultVisible(): Record<SectionId, boolean> {
     keyboard:            true,
     fretboard:           true,
     harmony:             true,
-    metronome:           false,
+    metronome:           true,
     tuner:               true,
     'tuning-selector':   false,
   }

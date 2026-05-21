@@ -35,7 +35,10 @@
   .landscapeBody {
     flex: 1;
     display: grid;
-    grid-template-rows: fit-content(50%) 1fr;
+    /* row 1: scale nav + circle (top)
+       row 2: instruments | harmony (stretch to match)
+       row 3: metronome   | tuner   (auto, shared height) */
+    grid-template-rows: fit-content(50%) 1fr auto;
     grid-template-columns: 1fr 1fr;
     gap: 8px;
     padding: 8px;
@@ -50,6 +53,7 @@
   }
 
   .panelTop {
+    grid-row: 1;
     grid-column: 1 / -1;
     display: flex;
     flex-direction: row;
@@ -78,42 +82,57 @@
     overflow: hidden;
   }
 
-  .panelLeft {
+  .panelInstruments {
+    grid-row: 2;
+    grid-column: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
     overflow: hidden;
     min-height: 0;
-    /* Prevents piano/fretboard from growing taller than a usable instrument height
-       on large desktop viewports where the bottom grid row would otherwise be huge */
-    max-height: 320px;
   }
 
-  .panelRight {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    /* Scrollable so tuner and metronome never overlap when viewport is short */
-    overflow-y: auto;
-    min-height: 0;
-  }
-
-  /* Instrument panels (keyboard, fretboard) fill available left-column height equally */
-  .panelLeft > div {
+  /* Keyboard and fretboard split the instruments column equally and stretch
+     to fill the row, which is sized to match the harmony cell on the right. */
+  .panelInstruments > div {
     flex: 1;
     min-height: 0;
     display: flex;
     flex-direction: column;
   }
 
-  /* Right-column sections (harmony, metronome, tuner) size to their natural content;
-     the panel scrolls rather than forcing sections to overlap when space is tight */
-  .panelRight > div {
-    flex: none;
+  .panelHarmony {
+    grid-row: 2;
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
   }
 
-  .panelHidden {
-    display: none;
+  /* Harmony wrapper stretches to the cell height; if its natural content
+     exceeds that height (very short viewports), scroll inside the wrapper. */
+  .panelHarmony > * {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .panelMetronome {
+    grid-row: 3;
+    grid-column: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .panelTuner {
+    grid-row: 3;
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
   }
 
   .panelFull {
