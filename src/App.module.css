@@ -92,10 +92,12 @@
     min-height: 0;
   }
 
-  /* Keyboard and fretboard split the instruments column equally and stretch
-     to fill the row, which is sized to match the harmony cell on the right. */
+  /* Each instrument is pinned to half the column height (minus half the 8px gap)
+     regardless of whether the other instrument is visible. If only one is shown
+     it still takes ~50% of the column, leaving empty space below — keeps the
+     instrument from ballooning to the full harmony height. */
   .panelInstruments > div {
-    flex: 1;
+    flex: 0 0 calc(50% - 4px);
     min-height: 0;
     display: flex;
     flex-direction: column;
