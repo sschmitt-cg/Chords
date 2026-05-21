@@ -17,13 +17,12 @@ import UserGuide from './components/UserGuide/UserGuide'
 import styles from './App.module.css'
 
 // Landscape panel assignments — fixed regardless of portrait section order.
-// Layout (bottom area, below the scale/circle top row):
-//   row 2:  instruments (keyboard + fretboard)  |  harmony
-//   row 3:  metronome                           |  tuner
-// Row 2 stretches so instruments fill the same height as harmony; row 3 is auto
-// so metronome and tuner share equal height.
+// Below the top row (scale nav + circle) the bottom area is two flex columns.
+// Each child renders at its natural height; hidden children are removed and
+// remaining ones flow up to fill the gap.
 const LANDSCAPE_TOP: SectionId[]         = ['scale-logical', 'scale-exploratory', 'strip']
-const LANDSCAPE_INSTRUMENTS: SectionId[] = ['keyboard', 'fretboard']
+const LANDSCAPE_LEFT_COL: SectionId[]    = ['keyboard', 'fretboard', 'metronome']
+const LANDSCAPE_RIGHT_COL: SectionId[]   = ['harmony', 'tuner']
 
 function renderSection(id: SectionId): React.ReactElement | null {
   switch (id) {
@@ -47,13 +46,8 @@ function App(): React.ReactElement {
   const [view, setView] = useState<'app' | 'guide'>('app')
   useUrlSync()
 
-  const instrumentsVisible = LANDSCAPE_INSTRUMENTS.some(id => sectionVisible[id])
-  const harmonyVisible     = sectionVisible['harmony']
-  const metronomeVisible   = sectionVisible['metronome']
-  const tunerVisible       = sectionVisible['tuner']
-
-  const leftColEmpty  = !instrumentsVisible && !metronomeVisible
-  const rightColEmpty = !harmonyVisible && !tunerVisible
+  const leftColEmpty  = LANDSCAPE_LEFT_COL.every(id => !sectionVisible[id])
+  const rightColEmpty = LANDSCAPE_RIGHT_COL.every(id => !sectionVisible[id])
 
   if (view === 'guide') {
     return <UserGuide onBack={() => setView('app')} />
@@ -80,46 +74,32 @@ function App(): React.ReactElement {
               </div>
             )}
           </div>
-          {instrumentsVisible && (
-            <div
-              className={[
-                styles.panelInstruments,
-                rightColEmpty ? styles.panelFull : '',
-              ].join(' ')}
-            >
-              {LANDSCAPE_INSTRUMENTS.filter(id => sectionVisible[id]).map(id => (
-                <div key={id}>{renderSection(id)}</div>
-              ))}
-            </div>
-          )}
-          {harmonyVisible && (
-            <div
-              className={[
-                styles.panelHarmony,
-                leftColEmpty ? styles.panelFull : '',
-              ].join(' ')}
-            >
-              <HarmonyGrid />
-            </div>
-          )}
-          {metronomeVisible && (
-            <div
-              className={[
-                styles.panelMetronome,
-                rightColEmpty ? styles.panelFull : '',
-              ].join(' ')}
-            >
-              <Metronome />
-            </div>
-          )}
-          {tunerVisible && (
-            <div
-              className={[
-                styles.panelTuner,
-                leftColEmpty ? styles.panelFull : '',
-              ].join(' ')}
-            >
-              <ChromaticTuner />
+          {(!leftColEmpty || !rightColEmpty) && (
+            <div className={styles.panelBottom}>
+              {!leftColEmpty && (
+                <div
+                  className={[
+                    styles.panelCol,
+                    rightColEmpty ? styles.panelColFull : '',
+                  ].join(' ')}
+                >
+                  {LANDSCAPE_LEFT_COL.filter(id => sectionVisible[id]).map(id => (
+                    <div key={id} className={styles.cell}>{renderSection(id)}</div>
+                  ))}
+                </div>
+              )}
+              {!rightColEmpty && (
+                <div
+                  className={[
+                    styles.panelCol,
+                    leftColEmpty ? styles.panelColFull : '',
+                  ].join(' ')}
+                >
+                  {LANDSCAPE_RIGHT_COL.filter(id => sectionVisible[id]).map(id => (
+                    <div key={id} className={styles.cell}>{renderSection(id)}</div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

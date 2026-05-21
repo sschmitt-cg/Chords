@@ -34,31 +34,24 @@
 
   .landscapeBody {
     flex: 1;
-    display: grid;
-    /* row 1: scale nav + circle (top)
-       row 2: instruments | harmony (stretch to match)
-       row 3: metronome   | tuner   (auto, shared height) */
-    grid-template-rows: fit-content(50%) 1fr auto;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
     padding: 8px;
     padding-left: max(8px, env(safe-area-inset-left));
     padding-right: max(8px, env(safe-area-inset-right));
     padding-bottom: max(8px, env(safe-area-inset-bottom));
     min-height: 0;
-    overflow: hidden;
     max-width: 1100px;
     width: 100%;
     align-self: center;
   }
 
   .panelTop {
-    grid-row: 1;
-    grid-column: 1 / -1;
     display: flex;
     flex-direction: row;
     gap: 8px;
-    overflow: hidden;
+    flex-shrink: 0;
     min-height: 0;
   }
 
@@ -68,8 +61,7 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    overflow: hidden;
-    min-height: 0;
+    min-width: 0;
   }
 
   /* Right sub-column: circle, square, height = combined height of left column */
@@ -82,62 +74,43 @@
     overflow: hidden;
   }
 
-  .panelInstruments {
-    grid-row: 2;
-    grid-column: 1;
+  /* Bottom area below the scale/circle top row: two side-by-side flex columns.
+     Each column lists its visible sections at their natural heights; hidden
+     items are removed from the DOM and remaining items flow up to fill gaps. */
+  .panelBottom {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .panelCol {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 8px;
-    overflow: hidden;
     min-height: 0;
-  }
-
-  /* Each instrument is pinned to half the column height (minus half the 8px gap)
-     regardless of whether the other instrument is visible. If only one is shown
-     it still takes ~50% of the column, leaving empty space below — keeps the
-     instrument from ballooning to the full harmony height. */
-  .panelInstruments > div {
-    flex: 0 0 calc(50% - 4px);
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .panelHarmony {
-    grid-row: 2;
-    grid-column: 2;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-  }
-
-  /* Harmony wrapper stretches to the cell height; if its natural content
-     exceeds that height (very short viewports), scroll inside the wrapper. */
-  .panelHarmony > * {
-    flex: 1;
-    min-height: 0;
+    min-width: 0;
+    /* Allow the column to scroll on very short landscape viewports rather
+       than force its siblings to compress. */
     overflow-y: auto;
   }
 
-  .panelMetronome {
-    grid-row: 3;
-    grid-column: 1;
+  /* A panelCol cell renders one section at its natural height.
+     `flex: 0 0 auto` keeps the section from stretching when the column has
+     fewer items than expected — prevents the lone-instrument ballooning. */
+  .panelCol > .cell {
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     min-height: 0;
   }
 
-  .panelTuner {
-    grid-row: 3;
-    grid-column: 2;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    min-height: 0;
-  }
-
-  .panelFull {
-    grid-column: 1 / -1;
+  /* When the opposite column is entirely empty, the surviving column spans
+     full width (matches the prior panelFull behavior). */
+  .panelColFull {
+    flex: 1 1 100%;
   }
 }
