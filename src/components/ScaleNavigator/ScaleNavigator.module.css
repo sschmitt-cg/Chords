@@ -147,6 +147,15 @@
   flex-shrink: 0;
 }
 
+/* Brightness tier divider — sits between rows whose underlying modes belong to
+   different fifth-cycle tiers. Modes in the same tier have identical net
+   sharp/flat balance; the separator marks the step up in brightness. */
+.pickerSeparator {
+  height: 0;
+  margin: 4px 12px;
+  border-top: 0.5px solid #3a4888;
+}
+
 /* ---- Landscape on narrow viewports only: hide labels and compact LCD to recover vertical space.
    Desktop windows are always wider than tall (landscape), but the knob labels should stay visible
    there. Combining max-width with orientation scopes the rule to phone-sized landscape only. ---- */

@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react'
 import { useTonalStore } from '../../store/index'
-import { SCALE_FAMILIES } from '../../theory/index'
+import { SCALE_FAMILIES, MODE_BRIGHTNESS } from '../../theory/index'
 import { KnobUnit, Picker, type PickerType, type PickerOption } from './index'
 import { pcName, FAMILY_LCD } from './shared'
 import styles from './ScaleNavigator.module.css'
@@ -51,7 +51,7 @@ export default function ScaleLogical(): React.ReactElement {
   const modeOptions: PickerOption[] = currentFamily.modes.map((m, i) => ({
     label: m.name,
     value: i,
-    brightnessDot: m.brightness,
+    brightnessDot: MODE_BRIGHTNESS[familyIndex][i].displayBrightness,
   }))
 
   function handlePickerSelect(value: number) {

@@ -344,6 +344,7 @@ export interface PickerOption {
   label: string
   value: number
   brightnessDot?: number
+  separatorBefore?: boolean
 }
 
 export interface PickerProps {
@@ -378,15 +379,17 @@ export function Picker({ options, currentValue, anchorRect, onSelect, onClose }:
   return createPortal(
     <div ref={containerRef} data-picker className={styles.picker} style={{ left: anchorRect.left, top: anchorRect.bottom + 6 }}>
       {options.map(opt => (
-        <button
-          key={opt.value}
-          ref={opt.value === currentValue ? selectedRef : undefined}
-          className={[styles.pickerRow, opt.value === currentValue ? styles.pickerRowCurrent : ''].join(' ')}
-          onClick={() => { onSelect(opt.value); onClose() }}
-        >
-          <span>{opt.label}</span>
-          {opt.brightnessDot !== undefined && <BrightnessDot brightness={opt.brightnessDot} />}
-        </button>
+        <React.Fragment key={opt.value}>
+          {opt.separatorBefore && <div className={styles.pickerSeparator} aria-hidden />}
+          <button
+            ref={opt.value === currentValue ? selectedRef : undefined}
+            className={[styles.pickerRow, opt.value === currentValue ? styles.pickerRowCurrent : ''].join(' ')}
+            onClick={() => { onSelect(opt.value); onClose() }}
+          >
+            <span>{opt.label}</span>
+            {opt.brightnessDot !== undefined && <BrightnessDot brightness={opt.brightnessDot} />}
+          </button>
+        </React.Fragment>
       ))}
     </div>,
     document.body

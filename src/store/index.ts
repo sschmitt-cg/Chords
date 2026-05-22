@@ -339,7 +339,10 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
   setModeByTension: (tension) => {
     const { currentKeyPc, familyIndex, modeIndex, enharmonicPrefs } = get()
     const oldFamily = SCALE_FAMILIES[familyIndex]
-    const currentBrightness = oldFamily.modes[modeIndex].brightness
+    const currentEntry = BRIGHTNESS_ORDER.find(
+      e => e.familyIndex === familyIndex && e.modeIndex === modeIndex
+    )
+    const currentBrightness = currentEntry?.tieredBrightness ?? 0
 
     // All BRIGHTNESS_ORDER entries that belong to the target tension group
     const candidates = BRIGHTNESS_ORDER.filter(
@@ -349,7 +352,7 @@ export const useTonalStore = create<TonalStore>((set, get) => ({
 
     // Pick the candidate whose brightness is closest to current
     const best = candidates.reduce((prev, cur) =>
-      Math.abs(cur.brightness - currentBrightness) < Math.abs(prev.brightness - currentBrightness)
+      Math.abs(cur.tieredBrightness - currentBrightness) < Math.abs(prev.tieredBrightness - currentBrightness)
         ? cur : prev
     )
     const newFamily = SCALE_FAMILIES[best.familyIndex]
