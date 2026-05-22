@@ -47,7 +47,6 @@ export type ChordFunction = 'tonic' | 'subdominant' | 'dominant'
 export interface ScaleMode {
   name: string
   lcdName: string     // max 7 chars, uppercase, for the LCD display
-  brightness: number  // 0–100 global ordering score
 }
 
 export interface ScaleFamily {
@@ -58,7 +57,20 @@ export interface ScaleFamily {
   modes: [ScaleMode, ScaleMode, ScaleMode, ScaleMode, ScaleMode, ScaleMode, ScaleMode]
 }
 
-export type BrightnessEntry = { familyId: string; modeIndex: number; brightness: number }
+// Algorithmic brightness data for a mode. fifthSum is the canonical fifth-cycle
+// sum (-35..+35 in steps of 7); modes with the same fifthSum form a brightness
+// tier. tieredBrightness adds a ±1 bump for the 3rd quality (M3 / m3 / dim3) so
+// that within a tier, modes with a major 3rd sort above minor-3rd siblings
+// without crossing tier boundaries. displayBrightness is a 0–100 remap used by
+// the BrightnessDot icon.
+export interface BrightnessEntry {
+  familyIndex: number
+  modeIndex: number
+  fifthSum: number
+  tier: number             // 0..10, darkest..brightest
+  tieredBrightness: number // sort key
+  displayBrightness: number // 0..100
+}
 
 // Guitar tuning: 6 MIDI values, index 0 = high E string, index 5 = low E string
 export type GuitarTuning = [number, number, number, number, number, number]
