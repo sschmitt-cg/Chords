@@ -56,10 +56,7 @@ function labelPosition(r: number, index: number): { x: number; y: number } {
 export default function CircleOfFifths(): React.ReactElement {
   const { currentModeRootPc, currentModeIntervals, setKey, setFamily, setModeIndex } = useTonalStore()
   const tonicPc = wrap(currentModeRootPc, 12)
-  // Use the 3rd interval to decide which ring to highlight:
-  //   major 3rd (4 semitones) → outer/major ring
-  //   minor 3rd (3 semitones) → inner/minor ring
-  //   neither or both (e.g. no-3rd scale families) → no highlight
+  // family ID doesn't reflect the current mode's 3rd quality (Aeolian is in the major family but has a minor 3rd)
   const thirdInterval = currentModeIntervals[2]
   const activeRing: 'major' | 'minor' | 'none' =
     thirdInterval === 4 ? 'major' : thirdInterval === 3 ? 'minor' : 'none'
