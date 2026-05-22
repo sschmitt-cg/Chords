@@ -38,9 +38,14 @@ the knob, or tap it to open a picker.
 
 Three exploratory knobs: **BRIGHTNESS** scans every mode across all scale
 families from darkest to brightest and can shift the family as well as the
-mode, **TENSION** steps between three settings based on the number of
-augmented 2nds (unusually large gaps between adjacent scale notes), and
-**VOLUME** controls the synth output (tap to mute or unmute).
+mode. Modes are ordered by their sharp-vs-flat balance (the canonical
+fifth-cycle brightness measure), then by 3rd quality within a tier. Modes with
+the same net sharp/flat balance appear in the same group; the picker shows a
+thin divider between groups so you can feel one "step in brightness" vs. moving
+between flavors at the same brightness level. **TENSION** steps between three
+settings based on the number of augmented 2nds (unusually large gaps between
+adjacent scale notes), and **VOLUME** controls the synth output (tap to mute or
+unmute).
 
 ### Scale Strip
 

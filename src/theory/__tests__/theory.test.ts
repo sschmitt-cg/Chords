@@ -14,7 +14,7 @@ import {
   chordNotesToPcs,
   SCALE_FAMILIES,
   BRIGHTNESS_ORDER,
-  GLOBAL_BRIGHTNESS_ORDER,
+  computeBrightness,
   MODE_NAMES,
 } from '../index'
 import type { ScaleType } from '../types'
@@ -250,16 +250,99 @@ describe('SCALE_FAMILIES structural invariants', () => {
   })
 })
 
-describe('BRIGHTNESS_ORDER / GLOBAL_BRIGHTNESS_ORDER', () => {
-  it('BRIGHTNESS_ORDER contains 35 entries sorted ascending', () => {
+describe('BRIGHTNESS_ORDER / computeBrightness', () => {
+  it('BRIGHTNESS_ORDER contains 35 entries sorted ascending by tieredBrightness', () => {
     expect(BRIGHTNESS_ORDER).toHaveLength(35)
     for (let i = 1; i < BRIGHTNESS_ORDER.length; i++) {
-      expect(BRIGHTNESS_ORDER[i].brightness).toBeGreaterThanOrEqual(BRIGHTNESS_ORDER[i - 1].brightness)
+      expect(BRIGHTNESS_ORDER[i].tieredBrightness).toBeGreaterThanOrEqual(
+        BRIGHTNESS_ORDER[i - 1].tieredBrightness,
+      )
     }
   })
 
-  it('GLOBAL_BRIGHTNESS_ORDER mirrors BRIGHTNESS_ORDER length', () => {
-    expect(GLOBAL_BRIGHTNESS_ORDER).toHaveLength(BRIGHTNESS_ORDER.length)
+  it('every mode lands in its canonical fifth-cycle tier', () => {
+    // Canonical fifth-cycle sum for each (family id, mode name).
+    // Tier = (fifthSum + 35) / 7.
+    const expected: Array<[string, string, number]> = [
+      // Major
+      ['major', 'Ionian',           14],
+      ['major', 'Dorian',            0],
+      ['major', 'Phrygian',        -14],
+      ['major', 'Lydian',           21],
+      ['major', 'Mixolydian',        7],
+      ['major', 'Aeolian',          -7],
+      ['major', 'Locrian',         -21],
+      // Melodic Minor
+      ['melodic-minor', 'Melodic Minor',     7],
+      ['melodic-minor', 'Dorian ♭2',   -7],
+      ['melodic-minor', 'Lydian Aug.',      28],
+      ['melodic-minor', 'Lydian Dom.',      14],
+      ['melodic-minor', 'Mixolydian ♭6', 0],
+      ['melodic-minor', 'Locrian ♯2', -14],
+      ['melodic-minor', 'Altered',         -28],
+      // Harmonic Minor
+      ['harmonic-minor', 'Harmonic Minor',   0],
+      ['harmonic-minor', 'Locrian ♯6', -14],
+      ['harmonic-minor', 'Ionian ♯5',  21],
+      ['harmonic-minor', 'Dorian ♯4',   7],
+      ['harmonic-minor', 'Phrygian Dom.',   -7],
+      ['harmonic-minor', 'Lydian ♯2',  28],
+      ['harmonic-minor', 'Alt. Diminished', -35],
+      // Harmonic Major
+      ['harmonic-major', 'Harmonic Major',          7],
+      ['harmonic-major', 'Dorian ♭5',         -7],
+      ['harmonic-major', 'Phrygian ♭4',      -21],
+      ['harmonic-major', 'Lydian ♭3',         14],
+      ['harmonic-major', 'Mixolydian ♭2',      0],
+      ['harmonic-major', 'Lydian Aug. ♯2',    35],
+      ['harmonic-major', 'Locrian ♭♭7', -28],
+      // Double Harmonic
+      ['double-harmonic', 'Double Harmonic',           0],
+      ['double-harmonic', 'Lydian ♯2 ♯6',   35],
+      ['double-harmonic', 'Ultraphrygian',           -28],
+      ['double-harmonic', 'Hungarian Minor',           7],
+      ['double-harmonic', 'Oriental',                 -7],
+      ['double-harmonic', 'Ionian Aug. ♯2',      28],
+      ['double-harmonic', 'Locrian ♭♭3',   -35],
+    ]
+    for (const [familyId, modeName, expectedFifthSum] of expected) {
+      const fi = SCALE_FAMILIES.findIndex(f => f.id === familyId)
+      const family = SCALE_FAMILIES[fi]
+      const mi = family.modes.findIndex(m => m.name === modeName)
+      const result = computeBrightness(family, mi)
+      expect(result.fifthSum, `${familyId} / ${modeName}`).toBe(expectedFifthSum)
+      expect(result.tier).toBe(Math.round((expectedFifthSum + 35) / 7))
+    }
+  })
+
+  it('within a tier, minor-3rd modes precede major-3rd modes', () => {
+    // Group BRIGHTNESS_ORDER entries by tier; assert minor-3rd (tieredBrightness == fifthSum)
+    // appears before major-3rd (tieredBrightness == fifthSum + 1) inside each tier.
+    const tiers = new Map<number, typeof BRIGHTNESS_ORDER>()
+    for (const entry of BRIGHTNESS_ORDER) {
+      const bucket = tiers.get(entry.tier) ?? []
+      bucket.push(entry)
+      tiers.set(entry.tier, bucket)
+    }
+    for (const bucket of tiers.values()) {
+      for (let i = 1; i < bucket.length; i++) {
+        expect(bucket[i].tieredBrightness).toBeGreaterThanOrEqual(bucket[i - 1].tieredBrightness)
+      }
+    }
+  })
+
+  it('Hungarian Minor sits in the +7 tier, not the -7 tier', () => {
+    // Regression test for the most egregious hand-tuned outlier.
+    const dh = SCALE_FAMILIES.find(f => f.id === 'double-harmonic')!
+    const mi = dh.modes.findIndex(m => m.name === 'Hungarian Minor')
+    expect(computeBrightness(dh, mi).fifthSum).toBe(7)
+  })
+
+  it('displayBrightness stays within [0, 100] for every mode', () => {
+    for (const entry of BRIGHTNESS_ORDER) {
+      expect(entry.displayBrightness).toBeGreaterThanOrEqual(0)
+      expect(entry.displayBrightness).toBeLessThanOrEqual(100)
+    }
   })
 })
 

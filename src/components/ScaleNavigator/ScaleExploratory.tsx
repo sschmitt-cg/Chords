@@ -39,7 +39,13 @@ export default function ScaleExploratory(): React.ReactElement {
   const brightnessOptions: PickerOption[] = BRIGHTNESS_ORDER.map((entry, pos) => {
     const f = SCALE_FAMILIES[entry.familyIndex]
     const m = f.modes[entry.modeIndex]
-    return { label: `${m.name} (${f.name})`, value: pos, brightnessDot: m.brightness }
+    const prevTier = pos > 0 ? BRIGHTNESS_ORDER[pos - 1].tier : entry.tier
+    return {
+      label: `${m.name} (${f.name})`,
+      value: pos,
+      brightnessDot: entry.displayBrightness,
+      separatorBefore: entry.tier !== prevTier,
+    }
   })
 
   const tensionOptions: PickerOption[] = [
