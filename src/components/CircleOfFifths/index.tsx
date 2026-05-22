@@ -6,10 +6,6 @@ import { useTonalStore } from '../../store/index'
 import { CIRCLE_OF_FIFTHS_MAJOR, CIRCLE_OF_FIFTHS_MINOR, SCALE_FAMILIES, pcColorVar, wrap } from '../../theory/index'
 import styles from './CircleOfFifths.module.css'
 
-// Families whose root mode is major-flavoured — outer ring gets the active highlight.
-// Anything not in this set is treated as minor-type (inner ring gets the highlight).
-const MAJOR_FAMILY_IDS = new Set(['major', 'harmonic-major', 'double-harmonic'])
-
 // Index of the Major family in SCALE_FAMILIES (Ionian=0 through Locrian=6)
 const MAJOR_FAMILY_INDEX = SCALE_FAMILIES.findIndex(f => f.id === 'major')
 // Aeolian is mode index 5 within the Major family
@@ -58,12 +54,12 @@ function labelPosition(r: number, index: number): { x: number; y: number } {
 }
 
 export default function CircleOfFifths(): React.ReactElement {
-  const { currentModeRootPc, familyIndex, setKey, setFamily, setModeIndex } = useTonalStore()
+  const { currentModeRootPc, currentModeIntervals, setKey, setFamily, setModeIndex } = useTonalStore()
   const tonicPc = wrap(currentModeRootPc, 12)
-  // Only highlight the outer (major) ring when the current family is major-typed,
-  // and the inner (minor) ring when it is minor-typed, so clicking Am doesn't
-  // also light up the A Major wedge sharing the same pitch class.
-  const isMajorFamily = MAJOR_FAMILY_IDS.has(SCALE_FAMILIES[familyIndex].id)
+  // family ID doesn't reflect the current mode's 3rd quality (Aeolian is in the major family but has a minor 3rd)
+  const thirdInterval = currentModeIntervals[2]
+  const activeRing: 'major' | 'minor' | 'none' =
+    thirdInterval === 4 ? 'major' : thirdInterval === 3 ? 'minor' : 'none'
 
   // Switch to Major/Ionian then set the tonal center to the clicked pitch class.
   function handleMajorClick(pc: number): void {
@@ -88,7 +84,7 @@ export default function CircleOfFifths(): React.ReactElement {
       >
         {/* Major (outer) ring wedges */}
         {CIRCLE_OF_FIFTHS_MAJOR.map((key, i) => {
-          const isActive = isMajorFamily && key.pc === tonicPc
+          const isActive = activeRing === 'major' && key.pc === tonicPc
           const colorVar = pcColorVar(key.pc)
           const pos = labelPosition(R_MAJOR_TEXT, i)
           return (
@@ -121,7 +117,7 @@ export default function CircleOfFifths(): React.ReactElement {
 
         {/* Minor (inner) ring wedges */}
         {CIRCLE_OF_FIFTHS_MINOR.map((key, i) => {
-          const isActive = !isMajorFamily && key.pc === tonicPc
+          const isActive = activeRing === 'minor' && key.pc === tonicPc
           const colorVar = pcColorVar(key.pc)
           const pos = labelPosition(R_MINOR_TEXT, i)
           return (
