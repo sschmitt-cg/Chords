@@ -15,7 +15,7 @@ parity. Open both side by side during testing.
 - [x] Mode/scale selector — ScaleNavigator covers all 7 diatonic modes + 4 extra families
 - [x] Scale strip — correct note spelling for every key/mode combination
 - [x] Scale strip — swipe/drag gestures: horizontal swipe rotates tonal center across scale degrees, long-press (~250ms) + vertical drag transposes root chromatically (~24px/semitone)
-- [x] Harmony Grid — 7 rows, correct chord names at triads through 13ths (sus2/sus4/b5 added; exotic fallbacks show root only)
+- [x] Harmony Grid — 7 rows, correct chord names at triads through 13ths (sus2/sus4/b5 added; exotic stacks fall back to closest tertian name + parenthetical 7th, e.g. `Dm(bb7)`, `Adim(bb7)`)
 - [x] Harmony Grid — degree header buttons (3 5 7 9 11 13) filter extensions; header click resets per-row overrides
 - [x] Harmony Grid — per-row extension: clicking ghost note extends that row; clicking active note reduces to that degree
 - [x] Harmony Grid — selecting a chord highlights it and updates the visualizers

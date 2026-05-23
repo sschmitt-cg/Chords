@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useTonalStore } from '../../store/index'
-import { pcColorVar, wrap, SHARP_NAMES } from '../../theory/index'
+import { pcColorVar, wrap, SHARP_NAMES, chordNameForRow } from '../../theory/index'
 import VoicingNavigator from '../VoicingNavigator/index'
 import TuningSelector from '../TuningSelector/index'
 import styles from './FretboardVisualizer.module.css'
@@ -107,11 +107,14 @@ export default function FretboardVisualizer(): React.ReactElement {
 
   let description: string
   if (!selectedRow) {
-    description = 'all scale notes, root squared'
-  } else if (guitarVoicingIndex < 0) {
-    description = 'all chord notes, root squared'
+    description = 'all scale notes'
   } else {
-    description = `voicing ${guitarVoicingIndex + 1} of ${voicings.length}, root squared`
+    const chordLabel = chordNameForRow(selectedRow, effectiveMax)
+    if (guitarVoicingIndex < 0) {
+      description = `${chordLabel} — all chord notes`
+    } else {
+      description = `${chordLabel} — voicing ${guitarVoicingIndex + 1} of ${voicings.length}`
+    }
   }
 
   return (

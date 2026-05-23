@@ -280,6 +280,28 @@ export function computeDisplayScale(
 
 // -------------------- CHORD ANALYSIS --------------------
 
+// Best-fit tertian label when the (int3, int5) pair doesn't match a recognized
+// triad. Used so that exotic scales (Ultraphrygian, Ultralocrian, etc.) still
+// produce informative chord names instead of bare root letters.
+function fallbackTriadSuffix(int3: number, int5: number): string {
+  if (int5 === 6) return 'dim'
+  if (int5 === 8) return 'aug'
+  if (int5 === 7) {
+    if (int3 < 3) return 'sus2'
+    if (int3 > 4) return 'sus4'
+    return ''
+  }
+  return ''
+}
+
+function describeSeventhInterval(int7: number): string {
+  if (int7 === 11) return 'maj7'
+  if (int7 === 10) return 'b7'
+  if (int7 === 9)  return 'bb7'
+  if (int7 === 8)  return 'bbb7'
+  return '?7'
+}
+
 export function intervalQuality(int3: number, int5: number): ChordQuality {
   if (int3 === 4 && int5 === 7) return { name: 'major',      suffix: '',     valid: true }
   if (int3 === 3 && int5 === 7) return { name: 'minor',      suffix: 'm',    valid: true }
@@ -408,6 +430,7 @@ export function chordNameForRow(row: HarmonyRow, maxDegree = 7): string {
   const thirdInt = wrap(third.pc - root.pc, 12)
   const fifthInt  = wrap(fifth.pc - root.pc, 12)
   const triad = intervalQuality(thirdInt, fifthInt)
+  const baseSuffix = triad.valid ? triad.suffix : fallbackTriadSuffix(thirdInt, fifthInt)
 
   const seventhNote    = row.notes.find(n => n.degree === 7)
   const ninthNote      = row.notes.find(n => n.degree === 9)
@@ -415,9 +438,15 @@ export function chordNameForRow(row: HarmonyRow, maxDegree = 7): string {
   const thirteenthNote = row.notes.find(n => n.degree === 13)
 
   let seventhQual: { label: string; valid: boolean } | null = null
+  let seventhFallback = ''
   if (maxDegree >= 7 && seventhNote) {
     const int7 = wrap(seventhNote.pc - root.pc, 12)
-    seventhQual = seventhQuality(triad, int7)
+    const q = seventhQuality(triad, int7)
+    if (q.valid) {
+      seventhQual = q
+    } else {
+      seventhFallback = `(${describeSeventhInterval(int7)})`
+    }
   }
 
   const alterations: string[] = []
@@ -445,7 +474,7 @@ export function chordNameForRow(row: HarmonyRow, maxDegree = 7): string {
   }
 
   const qualityTag = (() => {
-    if (!seventhQual) return triad.suffix
+    if (!seventhQual) return baseSuffix + seventhFallback
     const useCondensed = Boolean(highestExt)
     if (!useCondensed) return seventhQual.label
     switch (seventhQual.label) {

@@ -204,6 +204,28 @@ describe('buildHarmonyRowsForScale + chordNameForRow', () => {
   })
 })
 
+describe('chordNameForRow — non-standard tertian stacks', () => {
+  // D Ultraphrygian (Double Harmonic mode 3) → D Eb F Gb A Bb Cb.
+  // Exposes triads/sevenths that don't match the standard set:
+  //   i  D-F-A-Cb       (m + bb7) → expect "Dm(bb7)"
+  //   V  A-Cb-Eb-Gb     (int3=2,int5=6 + bb7) → expect "Adim(bb7)"
+  const dUphryg = computeDisplayScaleFromFamily(2, 'double-harmonic', 2)
+  const rows = buildHarmonyRowsForScale(dUphryg)
+
+  it('labels minor triad + bb7 as m(bb7)', () => {
+    expect(chordNameForRow(rows[0], 7)).toBe('Dm(bb7)')
+  })
+
+  it('labels (int3=2, int5=6) + bb7 as dim(bb7)', () => {
+    expect(chordNameForRow(rows[4], 7)).toBe('Adim(bb7)')
+  })
+
+  it('still resolves the bare triad when 7ths are off', () => {
+    expect(chordNameForRow(rows[0], 5)).toBe('Dm')
+    expect(chordNameForRow(rows[4], 5)).toBe('Adim')
+  })
+})
+
 describe('noteNameToPc / chordNotesToPcs', () => {
   it('parses natural notes', () => {
     expect(noteNameToPc('C')).toBe(0)
