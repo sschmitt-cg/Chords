@@ -5,6 +5,7 @@ import * as htmlToImage from 'html-to-image'
 import SectionMenu from '../SectionMenu/SectionMenu'
 import ShareCard from '../ShareCard/ShareCard'
 import { useTonalStore } from '../../store/index'
+import { useDismissable } from '../../hooks/useDismissable'
 import styles from './AppHeader.module.css'
 
 interface AppHeaderProps {
@@ -26,12 +27,17 @@ export default function AppHeader({ onOpenGuide }: AppHeaderProps): React.ReactE
   const [shareOpen, setShareOpen]   = useState(false)
   const [isCapturing, setIsCapturing] = useState(false)
 
+  const firstShareItemRef = useRef<HTMLButtonElement>(null)
+
   function toggleMenu() {
     if (!menuOpen && menuBtnRef.current) {
       setMenuAnchor(menuBtnRef.current.getBoundingClientRect())
     }
     setMenuOpen(prev => !prev)
   }
+
+  const closeShare = useCallback(() => setShareOpen(false), [])
+  useDismissable(shareOpen, closeShare)
 
   // Close share popover when clicking outside it
   useEffect(() => {
@@ -46,6 +52,11 @@ export default function AppHeader({ onOpenGuide }: AppHeaderProps): React.ReactE
     }
     document.addEventListener('pointerdown', onPointerDown)
     return () => document.removeEventListener('pointerdown', onPointerDown)
+  }, [shareOpen])
+
+  // When the popover opens, move focus into it so keyboard users can act without re-tabbing
+  useEffect(() => {
+    if (shareOpen) firstShareItemRef.current?.focus()
   }, [shareOpen])
 
   const captureCard = useCallback(async (filename: string): Promise<{ blob: Blob; file: File } | null> => {
@@ -139,16 +150,16 @@ export default function AppHeader({ onOpenGuide }: AppHeaderProps): React.ReactE
               </button>
 
               {shareOpen && (
-                <div className={styles.sharePopover} role="menu">
-                  <button className={styles.sharePopoverItem} role="menuitem" onClick={handleShareNative}>
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                <div className={styles.sharePopover} role="menu" aria-label="Share options">
+                  <button ref={firstShareItemRef} className={styles.sharePopoverItem} role="menuitem" onClick={handleShareNative}>
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
                       <path d="M7.5 9.5V2m0-1L5 3.5M7.5 1l2.5 2.5M2.5 7.5v4.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V7.5"
                         stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     Share
                   </button>
                   <button className={styles.sharePopoverItem} role="menuitem" onClick={handleDownload}>
-                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+                    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
                       <path d="M7.5 1.5v8m0 0L5 7m2.5 2.5L10 7M2.5 11v1.5a.5.5 0 00.5.5h9a.5.5 0 00.5-.5V11"
                         stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>

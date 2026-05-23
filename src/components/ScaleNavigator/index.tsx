@@ -2,6 +2,7 @@
 
 import React, { useRef, useCallback, useEffect } from 'react'
 import { createPortal } from 'react-dom'
+import { useDismissable } from '../../hooks/useDismissable'
 import styles from './ScaleNavigator.module.css'
 
 export const DRAG_THRESHOLD_PX = 22
@@ -112,12 +113,22 @@ export function BoundedKnob({ step, total, arcMin = -135, arcMax = 135, onPointe
 // LCD display
 // ------------------------------------------------------------------
 
-export function LCD({ value, onClick }: { value: string; onClick?: () => void }): React.ReactElement {
-  return (
-    <div className={styles.lcd} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
-      {value}
-    </div>
-  )
+export function LCD({ value, onClick, ariaLabel }: { value: string; onClick?: () => void; ariaLabel?: string }): React.ReactElement {
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={styles.lcd}
+        onClick={onClick}
+        aria-label={ariaLabel ?? `${value} — open picker`}
+        aria-haspopup="listbox"
+        style={{ cursor: 'pointer' }}
+      >
+        {value}
+      </button>
+    )
+  }
+  return <div className={styles.lcd}>{value}</div>
 }
 
 // ------------------------------------------------------------------
@@ -209,10 +220,41 @@ export function KnobUnit({ label, lcdValue, step, total, pickerType, onOpen, onC
     e.preventDefault()
   }, [openPicker])
 
+  // Keyboard: arrows nudge, Home/End jump to extremes. Wraps because the knob is circular.
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    let next: number | null = null
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') next = (step + 1) % total
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') next = (step - 1 + total) % total
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = total - 1
+    if (next !== null) {
+      e.preventDefault()
+      hapticTick()
+      onChange(next)
+    }
+  }, [step, total, onChange])
+
   return (
-    <div ref={wrapperRef} className={styles.knobUnit}>
-      <Knob step={step} total={total} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
-      <LCD value={lcdValue} />
+    <div
+      ref={wrapperRef}
+      className={styles.knobUnit}
+      role="group"
+      aria-label={label}
+    >
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label={`${label} value`}
+        aria-valuemin={0}
+        aria-valuemax={total - 1}
+        aria-valuenow={step}
+        aria-valuetext={lcdValue}
+        onKeyDown={handleKeyDown}
+        className={styles.knobFocusable}
+      >
+        <Knob step={step} total={total} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+      </div>
+      <LCD value={lcdValue} onClick={openPicker} ariaLabel={`${label}: ${lcdValue} — open picker`} />
       <span className={styles.knobLabel}>{label}</span>
     </div>
   )
@@ -270,11 +312,42 @@ export function WheelUnit({ label, lcdValue, step, total, pickerType, arcMin, ar
     e.preventDefault()
   }, [openPicker])
 
+  // Keyboard: arrows nudge, Home/End jump to extremes. Bounded — clamps at edges.
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    let next: number | null = null
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') next = Math.min(total - 1, step + 1)
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') next = Math.max(0, step - 1)
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = total - 1
+    if (next !== null && next !== step) {
+      e.preventDefault()
+      hapticTick()
+      onChange(next)
+    }
+  }, [step, total, onChange])
+
   return (
-    <div ref={wrapperRef} className={styles.knobUnit}>
-      <BoundedKnob step={step} total={total} arcMin={arcMin} arcMax={arcMax}
-        onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
-      <LCD value={lcdValue} />
+    <div
+      ref={wrapperRef}
+      className={styles.knobUnit}
+      role="group"
+      aria-label={label}
+    >
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label={`${label} value`}
+        aria-valuemin={0}
+        aria-valuemax={total - 1}
+        aria-valuenow={step}
+        aria-valuetext={lcdValue}
+        onKeyDown={handleKeyDown}
+        className={styles.knobFocusable}
+      >
+        <BoundedKnob step={step} total={total} arcMin={arcMin} arcMax={arcMax}
+          onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+      </div>
+      <LCD value={lcdValue} onClick={openPicker} ariaLabel={`${label}: ${lcdValue} — open picker`} />
       <span className={styles.knobLabel}>{label}</span>
     </div>
   )
@@ -324,13 +397,39 @@ export function VolumeKnobUnit({ volume, onToggleMute, onVolumeChange }: VolumeK
     e.preventDefault()
   }, [onToggleMute])
 
+  // Keyboard on the slider track: arrows adjust volume in 5% steps, Home/End jump to mute/100%.
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    let next: number | null = null
+    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') next = Math.min(TOTAL - 1, step + 1)
+    else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') next = Math.max(0, step - 1)
+    else if (e.key === 'Home') next = 0
+    else if (e.key === 'End') next = TOTAL - 1
+    if (next !== null && next * 5 !== volume) {
+      e.preventDefault()
+      hapticTick()
+      onVolumeChange(next * 5)
+    }
+  }, [step, volume, onVolumeChange])
+
   const lcdValue = volume === 0 ? 'MUTED' : `VOL ${volume}%`
 
   return (
-    <div className={styles.knobUnit}>
-      <BoundedKnob step={step} total={TOTAL} arcMin={-135} arcMax={135}
-        onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
-      <LCD value={lcdValue} />
+    <div className={styles.knobUnit} role="group" aria-label="Volume">
+      <div
+        role="slider"
+        tabIndex={0}
+        aria-label="Volume value"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={volume}
+        aria-valuetext={lcdValue}
+        onKeyDown={handleKeyDown}
+        className={styles.knobFocusable}
+      >
+        <BoundedKnob step={step} total={TOTAL} arcMin={-135} arcMax={135}
+          onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} />
+      </div>
+      <LCD value={lcdValue} onClick={onToggleMute} ariaLabel={volume === 0 ? 'Muted — tap to unmute' : `Volume ${volume}% — tap to mute`} />
       <span className={styles.knobLabel}>VOLUME</span>
     </div>
   )
@@ -351,20 +450,25 @@ export interface PickerProps {
   options: PickerOption[]
   currentValue: number
   anchorRect: DOMRect
+  ariaLabel?: string
   onSelect: (value: number) => void
   onClose: () => void
 }
 
-export function Picker({ options, currentValue, anchorRect, onSelect, onClose }: PickerProps): React.ReactElement {
+export function Picker({ options, currentValue, anchorRect, ariaLabel, onSelect, onClose }: PickerProps): React.ReactElement {
   const containerRef = useRef<HTMLDivElement>(null)
   const selectedRef = useRef<HTMLButtonElement>(null)
 
-  // Scroll selected item to vertical center after both refs are attached
+  // Escape closes; previously-focused element (the knob/LCD that opened the picker) gets focus back
+  useDismissable(true, onClose)
+
+  // Scroll the current option into view, then focus it so keyboard nav starts at the right place
   useEffect(() => {
     const container = containerRef.current
     const selected = selectedRef.current
     if (!container || !selected) return
     container.scrollTop = selected.offsetTop - container.clientHeight / 2 + selected.clientHeight / 2
+    selected.focus()
   }, [])
 
   useEffect(() => {
@@ -377,12 +481,21 @@ export function Picker({ options, currentValue, anchorRect, onSelect, onClose }:
   }, [onClose])
 
   return createPortal(
-    <div ref={containerRef} data-picker className={styles.picker} style={{ left: anchorRect.left, top: anchorRect.bottom + 6 }}>
+    <div
+      ref={containerRef}
+      data-picker
+      className={styles.picker}
+      style={{ left: anchorRect.left, top: anchorRect.bottom + 6 }}
+      role="listbox"
+      aria-label={ariaLabel ?? 'Options'}
+    >
       {options.map(opt => (
         <React.Fragment key={opt.value}>
           {opt.separatorBefore && <div className={styles.pickerSeparator} aria-hidden />}
           <button
             ref={opt.value === currentValue ? selectedRef : undefined}
+            role="option"
+            aria-selected={opt.value === currentValue}
             className={[styles.pickerRow, opt.value === currentValue ? styles.pickerRowCurrent : ''].join(' ')}
             onClick={() => { onSelect(opt.value); onClose() }}
           >

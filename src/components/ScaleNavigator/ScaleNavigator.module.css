@@ -85,6 +85,28 @@
   overflow: hidden;
   text-overflow: ellipsis;
   user-select: none;
+  /* Normalize the rendered LCD when it's an interactive <button> (clickable knobs/LCDs) */
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.lcd:focus-visible {
+  outline: 2px solid var(--knob-accent-bright, #6e84ff);
+  outline-offset: 1px;
+}
+
+/* Focusable wrapper around the knob SVG so keyboard users get a visible focus ring */
+.knobFocusable {
+  display: inline-block;
+  border-radius: 50%;
+  line-height: 0;
+}
+
+.knobFocusable:focus-visible {
+  outline: 2px solid var(--knob-accent-bright, #6e84ff);
+  outline-offset: 2px;
 }
 
 /* ---- Knob label ---- */

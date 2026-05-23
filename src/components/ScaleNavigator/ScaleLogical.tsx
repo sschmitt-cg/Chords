@@ -79,6 +79,11 @@ export default function ScaleLogical(): React.ReactElement {
     : picker?.type === 'family' ? familyIndex
     : modeIndex
 
+  const pickerAriaLabel =
+    picker?.type === 'root'   ? 'Select root note'
+    : picker?.type === 'family' ? 'Select scale family'
+    : 'Select mode'
+
   return (
     <div className={styles.outer}>
       <div className={styles.panel}>
@@ -97,6 +102,7 @@ export default function ScaleLogical(): React.ReactElement {
           options={pickerOptions}
           currentValue={pickerValue}
           anchorRect={picker.anchorRect}
+          ariaLabel={pickerAriaLabel}
           onSelect={handlePickerSelect}
           onClose={closePicker}
         />

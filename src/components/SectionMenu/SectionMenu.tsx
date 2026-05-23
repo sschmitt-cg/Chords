@@ -4,6 +4,7 @@ import {
   DndContext,
   closestCenter,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -11,10 +12,12 @@ import {
 import {
   SortableContext,
   useSortable,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useDismissable } from '../../hooks/useDismissable'
 import { useLayoutStore, SECTION_LABELS, PINNED_SECTIONS, type SectionId } from '../../store/layout'
 import styles from './SectionMenu.module.css'
 
@@ -84,7 +87,15 @@ interface SectionMenuProps {
 export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionMenuProps) {
   const { sectionOrder, setSectionOrder, resetLayout } = useLayoutStore()
 
-  const sensors = useSensors(useSensor(PointerSensor))
+  // KeyboardSensor + sortableKeyboardCoordinates lets users press Space on a drag handle
+  // to enter drag mode, then arrow keys to reorder and Space/Enter (or Escape) to commit/cancel.
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  // Escape closes the menu; previously-focused element (the toggle button) regains focus.
+  useDismissable(true, onClose)
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -109,7 +120,7 @@ export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionM
   const right = anchorRect ? window.innerWidth - anchorRect.right : 16
 
   return createPortal(
-    <div data-section-menu className={styles.menu} style={{ top, right }}>
+    <div data-section-menu className={styles.menu} style={{ top, right }} role="menu" aria-label="Section visibility and order">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
           {sectionOrder.map(id => (

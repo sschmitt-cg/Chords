@@ -209,7 +209,7 @@ item above is the gate.
 - [x] ScaleNavigator — persist navigator group visibility independently of orientation changes — handled by shareable URL encoding app state
 - [ ] Scale strip tile visualization — consider alternatives to the colored underline bar
 - [x] ScaleNavigator knob SVG colors (accent ticks, indicator dot) use hard-coded hex values — replaced with `--knob-accent`, `--knob-accent-bright`, `--knob-tick-inactive`, `--knob-body`, `--knob-body-border`, `--knob-pivot` tokens defined in `src/index.css`
-- [ ] Keyboard accessibility audit (all interactive elements focusable, ARIA labels)
+- [x] Keyboard accessibility audit (all interactive elements focusable, ARIA labels) — modal Escape + focus return (Share popover, ScaleNavigator picker, Tuning modal); LCDs converted to focusable buttons; knobs given `role=slider` with arrow-key support; SectionMenu got @dnd-kit `KeyboardSensor` for keyboard reordering; shared `useDismissable` hook handles Escape + focus restoration
 - [x] iOS safe-area insets (`env(safe-area-inset-*)`) applied to header and all layout panels
 
 ---
