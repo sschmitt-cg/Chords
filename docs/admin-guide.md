@@ -42,6 +42,28 @@ The `CNAME` file at the repo root contains `tonalexplorer.com`. GitHub Pages
 reads this file on every deploy to keep the custom domain bound to the site.
 DNS for the apex domain is configured outside this repository.
 
+### Content Security Policy
+
+Production builds inject a strict CSP `<meta http-equiv>` tag into `index.html`
+via a Vite plugin in `vite.config.ts`. The dev server is left untouched so HMR
+keeps working.
+
+Production directives:
+
+- `default-src 'self'` — deny everything by default
+- `img-src 'self' data: blob:` — allow data/blob URIs for ShareCard PNG export
+- `style-src 'self' 'unsafe-inline'` — required because ~50 components use
+  inline `style={{...}}` props for dynamic CSS custom properties
+- `script-src 'self'` — no third-party scripts
+- `connect-src 'self' data: blob:` — `fetch(dataUrl)` in ShareCard needs `data:`
+- `media-src 'self' blob:` — defensive; Web Audio uses oscillators, not media
+- `object-src 'none'`, `frame-ancestors 'none'`, `form-action 'none'`,
+  `base-uri 'self'` — lock down embedding, framing, form posts, base URI
+
+If a new third-party resource is added (CDN font, analytics, error reporting,
+etc.), update the relevant directive in `vite.config.ts` and verify production
+preview loads cleanly with no console-blocked resources.
+
 ## Deployment
 
 Deploys are fully automated by `.github/workflows/deploy.yml`:
