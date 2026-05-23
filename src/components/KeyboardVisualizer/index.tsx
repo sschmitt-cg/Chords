@@ -1,6 +1,6 @@
 import React from 'react'
 import { useTonalStore } from '../../store/index'
-import { pcColorVar } from '../../theory/index'
+import { pcColorVar, chordNameForRow } from '../../theory/index'
 import VoicingNavigator from '../VoicingNavigator/index'
 import styles from './KeyboardVisualizer.module.css'
 
@@ -116,11 +116,14 @@ export default function KeyboardVisualizer(): React.ReactElement {
 
   let description: string
   if (!selectedRow) {
-    description = 'all scale notes, root emphasized'
-  } else if (keyboardVoicingIndex < 0) {
-    description = 'all chord notes, root emphasized'
+    description = 'all scale notes'
   } else {
-    description = `voicing ${keyboardVoicingIndex + 1} of ${voicings.length}, root emphasized`
+    const chordLabel = chordNameForRow(selectedRow, effectiveMax)
+    if (keyboardVoicingIndex < 0) {
+      description = `${chordLabel} — all chord notes`
+    } else {
+      description = `${chordLabel} — voicing ${keyboardVoicingIndex + 1} of ${voicings.length}`
+    }
   }
 
   return (
