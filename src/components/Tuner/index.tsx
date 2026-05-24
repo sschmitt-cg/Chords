@@ -1,7 +1,7 @@
 import type React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import styles from './Tuner.module.css'
-import { freqToNoteInfo, type NoteInfo } from '../../theory/index'
+import { freqToMidi, midiToNoteInfo, type NoteInfo } from '../../theory/index'
 
 const SILENCE_THRESHOLD = 0.005
 
@@ -10,18 +10,32 @@ const MIN_SAMPLES = 30
 // Upper bound on lag; longer lags would alias below ~47 Hz, below the lowest bass guitar string
 const MAX_SAMPLES = 1024
 
-// Cents-smoothing ring buffer length; at ~60fps this covers ~80ms — enough to suppress
-// single-frame outliers without lagging the needle on real pitch changes.
-const CENTS_SMOOTHING_WINDOW = 5
+// YIN absolute threshold on the cumulative mean normalized difference function.
+// 0.15 is the value used in the original paper; lower values demand a cleaner
+// periodicity (rejecting more noisy frames), higher values accept weaker periods.
+const YIN_THRESHOLD = 0.15
 
-function medianCents(samples: readonly number[]): number {
+// MIDI-smoothing ring buffer length; at ~60fps this covers ~116ms — wide enough that a
+// single mis-detected frame (e.g. octave alt) can't flip the displayed note, narrow
+// enough that real string changes still cross the median within the test budget.
+const MIDI_SMOOTHING_WINDOW = 7
+
+// Bandpass roughly the musical range of interest: above bass rumble / mains hum,
+// below mic hiss and high overtones that bias YIN toward half-period (octave alt).
+const BANDPASS_HIGHPASS_HZ = 50
+const BANDPASS_LOWPASS_HZ  = 1500
+
+function median(samples: readonly number[]): number {
   const sorted = [...samples].sort((a, b) => a - b)
   const mid = sorted.length >> 1
   return sorted.length % 2 === 0
-    ? Math.round((sorted[mid - 1] + sorted[mid]) / 2)
+    ? (sorted[mid - 1] + sorted[mid]) / 2
     : sorted[mid]
 }
 
+// YIN pitch detector (de Cheveigné & Kawahara, 2002). Picks the first lag whose
+// cumulative-mean-normalized difference dips below an absolute threshold, which is
+// immune to the octave-flip / wander failure modes of unnormalized autocorrelation.
 function detectPitch(buffer: Float32Array<ArrayBuffer>, sampleRate: number): number | null {
   // RMS power gate — skip if signal is nearly silent
   let rms = 0
@@ -29,39 +43,48 @@ function detectPitch(buffer: Float32Array<ArrayBuffer>, sampleRate: number): num
   rms = Math.sqrt(rms / buffer.length)
   if (rms < SILENCE_THRESHOLD) return null
 
-  // Unnormalized autocorrelation: find the lag with the highest correlation
-  // that also exceeds a threshold relative to the zero-lag (total power).
-  let bestLag = -1
-  let bestCorr = 0
+  // Window must hold both buffer[i] and buffer[i + tau] for tau up to maxTau,
+  // so cap maxTau at half the buffer length.
+  const window = buffer.length >> 1
+  const maxTau = Math.min(MAX_SAMPLES, window)
 
-  const maxLag = Math.min(MAX_SAMPLES, buffer.length >> 1)
-  for (let lag = MIN_SAMPLES; lag < maxLag; lag++) {
-    let corr = 0
-    for (let i = 0; i < maxLag; i++) {
-      corr += buffer[i] * buffer[i + lag]
+  // d'(tau): cumulative-mean-normalized difference. d'(0) is defined as 1.
+  const yin = new Float32Array(maxTau)
+  yin[0] = 1
+  let runningSum = 0
+  for (let tau = 1; tau < maxTau; tau++) {
+    let d = 0
+    for (let i = 0; i < window; i++) {
+      const diff = buffer[i] - buffer[i + tau]
+      d += diff * diff
     }
-    if (corr > bestCorr) {
-      bestCorr = corr
-      bestLag = lag
-    }
+    runningSum += d
+    yin[tau] = (d * tau) / runningSum
   }
 
-  if (bestLag === -1) return null
+  // First tau >= MIN_SAMPLES where d'(tau) crosses below threshold; then descend
+  // to the local minimum so parabolic interpolation acts on the actual valley.
+  let chosenTau = -1
+  let tau = MIN_SAMPLES
+  while (tau < maxTau - 1) {
+    if (yin[tau] < YIN_THRESHOLD) {
+      while (tau + 1 < maxTau && yin[tau + 1] < yin[tau]) tau++
+      chosenTau = tau
+      break
+    }
+    tau++
+  }
 
-  // Parabolic interpolation around the peak for sub-sample accuracy
-  const y1 = bestLag > 0 ? autocorrAt(buffer, maxLag, bestLag - 1) : 0
-  const y2 = bestCorr
-  const y3 = bestLag < maxLag - 1 ? autocorrAt(buffer, maxLag, bestLag + 1) : 0
+  if (chosenTau === -1) return null
+
+  // Parabolic interpolation on d'(tau) around the chosen minimum
+  const y1 = chosenTau > 0 ? yin[chosenTau - 1] : yin[chosenTau]
+  const y2 = yin[chosenTau]
+  const y3 = chosenTau < maxTau - 1 ? yin[chosenTau + 1] : yin[chosenTau]
   const denom = 2 * (2 * y2 - y1 - y3)
-  const refinedLag = denom !== 0 ? bestLag + (y1 - y3) / denom : bestLag
+  const refinedTau = denom !== 0 ? chosenTau + (y1 - y3) / denom : chosenTau
 
-  return sampleRate / refinedLag
-}
-
-function autocorrAt(buffer: Float32Array<ArrayBuffer>, maxLag: number, lag: number): number {
-  let c = 0
-  for (let i = 0; i < maxLag; i++) c += buffer[i] * buffer[i + lag]
-  return c
+  return sampleRate / refinedTau
 }
 
 interface NeedleProps {
@@ -164,9 +187,9 @@ export default function ChromaticTuner(): React.ReactElement {
   const rafRef       = useRef<number | null>(null)
   // Float32Array<ArrayBuffer> required by getFloatTimeDomainData; new Float32Array() always uses ArrayBuffer
   const bufferRef    = useRef<Float32Array<ArrayBuffer> | null>(null)
-  // Ring buffer of recent cents readings, reset on note transition or silence to keep transitions responsive
-  const centsBufferRef = useRef<number[]>([])
-  const lastNoteKeyRef = useRef<string | null>(null)
+  // Recent MIDI numbers (continuous, not rounded) — median of this buffer drives both note and cents.
+  // Smoothing MIDI rather than cents means a single outlier frame can't flip the displayed note name.
+  const midiBufferRef = useRef<number[]>([])
 
   const stopTuner = useCallback(() => {
     if (rafRef.current !== null) {
@@ -212,15 +235,25 @@ export default function ChromaticTuner(): React.ReactElement {
     analyser.fftSize = 2048
     analyser.smoothingTimeConstant = 0
 
+    // Bandpass the mic input before pitch detection: rolls off mains hum / room rumble
+    // below the lowest bass string, and HF mic hiss / overtones above the highest guitar fret.
+    const highpass = ctx.createBiquadFilter()
+    highpass.type = 'highpass'
+    highpass.frequency.value = BANDPASS_HIGHPASS_HZ
+    const lowpass = ctx.createBiquadFilter()
+    lowpass.type = 'lowpass'
+    lowpass.frequency.value = BANDPASS_LOWPASS_HZ
+
     const source = ctx.createMediaStreamSource(stream)
-    source.connect(analyser)
+    source.connect(highpass)
+    highpass.connect(lowpass)
+    lowpass.connect(analyser)
 
     streamRef.current   = stream
     ctxRef.current      = ctx
     analyserRef.current = analyser
     bufferRef.current   = new Float32Array(analyser.fftSize) as Float32Array<ArrayBuffer>
-    centsBufferRef.current = []
-    lastNoteKeyRef.current = null
+    midiBufferRef.current = []
 
     setStatus('running')
 
@@ -232,20 +265,13 @@ export default function ChromaticTuner(): React.ReactElement {
       analyserNode.getFloatTimeDomainData(buf)
       const hz = detectPitch(buf, ctx.sampleRate)
       if (hz === null) {
-        centsBufferRef.current = []
-        lastNoteKeyRef.current = null
+        midiBufferRef.current = []
         setNote(null)
       } else {
-        const raw = freqToNoteInfo(hz)
-        const noteKey = `${raw.name}${raw.octave}`
-        if (noteKey !== lastNoteKeyRef.current) {
-          centsBufferRef.current = []
-          lastNoteKeyRef.current = noteKey
-        }
-        const buffer = centsBufferRef.current
-        buffer.push(raw.cents)
-        if (buffer.length > CENTS_SMOOTHING_WINDOW) buffer.shift()
-        setNote({ ...raw, cents: medianCents(buffer) })
+        const buffer = midiBufferRef.current
+        buffer.push(freqToMidi(hz))
+        if (buffer.length > MIDI_SMOOTHING_WINDOW) buffer.shift()
+        setNote(midiToNoteInfo(median(buffer)))
       }
 
       rafRef.current = requestAnimationFrame(tick)

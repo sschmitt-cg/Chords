@@ -44,6 +44,17 @@ Phase 7 (below) covers the Capacitor build and submission steps that follow.
   applied to cents readings; buffer resets on note transition (different name+octave)
   or silence so attacks and string changes stay responsive; visible needle/cents
   flutter on held notes is suppressed without lag.
+- [x] **Tuner — YIN pitch detection:** replaced unnormalized autocorrelation with the
+  YIN algorithm (cumulative-mean-normalized difference function, 0.15 absolute
+  threshold, parabolic interpolation around the chosen minimum). Fixes residual
+  needle jitter on clean held tones caused by the previous detector picking a
+  different correlation peak each frame.
+- [x] **Tuner — MIDI-median smoothing + input bandpass:** smoothing now runs on
+  continuous MIDI numbers (7-frame median, ~116ms) rather than cents — a single
+  outlier frame can no longer flip the displayed note name. Mic input is bandpassed
+  50–1500 Hz before YIN sees it, knocking out mains-hum / room rumble and HF mic
+  hiss that biased the detector toward octave alts. Smoothing buffer resets only on
+  silence, not on note transitions.
 - [x] **ScaleStrip — horizontal swipe to shift mode** — pointer-event gesture on the
   strip rotates the tonal center across scale degrees (same notes, new root).
   Threshold 40px, max 800ms, dominant-axis gate; the synthetic click is swallowed
