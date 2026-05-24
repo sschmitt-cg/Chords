@@ -102,11 +102,18 @@ export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionM
 
   // Move focus into the menu on open so keyboard users can navigate without re-tabbing.
   // The menu is portaled to document.body, so Tab from the toggle button doesn't naturally flow in.
+  // We iterate candidates instead of taking the first match because in landscape, drag handles
+  // are display:none and focus() on a hidden element is a no-op. Confirm focus actually moved
+  // by comparing document.activeElement after the call.
   useEffect(() => {
-    const firstFocusable = menuRef.current?.querySelector<HTMLElement>(
+    const candidates = menuRef.current?.querySelectorAll<HTMLElement>(
       'button, input, [tabindex]:not([tabindex="-1"])',
     )
-    firstFocusable?.focus()
+    if (!candidates) return
+    for (const el of candidates) {
+      el.focus()
+      if (document.activeElement === el) break
+    }
   }, [])
 
   useEffect(() => {

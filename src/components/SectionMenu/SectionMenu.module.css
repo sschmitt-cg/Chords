@@ -42,7 +42,9 @@
   color: #8090c0;
 }
 
-.dragHandle:focus-visible {
+/* Use bare :focus (not :focus-visible) so programmatic focus on menu open is visible
+   regardless of the user's last input modality */
+.dragHandle:focus {
   outline: 2px solid #6e84ff;
   outline-offset: -2px;
   color: #c8d0f0;
@@ -120,7 +122,7 @@
   outline-offset: 2px;
 }
 
-.checkbox:focus-visible {
+.checkbox:focus {
   outline: 2px solid #6e84ff;
   outline-offset: 2px;
 }
