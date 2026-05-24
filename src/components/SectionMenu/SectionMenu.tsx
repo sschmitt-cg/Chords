@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import {
   DndContext,
@@ -88,6 +88,7 @@ interface SectionMenuProps {
 
 export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionMenuProps) {
   const { sectionOrder, setSectionOrder, resetLayout } = useLayoutStore()
+  const menuRef = useRef<HTMLDivElement>(null)
 
   // KeyboardSensor + sortableKeyboardCoordinates lets users press Space on a drag handle
   // to enter drag mode, then arrow keys to reorder and Space/Enter (or Escape) to commit/cancel.
@@ -98,6 +99,15 @@ export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionM
 
   // Escape closes the menu; previously-focused element (the toggle button) regains focus.
   useDismissable(true, onClose)
+
+  // Move focus into the menu on open so keyboard users can navigate without re-tabbing.
+  // The menu is portaled to document.body, so Tab from the toggle button doesn't naturally flow in.
+  useEffect(() => {
+    const firstFocusable = menuRef.current?.querySelector<HTMLElement>(
+      'button, input, [tabindex]:not([tabindex="-1"])',
+    )
+    firstFocusable?.focus()
+  }, [])
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -122,7 +132,7 @@ export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionM
   const right = anchorRect ? window.innerWidth - anchorRect.right : 16
 
   return createPortal(
-    <div data-section-menu className={styles.menu} style={{ top, right }} role="menu" aria-label="Section visibility and order">
+    <div ref={menuRef} data-section-menu className={styles.menu} style={{ top, right }} role="menu" aria-label="Section visibility and order">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
           {sectionOrder.map(id => (
