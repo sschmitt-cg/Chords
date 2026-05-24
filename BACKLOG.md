@@ -44,6 +44,11 @@ Phase 7 (below) covers the Capacitor build and submission steps that follow.
   applied to cents readings; buffer resets on note transition (different name+octave)
   or silence so attacks and string changes stay responsive; visible needle/cents
   flutter on held notes is suppressed without lag.
+- [x] **Tuner — YIN pitch detection:** replaced unnormalized autocorrelation with the
+  YIN algorithm (cumulative-mean-normalized difference function, 0.15 absolute
+  threshold, parabolic interpolation around the chosen minimum). Fixes residual
+  needle jitter on clean held tones caused by the previous detector picking a
+  different correlation peak each frame.
 - [x] **ScaleStrip — horizontal swipe to shift mode** — pointer-event gesture on the
   strip rotates the tonal center across scale degrees (same notes, new root).
   Threshold 40px, max 800ms, dominant-axis gate; the synthetic click is swallowed
