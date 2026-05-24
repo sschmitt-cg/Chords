@@ -27,7 +27,7 @@ interface SortableRowProps {
 
 function SortableRow({ id }: SortableRowProps) {
   const { sectionVisible, setSectionVisible } = useLayoutStore()
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -40,7 +40,9 @@ function SortableRow({ id }: SortableRowProps) {
       style={style}
       className={[styles.row, isDragging ? styles.dragging : ''].join(' ')}
     >
-      <button className={styles.dragHandle} aria-label="Drag to reorder" {...attributes} {...listeners}>
+      {/* setActivatorNodeRef is what KeyboardSensor reads to locate the focusable handle;
+          without it, keyboard activation silently no-ops. */}
+      <button ref={setActivatorNodeRef} className={styles.dragHandle} aria-label="Drag to reorder" {...attributes} {...listeners}>
         <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
           <circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/>
           <circle cx="3" cy="8" r="1.5"/><circle cx="9" cy="8" r="1.5"/>
