@@ -68,6 +68,9 @@ export default function ScaleExploratory(): React.ReactElement {
   const pickerValue =
     picker?.type === 'brightness' ? currentBrightnessPosition : currentTension
 
+  const pickerAriaLabel =
+    picker?.type === 'brightness' ? 'Select mode by brightness' : 'Select tension level'
+
   return (
     <div className={styles.outer}>
       <div className={styles.panel}>
@@ -87,6 +90,7 @@ export default function ScaleExploratory(): React.ReactElement {
           options={pickerOptions}
           currentValue={pickerValue}
           anchorRect={picker.anchorRect}
+          ariaLabel={pickerAriaLabel}
           onSelect={handlePickerSelect}
           onClose={closePicker}
         />

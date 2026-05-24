@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import { useTonalStore } from '../../store/index'
 import { pcColorVar, wrap, SHARP_NAMES, chordNameForRow } from '../../theory/index'
+import { useDismissable } from '../../hooks/useDismissable'
 import VoicingNavigator from '../VoicingNavigator/index'
 import TuningSelector from '../TuningSelector/index'
 import styles from './FretboardVisualizer.module.css'
@@ -28,6 +29,8 @@ export default function FretboardVisualizer(): React.ReactElement {
   } = useTonalStore()
 
   const [tuningModalOpen, setTuningModalOpen] = useState(false)
+  const closeTuningModal = useCallback(() => setTuningModalOpen(false), [])
+  useDismissable(tuningModalOpen, closeTuningModal)
 
   const scalePcs = new Set(currentScale.pitchClasses)
 
