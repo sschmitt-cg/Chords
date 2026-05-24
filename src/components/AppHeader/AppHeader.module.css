@@ -105,3 +105,11 @@
 .sharePopoverItem:active {
   background: rgba(255, 255, 255, 0.14);
 }
+
+/* Use :focus (not :focus-visible) so programmatic focus on open is visible regardless
+   of the user's last input modality */
+.sharePopoverItem:focus {
+  outline: none;
+  background: rgba(110, 132, 255, 0.20);
+  box-shadow: inset 0 0 0 1px rgba(110, 132, 255, 0.6);
+}

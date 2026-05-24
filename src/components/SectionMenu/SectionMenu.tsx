@@ -1,9 +1,10 @@
-import { useEffect, type RefObject } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import {
   DndContext,
   closestCenter,
   PointerSensor,
+  KeyboardSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -11,10 +12,12 @@ import {
 import {
   SortableContext,
   useSortable,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useDismissable } from '../../hooks/useDismissable'
 import { useLayoutStore, SECTION_LABELS, PINNED_SECTIONS, type SectionId } from '../../store/layout'
 import styles from './SectionMenu.module.css'
 
@@ -24,7 +27,7 @@ interface SortableRowProps {
 
 function SortableRow({ id }: SortableRowProps) {
   const { sectionVisible, setSectionVisible } = useLayoutStore()
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -37,7 +40,9 @@ function SortableRow({ id }: SortableRowProps) {
       style={style}
       className={[styles.row, isDragging ? styles.dragging : ''].join(' ')}
     >
-      <button className={styles.dragHandle} aria-label="Drag to reorder" {...attributes} {...listeners}>
+      {/* setActivatorNodeRef is what KeyboardSensor reads to locate the focusable handle;
+          without it, keyboard activation silently no-ops. */}
+      <button ref={setActivatorNodeRef} className={styles.dragHandle} aria-label="Drag to reorder" {...attributes} {...listeners}>
         <svg width="12" height="16" viewBox="0 0 12 16" fill="currentColor">
           <circle cx="3" cy="3" r="1.5"/><circle cx="9" cy="3" r="1.5"/>
           <circle cx="3" cy="8" r="1.5"/><circle cx="9" cy="8" r="1.5"/>
@@ -83,8 +88,33 @@ interface SectionMenuProps {
 
 export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionMenuProps) {
   const { sectionOrder, setSectionOrder, resetLayout } = useLayoutStore()
+  const menuRef = useRef<HTMLDivElement>(null)
 
-  const sensors = useSensors(useSensor(PointerSensor))
+  // KeyboardSensor + sortableKeyboardCoordinates lets users press Space on a drag handle
+  // to enter drag mode, then arrow keys to reorder and Space/Enter (or Escape) to commit/cancel.
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  )
+
+  // Escape closes the menu; previously-focused element (the toggle button) regains focus.
+  useDismissable(true, onClose)
+
+  // Move focus into the menu on open so keyboard users can navigate without re-tabbing.
+  // The menu is portaled to document.body, so Tab from the toggle button doesn't naturally flow in.
+  // We iterate candidates instead of taking the first match because in landscape, drag handles
+  // are display:none and focus() on a hidden element is a no-op. Confirm focus actually moved
+  // by comparing document.activeElement after the call.
+  useEffect(() => {
+    const candidates = menuRef.current?.querySelectorAll<HTMLElement>(
+      'button, input, [tabindex]:not([tabindex="-1"])',
+    )
+    if (!candidates) return
+    for (const el of candidates) {
+      el.focus()
+      if (document.activeElement === el) break
+    }
+  }, [])
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -109,7 +139,7 @@ export default function SectionMenu({ anchorRect, onClose, toggleRef }: SectionM
   const right = anchorRect ? window.innerWidth - anchorRect.right : 16
 
   return createPortal(
-    <div data-section-menu className={styles.menu} style={{ top, right }}>
+    <div ref={menuRef} data-section-menu className={styles.menu} style={{ top, right }} role="menu" aria-label="Section visibility and order">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sectionOrder} strategy={verticalListSortingStrategy}>
           {sectionOrder.map(id => (
