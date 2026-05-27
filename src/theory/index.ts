@@ -143,13 +143,30 @@ export function pcName(pc: number, enharmonicPrefs: Record<number, 'sharp' | 'fl
   return FLAT_NAMES[norm]
 }
 
+// Like pcName, but falls back to the supplied accidental bias when the user has
+// no explicit enharmonic preference for this pitch class. Used for chromatic
+// non-scale tones in views that should match the surrounding scale's spelling.
+export function pcNameWithBias(
+  pc: number,
+  bias: 'sharp' | 'flat' | 'neutral',
+  enharmonicPrefs: Record<number, 'sharp' | 'flat'>,
+): string {
+  const norm = wrap(pc, 12)
+  const opt = ENHARMONIC_OPTIONS[norm]
+  if (!opt) return SHARP_NAMES[norm]
+  const pref = enharmonicPrefs[norm]
+  if (pref === 'sharp') return SHARP_NAMES[norm]
+  if (pref === 'flat') return FLAT_NAMES[norm]
+  return bias === 'sharp' ? SHARP_NAMES[norm] : FLAT_NAMES[norm]
+}
+
 function accidentalSymbol(offset: number): string {
   if (offset === 0) return ''
   const char = offset > 0 ? '#' : 'b'
   return char.repeat(Math.abs(offset))
 }
 
-function biasFromName(name: string): 'sharp' | 'flat' | 'neutral' {
+export function biasFromName(name: string): 'sharp' | 'flat' | 'neutral' {
   if (name.includes('#')) return 'sharp'
   if (name.includes('b')) return 'flat'
   return 'neutral'
