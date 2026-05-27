@@ -128,6 +128,8 @@ diatonic triad with a mini keyboard and fretboard showing the chord shape.
 The app starts muted. Tap the volume knob in the Scale Explorer to unmute —
 this also unlocks the synth for the rest of the session.
 
-**Why is /v2 redirecting?**
-The React app is now the primary site at the root URL. The old `/v2.html`
-address redirects to `/` so any saved links keep working.
+## Open-source licenses
+
+Tonal Explorer is built with open-source software. Attribution and license
+text for every bundled third-party package are listed in
+[NOTICE.md](../NOTICE.md) in the repository.

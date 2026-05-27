@@ -191,13 +191,29 @@ export default function UserGuide({ onBack }: UserGuideProps): React.ReactElemen
             The app starts muted. Tap the volume knob in the Scale Explorer to
             unmute — this also unlocks the synth for the rest of the session.
           </p>
+        </section>
 
-          <h3>Why is /v2 redirecting?</h3>
+        <section>
+          <h2>Open-source licenses</h2>
           <p>
-            The React app is now the primary site at the root URL. The old
-            <code> /v2.html</code> address redirects to <code>/</code> so any
-            saved links keep working.
+            Tonal Explorer is built with open-source software. Full
+            attribution and license text for every bundled third-party
+            package live in{' '}
+            <a
+              href="https://github.com/sschmitt-cg/Chords/blob/main/NOTICE.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              NOTICE.md
+            </a>
+            .
           </p>
+          <ul>
+            <li>React, React DOM — © Meta Platforms, Inc. and affiliates — MIT</li>
+            <li>Zustand — © 2019 Paul Henschel — MIT</li>
+            <li>@dnd-kit (core, sortable, utilities) — © 2021 Claudéric Demers — MIT</li>
+            <li>html-to-image — © 2017–2025 W.Y. — MIT</li>
+          </ul>
         </section>
       </main>
     </div>
