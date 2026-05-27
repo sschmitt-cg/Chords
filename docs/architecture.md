@@ -58,9 +58,8 @@ Every interactive element must meet these requirements, always:
 |---|---|
 | `docs/product-vision.md` | Product goals, audiences, design principles |
 | `BACKLOG.md` | Phased feature backlog and current status |
+| `NOTICE.md` | Third-party open-source attributions |
 | `index.html` | Vite entry point for the React app (production root) |
-| `v2.html` | Static redirect stub to `/` — preserves the legacy `/v2.html` link |
-| `index-legacy.html` | Legacy vanilla JS app — do not modify; served only via the renamed file, not the site root |
 | `src/theory/index.ts` | Core music theory pure functions |
 | `src/theory/voicings.ts` | Chord voicing computation (keyboard inversions + guitar fingerings) |
 | `src/theory/types.ts` | TypeScript interfaces for the theory layer |
@@ -69,4 +68,3 @@ Every interactive element must meet these requirements, always:
 | `src/audio/index.ts` | Web Audio engine — oscillator synth, iOS unlock, mute, playback |
 | `src/hooks/useAudio.ts` | React hook wrapping the audio engine |
 | `src/components/UserGuide/` | In-app User Guide page (info icon in AppHeader opens it) |
-| `script.js` | Original source — reference only during migration |

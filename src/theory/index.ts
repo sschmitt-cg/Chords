@@ -143,15 +143,48 @@ export function pcName(pc: number, enharmonicPrefs: Record<number, 'sharp' | 'fl
   return FLAT_NAMES[norm]
 }
 
+// Like pcName, but falls back to the supplied accidental bias when the user has
+// no explicit enharmonic preference for this pitch class. Used for chromatic
+// non-scale tones in views that should match the surrounding scale's spelling.
+export function pcNameWithBias(
+  pc: number,
+  bias: 'sharp' | 'flat' | 'neutral',
+  enharmonicPrefs: Record<number, 'sharp' | 'flat'>,
+): string {
+  const norm = wrap(pc, 12)
+  const opt = ENHARMONIC_OPTIONS[norm]
+  if (!opt) return SHARP_NAMES[norm]
+  const pref = enharmonicPrefs[norm]
+  if (pref === 'sharp') return SHARP_NAMES[norm]
+  if (pref === 'flat') return FLAT_NAMES[norm]
+  return bias === 'sharp' ? SHARP_NAMES[norm] : FLAT_NAMES[norm]
+}
+
 function accidentalSymbol(offset: number): string {
   if (offset === 0) return ''
   const char = offset > 0 ? '#' : 'b'
   return char.repeat(Math.abs(offset))
 }
 
-function biasFromName(name: string): 'sharp' | 'flat' | 'neutral' {
+export function biasFromName(name: string): 'sharp' | 'flat' | 'neutral' {
   if (name.includes('#')) return 'sharp'
   if (name.includes('b')) return 'flat'
+  return 'neutral'
+}
+
+// Derive a sharp/flat preference from an entire scale spelling rather than just
+// the tonic, so a scale like C Lydian #2 (tonic "C", contains D# and F#) is
+// recognised as sharp-biased. Falls back to 'neutral' only when no spelled note
+// carries an accidental.
+export function biasFromSpelling(spelled: readonly string[]): 'sharp' | 'flat' | 'neutral' {
+  let sharps = 0
+  let flats = 0
+  for (const n of spelled) {
+    if (n.includes('#')) sharps++
+    else if (n.length > 1 && n.slice(1).includes('b')) flats++
+  }
+  if (sharps > flats) return 'sharp'
+  if (flats > sharps) return 'flat'
   return 'neutral'
 }
 

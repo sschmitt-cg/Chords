@@ -5,24 +5,18 @@ and chord extensions through interactive visualizers (piano keyboard, guitar
 fretboard, harmony grid) and a built-in Web Audio synth.
 
 Live: **[tonalexplorer.com](https://tonalexplorer.com)** (React app served at
-the root). The legacy `/v2.html` link redirects to `/`.
+the root).
 
 ---
 
 ## Project layout
 
-This repo ships the React app at the root and preserves the legacy vanilla app
-alongside it:
-
 | Path | What it is |
 |---|---|
 | `index.html` + `src/` | React 18 + TypeScript + Vite + Zustand app. Production root. |
-| `index-legacy.html` + `styles.css` + `script.js` | Legacy single-file vanilla app. Fully functional, preserved as the reference implementation. Do not modify. |
-| `v2.html` | Minimal redirect stub to `/` — keeps the old v2 link working. |
 
-The `deploy.yml` workflow builds the React app with Vite, then copies the
-legacy files and the v2 redirect into `dist/` so all are served from the same
-GitHub Pages site.
+The `deploy.yml` workflow builds the React app with Vite and publishes
+`dist/` to GitHub Pages.
 
 ## Quick start
 
@@ -35,9 +29,6 @@ Node 22 LTS is recommended — a `.nvmrc` is pinned to `22.13.0`, so
 npm install
 npm run dev        # React app on http://localhost:5173
 ```
-
-Open `index-legacy.html` directly in a browser (or via any static server) to
-run the legacy app.
 
 ## Scripts
 

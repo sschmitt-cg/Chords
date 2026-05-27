@@ -17,7 +17,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useTonalStore } from '../../store/index'
 import { useAudio } from '../../hooks/useAudio'
-import { computeRomans, pcColorVar, wrap, pcName } from '../../theory/index'
+import { biasFromSpelling, computeRomans, pcColorVar, pcNameWithBias, wrap } from '../../theory/index'
 import styles from './ScaleStrip.module.css'
 
 const AXIS_LOCK_PX = 8
@@ -434,7 +434,10 @@ export default function ScaleStrip() {
   // Build the 36-slot carousel. Slot widths come from the per-mode cycle layout.
   // Ghost names are needed in landscape (rendered as labeled dashed tiles) but
   // not in portrait (collapsed to a dotted spacer); we compute them either way.
+  // Ghost tones inherit the scale's accidental bias so they don't visually clash
+  // with scale tones (e.g. avoid showing Db alongside D# in the same row).
   const carouselSlots = useMemo(() => {
+    const scaleBias = biasFromSpelling(currentScale.spelled)
     const out = []
     for (let i = 0; i < CAROUSEL_TILE_COUNT; i++) {
       const chromOffset = i % CYCLE_SIZE
@@ -443,7 +446,9 @@ export default function ScaleStrip() {
       const isScaleTone = scaleIdx !== -1
       const isPrimary = i >= CAROUSEL_PRIMARY_OFFSET && i < CAROUSEL_PRIMARY_OFFSET + CYCLE_SIZE
       const isRoot = isPrimary && chromOffset === 0
-      const name = isScaleTone ? currentScale.spelled[scaleIdx] : pcName(pc, enharmonicPrefs)
+      const name = isScaleTone
+        ? currentScale.spelled[scaleIdx]
+        : pcNameWithBias(pc, scaleBias, enharmonicPrefs)
       const roman = isScaleTone ? romans[scaleIdx] : ''
       out.push({ i, chromOffset, pc, name, roman, isScaleTone, isPrimary, isRoot })
     }
