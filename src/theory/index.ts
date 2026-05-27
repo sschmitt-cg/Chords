@@ -172,6 +172,22 @@ export function biasFromName(name: string): 'sharp' | 'flat' | 'neutral' {
   return 'neutral'
 }
 
+// Derive a sharp/flat preference from an entire scale spelling rather than just
+// the tonic, so a scale like C Lydian #2 (tonic "C", contains D# and F#) is
+// recognised as sharp-biased. Falls back to 'neutral' only when no spelled note
+// carries an accidental.
+export function biasFromSpelling(spelled: readonly string[]): 'sharp' | 'flat' | 'neutral' {
+  let sharps = 0
+  let flats = 0
+  for (const n of spelled) {
+    if (n.includes('#')) sharps++
+    else if (n.length > 1 && n.slice(1).includes('b')) flats++
+  }
+  if (sharps > flats) return 'sharp'
+  if (flats > sharps) return 'flat'
+  return 'neutral'
+}
+
 function spellScale(_tonicPc: number, tonicName: string, pitchClasses: number[]): string[] {
   const bias = biasFromName(tonicName)
   const tonicLetter = tonicName[0].toUpperCase()

@@ -17,7 +17,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { useTonalStore } from '../../store/index'
 import { useAudio } from '../../hooks/useAudio'
-import { biasFromName, computeRomans, pcColorVar, pcNameWithBias, wrap } from '../../theory/index'
+import { biasFromSpelling, computeRomans, pcColorVar, pcNameWithBias, wrap } from '../../theory/index'
 import styles from './ScaleStrip.module.css'
 
 const AXIS_LOCK_PX = 8
@@ -437,7 +437,7 @@ export default function ScaleStrip() {
   // Ghost tones inherit the scale's accidental bias so they don't visually clash
   // with scale tones (e.g. avoid showing Db alongside D# in the same row).
   const carouselSlots = useMemo(() => {
-    const scaleBias = biasFromName(currentScale.spelled[0])
+    const scaleBias = biasFromSpelling(currentScale.spelled)
     const out = []
     for (let i = 0; i < CAROUSEL_TILE_COUNT; i++) {
       const chromOffset = i % CYCLE_SIZE

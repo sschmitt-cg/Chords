@@ -17,6 +17,7 @@ import {
   computeBrightness,
   MODE_NAMES,
   biasFromName,
+  biasFromSpelling,
   pcNameWithBias,
 } from '../index'
 import type { ScaleType } from '../types'
@@ -392,6 +393,30 @@ describe('biasFromName', () => {
   it('returns "neutral" for natural letter names', () => {
     expect(biasFromName('C')).toBe('neutral')
     expect(biasFromName('F')).toBe('neutral')
+  })
+})
+
+describe('biasFromSpelling', () => {
+  it('reports sharp bias when the scale contains any sharps (even if tonic is natural)', () => {
+    // C Lydian #2 from the harmonic-minor family: tonic "C" is neutral, but scale contains D# and F#
+    expect(biasFromSpelling(['C', 'D#', 'E', 'F#', 'G', 'A', 'B'])).toBe('sharp')
+  })
+
+  it('reports flat bias for a flat-spelled scale', () => {
+    expect(biasFromSpelling(['F', 'G', 'A', 'Bb', 'C', 'D', 'E'])).toBe('flat')
+  })
+
+  it('reports neutral for an all-natural scale (C major)', () => {
+    expect(biasFromSpelling(['C', 'D', 'E', 'F', 'G', 'A', 'B'])).toBe('neutral')
+  })
+
+  it('treats "B" (natural) as no flat — only the accidental "b" character counts', () => {
+    // Ionian on B: B, C#, D#, E, F#, G#, A# — sharp, not flat
+    expect(biasFromSpelling(['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'])).toBe('sharp')
+  })
+
+  it('breaks ties (equal sharps and flats) by returning neutral', () => {
+    expect(biasFromSpelling(['C', 'C#', 'Db'])).toBe('neutral')
   })
 })
 
