@@ -16,6 +16,9 @@ import {
   BRIGHTNESS_ORDER,
   computeBrightness,
   MODE_NAMES,
+  biasFromName,
+  biasFromSpelling,
+  pcNameWithBias,
 } from '../index'
 import type { ScaleType } from '../types'
 
@@ -373,5 +376,76 @@ describe('MODE_NAMES', () => {
     expect(MODE_NAMES).toEqual([
       'ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian',
     ])
+  })
+})
+
+describe('biasFromName', () => {
+  it('returns "sharp" for names containing #', () => {
+    expect(biasFromName('F#')).toBe('sharp')
+    expect(biasFromName('C#')).toBe('sharp')
+  })
+
+  it('returns "flat" for names containing b', () => {
+    expect(biasFromName('Bb')).toBe('flat')
+    expect(biasFromName('Eb')).toBe('flat')
+  })
+
+  it('returns "neutral" for natural letter names', () => {
+    expect(biasFromName('C')).toBe('neutral')
+    expect(biasFromName('F')).toBe('neutral')
+  })
+})
+
+describe('biasFromSpelling', () => {
+  it('reports sharp bias when the scale contains any sharps (even if tonic is natural)', () => {
+    // C Lydian #2 from the harmonic-minor family: tonic "C" is neutral, but scale contains D# and F#
+    expect(biasFromSpelling(['C', 'D#', 'E', 'F#', 'G', 'A', 'B'])).toBe('sharp')
+  })
+
+  it('reports flat bias for a flat-spelled scale', () => {
+    expect(biasFromSpelling(['F', 'G', 'A', 'Bb', 'C', 'D', 'E'])).toBe('flat')
+  })
+
+  it('reports neutral for an all-natural scale (C major)', () => {
+    expect(biasFromSpelling(['C', 'D', 'E', 'F', 'G', 'A', 'B'])).toBe('neutral')
+  })
+
+  it('treats "B" (natural) as no flat — only the accidental "b" character counts', () => {
+    // Ionian on B: B, C#, D#, E, F#, G#, A# — sharp, not flat
+    expect(biasFromSpelling(['B', 'C#', 'D#', 'E', 'F#', 'G#', 'A#'])).toBe('sharp')
+  })
+
+  it('breaks ties (equal sharps and flats) by returning neutral', () => {
+    expect(biasFromSpelling(['C', 'C#', 'Db'])).toBe('neutral')
+  })
+})
+
+describe('pcNameWithBias', () => {
+  it('uses sharp spelling for accidental pcs when bias is sharp', () => {
+    expect(pcNameWithBias(1, 'sharp', {})).toBe('C#')
+    expect(pcNameWithBias(6, 'sharp', {})).toBe('F#')
+    expect(pcNameWithBias(10, 'sharp', {})).toBe('A#')
+  })
+
+  it('uses flat spelling for accidental pcs when bias is flat', () => {
+    expect(pcNameWithBias(1, 'flat', {})).toBe('Db')
+    expect(pcNameWithBias(8, 'flat', {})).toBe('Ab')
+    expect(pcNameWithBias(10, 'flat', {})).toBe('Bb')
+  })
+
+  it('defaults to flat spelling when bias is neutral (matches pcName)', () => {
+    expect(pcNameWithBias(1, 'neutral', {})).toBe('Db')
+    expect(pcNameWithBias(10, 'neutral', {})).toBe('Bb')
+  })
+
+  it('honors explicit user preference over bias', () => {
+    expect(pcNameWithBias(1, 'flat', { 1: 'sharp' })).toBe('C#')
+    expect(pcNameWithBias(10, 'sharp', { 10: 'flat' })).toBe('Bb')
+  })
+
+  it('returns the natural name unchanged for non-accidental pcs', () => {
+    expect(pcNameWithBias(0, 'sharp', {})).toBe('C')
+    expect(pcNameWithBias(4, 'flat', {})).toBe('E')
+    expect(pcNameWithBias(11, 'flat', {})).toBe('B')
   })
 })
