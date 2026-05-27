@@ -12,13 +12,7 @@ the site is hosted as static files on GitHub Pages at
 [tonalexplorer.com](https://tonalexplorer.com). The custom domain is wired
 through the `CNAME` file in the repository root.
 
-The repository ships two coexisting entry points:
-
-| Path | Served at | Source |
-|---|---|---|
-| React app (current) | `/` | `index.html` (Vite entry) |
-| Legacy vanilla JS app | `/index-legacy.html` | `index-legacy.html` + `styles.css` + `script.js` |
-| Legacy redirect | `/v2.html` | `v2.html` (meta refresh + JS redirect to `/`) |
+The site is the React app at `/`, served from `index.html` (the Vite entry).
 
 ## Requirements
 
@@ -72,10 +66,8 @@ Deploys are fully automated by `.github/workflows/deploy.yml`:
 - **Concurrency:** `group: pages, cancel-in-progress: true` — a new push
   cancels any in-progress deploy.
 - **Steps:** install dependencies, `npm run build` (Vite emits the React app
-  to `dist/`), copy `index-legacy.html`, `styles.css`, `script.js`, and
-  `v2.html` into `dist/` so the legacy app and the redirect coexist with the
-  React app, then upload and deploy via `actions/upload-pages-artifact@v3` and
-  `actions/deploy-pages@v4`.
+  to `dist/`), then upload and deploy via `actions/upload-pages-artifact@v3`
+  and `actions/deploy-pages@v4`.
 
 To deploy: merge a PR into `main` (or push a commit directly) and watch the
 **Deploy to GitHub Pages** workflow under the repository's Actions tab.
@@ -87,14 +79,6 @@ nvm use            # picks up Node from .nvmrc
 npm install
 npm run build      # outputs dist/index.html (React entry) + assets
 npm run preview    # serves dist/ locally on a Vite preview port
-```
-
-The preview command does **not** copy the legacy files or redirect stub into
-`dist/` — that step only runs in CI. To test the legacy assets locally, copy
-them manually after `npm run build`:
-
-```bash
-cp index-legacy.html styles.css script.js v2.html dist/
 ```
 
 ### Continuous integration
@@ -135,32 +119,11 @@ record is changed externally, GitHub Pages may begin serving from
 
 ## Troubleshooting
 
-### Deploy workflow fails at the "Copy legacy app and v2 redirect into dist" step
+### Custom domain shows an unexpected page at `/`
 
-**Symptom:** `cp: cannot stat 'index-legacy.html': No such file or directory`
-(or one of the other files in the same `cp` line).
-**Cause:** A legacy file was renamed or removed without updating the workflow.
-**Resolution:** Update the `cp` line in `.github/workflows/deploy.yml` to match
-the current set of legacy assets at the repo root.
-
-### `/v2.html` no longer redirects to `/`
-
-**Symptom:** Visiting `tonalexplorer.com/v2.html` shows a blank page or stale
-content.
-**Cause:** `v2.html` was not copied into `dist/` during deploy, or the
-redirect stub was overwritten by an old build artifact.
-**Resolution:** Confirm `v2.html` is present in the repo root and listed in
-the workflow's `cp` step. The file should contain a `<meta http-equiv="refresh">`
-plus a `window.location.replace('/')` script targeting `/` (hard-coded — no
-query-param reads).
-
-### Custom domain shows the legacy app at `/`
-
-**Symptom:** `tonalexplorer.com` loads the old vanilla JS app instead of the
-React app.
-**Cause:** `index.html` in the repo root is the legacy file (not the React
-Vite entry), or the `vite.config.ts` `rollupOptions.input` is pointing
-elsewhere.
+**Symptom:** `tonalexplorer.com` does not load the React app.
+**Cause:** `index.html` in the repo root is not the React Vite entry, or
+`vite.config.ts` `rollupOptions.input` is pointing elsewhere.
 **Resolution:** Confirm `index.html` is the React entry (contains
 `<div id="root"></div>` and the `/src/main.tsx` import), and that
 `rollupOptions.input` in `vite.config.ts` is `'index.html'`.

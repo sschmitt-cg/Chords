@@ -253,10 +253,6 @@ changes required, generous free tier. The existing GitHub Pages deploy
 stays on the custom domain `tonalexplorer.com`; previews live on a
 subdomain like `pr-42.tonal-explorer.pages.dev`.
 
-**Note**: PR previews currently only make sense for the React app.
-Legacy app previews would need the same `cp index.html styles.css script.js`
-step run before upload.
-
 **Risk**: Low; previews are independent of production. Only risk is
 accidentally shipping secrets in a preview build — there are currently
 none, but revisit when auth or API keys enter the app.
@@ -287,24 +283,6 @@ URL that loads the built app.
 
 **Risk**: Thresholds set too high block legitimate work. Mitigation: start
 loose, tighten only after stable green.
-
-### Phase G — Legacy app validation
-
-**Goal**: Prevent `script.js` / `index.html` regressions from deploying.
-
-The legacy app has no test harness. Minimum viable validation:
-
-1. **HTML validation**: add `html-validate` on `index.html`.
-2. **JS syntax check**: `node --check script.js` (catches the obvious
-   class of typo that would break the page).
-3. **Optional later**: a single Playwright smoke test that loads the
-   legacy app and verifies the key selector renders. Skippable if PR
-   traffic into legacy files remains ~zero.
-
-Add a `legacy-verify` job to `ci.yml` — or skip this phase entirely if
-the legacy app is considered frozen. Worth confirming with the maintainer.
-
-**Risk**: Low; changes only touch CI.
 
 ### Phase H — Release & changelog hygiene (optional)
 
